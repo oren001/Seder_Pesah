@@ -32,7 +32,7 @@ const SECTIONS = [
     { id: 'chad-gadya', order: 19, he: 'חַד גַּדְיָא', text: 'חַד גַּדְיָא, חַד גַּדְיָא.\nדְּזַבִּין אַבָּא בִּתְרֵי זוּזֵי,\nחַד גַּדְיָא, חַד גַּדְיָא.', trans: 'גדי אחד! שיר שמח ועליז לסיום הסדר. 🐐' },
 ];
 
-function ReaderContent() {
+export function ReaderContent({ isHost = false }: { isHost?: boolean }) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const roomId = (searchParams.get('room') ?? '').toUpperCase();
@@ -109,12 +109,14 @@ function ReaderContent() {
 
     return (
         <main style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', maxWidth: 560, margin: '0 auto', width: '100%' }}>
-            {/* Top bar */}
-            <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(200,146,42,0.15)', flexShrink: 0, background: 'rgba(253,251,247,0.85)', backdropFilter: 'blur(12px)' }}>
-                <span style={{ fontSize: '1.2rem' }}>🕍</span>
-                <div className="progress-bar-outer" style={{ flex: 1 }}><div className="progress-bar-inner" style={{ width: `${progress}%` }} /></div>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>{(room?.currentSectionIndex ?? 0) + 1}/{SECTIONS.length}</span>
-            </div>
+            {/* Top bar (hidden for host since host has their own progress UI) */}
+            {!isHost && (
+                <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(200,146,42,0.15)', flexShrink: 0, background: 'rgba(253,251,247,0.85)', backdropFilter: 'blur(12px)' }}>
+                    <span style={{ fontSize: '1.2rem' }}>🕍</span>
+                    <div className="progress-bar-outer" style={{ flex: 1 }}><div className="progress-bar-inner" style={{ width: `${progress}%` }} /></div>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>{(room?.currentSectionIndex ?? 0) + 1}/{SECTIONS.length}</span>
+                </div>
+            )}
 
             {/* Content */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 32px' }}>

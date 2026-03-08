@@ -90,8 +90,12 @@ export async function generateScenes(room: Room, io: Server): Promise<void> {
                 participantIds: room.participants.slice(0, scene.participantSlots).map((p) => p.id),
                 generatedAt: Date.now(),
             };
-            addGeneratedImage(room.id, genImage);
+            await addGeneratedImage(room.id, genImage);
+            const updatedRoom = await import('../rooms').then(m => m.getRoom(room.id));
             io.to(room.id).emit('new-image', { image: genImage });
+            if (updatedRoom) {
+                io.to(room.id).emit('room-updated', { room: updatedRoom });
+            }
         } catch (err) {
             console.error(`Failed to generate scene ${scene.id}:`, err);
         }

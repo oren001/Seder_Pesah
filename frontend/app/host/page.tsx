@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
+import { ReaderContent } from '../reader/page';
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 const TOTAL_SECTIONS = 19;
@@ -141,14 +142,24 @@ function HostContent() {
                         <div className="progress-bar-outer" style={{ marginBottom: 14 }}>
                             <div className="progress-bar-inner" style={{ width: `${((currentSection + 1) / TOTAL_SECTIONS) * 100}%` }} />
                         </div>
-                        <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-                            <button className="btn btn-secondary" onClick={prevPage} style={{ flex: 1 }} disabled={currentSection === 0} id="prev-btn">← הקודם</button>
-                            <button className="btn btn-primary" onClick={nextPage} style={{ flex: 2 }} id="next-btn">הבא →</button>
+                        <div style={{ display: 'flex', gap: 10, marginBottom: 10, direction: 'rtl' }}>
+                            <button className="btn btn-primary" onClick={nextPage} style={{ flex: 2 }} id="next-btn">הבא ⬅</button>
+                            <button className="btn btn-secondary" onClick={prevPage} style={{ flex: 1 }} disabled={currentSection === 0} id="prev-btn">➡ הקודם</button>
                         </div>
                         <button className="btn btn-danger btn-full btn-sm" onClick={finishSeder} id="finish-btn">🏁 סיים סדר</button>
                     </>
                 )}
             </div>
+
+            {/* Injected Reader View for the Host */}
+            {isActive && (
+                <div style={{ marginTop: 24, borderTop: '2px dashed var(--gold)', paddingTop: 24 }}>
+                    <p className="font-hebrew" style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 16 }}>📖 תצוגת הגדה (מה שהמשתתפים רואים)</p>
+                    <div className="card" style={{ padding: 0, overflow: 'hidden', background: 'var(--pearl)' }}>
+                        <ReaderContent isHost={true} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

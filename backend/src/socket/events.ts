@@ -43,7 +43,9 @@ export function registerSocketHandlers(io: Server) {
                 haggadahSections.length - 1
             );
             await setCurrentSection(roomId, newIndex);
+            const updatedRoom = await getRoom(roomId);
             io.to(roomId).emit('page-changed', { sectionIndex: newIndex });
+            io.to(roomId).emit('room-updated', { room: updatedRoom });
         });
 
         // Host moves to previous page
@@ -52,7 +54,9 @@ export function registerSocketHandlers(io: Server) {
             if (!room) return;
             const newIndex = Math.max(room.currentSectionIndex - 1, 0);
             await setCurrentSection(roomId, newIndex);
+            const updatedRoom = await getRoom(roomId);
             io.to(roomId).emit('page-changed', { sectionIndex: newIndex });
+            io.to(roomId).emit('room-updated', { room: updatedRoom });
         });
 
         // Host finishes the seder
