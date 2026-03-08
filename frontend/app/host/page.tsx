@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import { ReaderContent } from '../reader/page';
@@ -21,7 +21,25 @@ function HostContent() {
     const [generating, setGenerating] = useState(false);
     const [genProgress, setGenProgress] = useState({ completed: 0, total: 0 });
     const [copied, setCopied] = useState(false);
+
+    // Host Selfie State
+    const [participantId, setParticipantId] = useState<string | null>(null);
+    const [cameraStep, setCameraStep] = useState<'intro' | 'camera' | 'preview' | 'uploading'>('intro');
+    const [cameraError, setCameraError] = useState('');
+    const [selfieDataUrl, setSelfieDataUrl] = useState('');
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const streamRef = useRef<MediaStream | null>(null);
+
     const joinUrl = typeof window !== 'undefined' ? `${window.location.origin}/join/?room=${roomId}` : '';
+
+    // Check if host already joined on mount
+    useEffect(() => {
+        if (typeof window !== 'undefined' && roomId) {
+            const pid = sessionStorage.getItem(`participant_${roomId}`);
+            if (pid) setParticipantId(pid);
+        }
+    }, [roomId]);
 
     useEffect(() => {
         if (!roomId) return;
@@ -64,6 +82,42 @@ function HostContent() {
     const generateScenes = useCallback(async () => { setGenerating(true); setGenProgress({ completed: 0, total: 0 }); await fetch(`${BACKEND}/api/scenes/generate/${roomId}`, { method: 'POST' }); }, [roomId]);
     const copy = useCallback(async () => { await navigator.clipboard.writeText(joinUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }, [joinUrl]);
 
+    // Camera functions (port of Join flow)
+    const startCamera = useCallback(async () => {
+        setCameraStep('camera');
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } } });
+            streamRef.current = stream;
+            if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); }
+        } catch { setCameraError('הגישה למצלמה נדחתה. אנא אפשרו גישה ונסו שוב.'); setCameraStep('intro'); }
+    }, []);
+
+    const takeSelfie = useCallback(() => {
+        const video = videoRef.current; const canvas = canvasRef.current;
+        if (!video || !canvas) return;
+        canvas.width = 512; canvas.height = 512;
+        const ctx = canvas.getContext('2d')!;
+        ctx.save(); ctx.scale(-1, 1); ctx.drawImage(video, -512, 0, 512, 512); ctx.restore();
+        setSelfieDataUrl(canvas.toDataURL('image/jpeg', 0.7));
+        streamRef.current?.getTracks().forEach((t) => t.stop());
+        setCameraStep('preview');
+    }, []);
+
+    const joinAsHost = useCallback(async () => {
+        setCameraStep('uploading'); setCameraError('');
+        try {
+            const res = await fetch(`${BACKEND}/api/rooms/${roomId}/join`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ selfieDataUrl }),
+            });
+            if (!res.ok) throw new Error('שגיאה בהצטרפות לחדר');
+            const data = await res.json();
+            const pid = data.participant.id;
+            sessionStorage.setItem(`participant_${roomId}`, pid);
+            setParticipantId(pid);
+        } catch (err: unknown) { setCameraError(err instanceof Error ? err.message : 'שגיאה. נסו שוב.'); setCameraStep('preview'); }
+    }, [roomId, selfieDataUrl]);
+
     void hostId;
     const participants = room?.participants ?? [];
     const currentSection = room?.currentSectionIndex ?? 0;
@@ -97,6 +151,43 @@ function HostContent() {
                     </div>
                 ))}
             </div>
+
+            {/* Host Selfie Flow */}
+            {!participantId && (
+                <div className="card-gold" style={{ marginBottom: 14 }}>
+                    <p className="font-hebrew" style={{ color: 'var(--gold-dark)', fontSize: '0.9rem', marginBottom: 10, fontWeight: 700, textAlign: 'center' }}>📸 גם המארח משתתף!</p>
+                    {cameraStep === 'intro' && (
+                        <div style={{ textAlign: 'center' }}>
+                            <p className="font-hebrew" style={{ color: 'var(--text-mid)', fontSize: '0.8rem', marginBottom: 12 }}>צלמו גם אתם סלפי כדי להשתתף בתמונות.</p>
+                            {cameraError && <p style={{ color: '#C0392B', marginBottom: 10, fontSize: '0.8rem' }}>{cameraError}</p>}
+                            <button className="btn btn-primary btn-sm btn-full" onClick={startCamera}>📷 התחילו מצלמה</button>
+                        </div>
+                    )}
+                    {cameraStep === 'camera' && (
+                        <div className="animate-fade-in" style={{ textAlign: 'center' }}>
+                            <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', aspectRatio: '1', background: '#000', maxWidth: 220, margin: '0 auto 12px' }}>
+                                <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} playsInline muted />
+                            </div>
+                            <button className="btn btn-primary btn-sm btn-full animate-pulse-gold" onClick={takeSelfie}>📸 צלמו</button>
+                        </div>
+                    )}
+                    {cameraStep === 'preview' && (
+                        <div className="animate-fade-in" style={{ textAlign: 'center' }}>
+                            <div style={{ width: 120, height: 120, margin: '0 auto 14px', borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--gold)' }}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={selfieDataUrl} alt="הסלפי שלך" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                            {cameraError && <p style={{ color: '#C0392B', marginBottom: 10, fontSize: '0.8rem' }}>{cameraError}</p>}
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button className="btn btn-secondary btn-sm" onClick={() => { setSelfieDataUrl(''); startCamera(); }} style={{ flex: 1 }}>↩ שוב</button>
+                                <button className="btn btn-primary btn-sm" onClick={joinAsHost} style={{ flex: 2 }}>✅ הצטרף</button>
+                            </div>
+                        </div>
+                    )}
+                    {cameraStep === 'uploading' && <p className="font-hebrew" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>מצטרף…</p>}
+                    <canvas ref={canvasRef} style={{ display: 'none' }} />
+                </div>
+            )}
 
             {/* Participants */}
             {participants.length > 0 && (
