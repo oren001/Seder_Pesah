@@ -1,4 +1,4 @@
-#!/bash
+#!/bin/bash
 
 # 🕍 AI Haggadah - One-Click Deployment Script
 # Consolidated Ashkenaz Version
