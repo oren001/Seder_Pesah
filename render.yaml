@@ -1,0 +1,48 @@
+services:
+  # Backend — Node.js + Express + Socket.io
+  - type: web
+    name: haggadah-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        sync: false   # Set in Render dashboard → your frontend URL
+      - key: LEONARDO_API_KEY
+        sync: false   # Set in Render dashboard
+      - key: FIREBASE_PROJECT_ID
+        value: general-4686c
+      - key: FIREBASE_STORAGE_BUCKET
+        value: general-4686c.firebasestorage.app
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false   # Set in Render dashboard
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false   # Set in Render dashboard (paste the full key with \n)
+
+  # Frontend — Next.js
+  - type: web
+    name: haggadah-frontend
+    runtime: node
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NEXT_PUBLIC_BACKEND_URL
+        sync: false   # Set in Render dashboard → your backend URL
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        value: AIzaSyCcnpQDPsQptHdZKHupXOZNqNbO1JOD1Ss
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        value: general-4686c.firebaseapp.com
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        value: general-4686c
+      - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+        value: general-4686c.firebasestorage.app
+      - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+        value: "810223700186"
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        value: "1:810223700186:web:7eeeac4b4e0f921cd7fde3"
