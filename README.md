@@ -1,166 +1,78 @@
-# 🕍 AI Interactive Passover Haggadah
+# 🕍 AI Interactive Passover Haggadah (MVP)
 
-An interactive digital Seder experience where participants join via link, take a selfie, and appear as AI-generated characters in scenes from the Exodus.
+A modern, interactive digital Seder experience with a Pearl White theme. Participants join via a shared link, take a selfie, and are automatically featured in AI-generated Exodus scenes using Leonardo AI.
 
-## Tech Stack
-
-| Layer | Tech |
-|---|---|
-| Frontend | Next.js 14, TypeScript, Vanilla CSS |
-| Backend | Node.js, Express, Socket.io |
-| Database | Firebase Firestore (real-time) |
-| Storage | Firebase Storage |
-| AI Images | OpenAI DALL-E 3 |
+## ✨ New Features
+- **Modern Pearl White Theme**: Elegant glassmorphism design with an epic Exodus background.
+- **Full Hebrew UI**: All Haggadah text and interface elements are in Hebrew.
+- **Leonardo AI Phoenix**: Ultra-high quality biblical epic scenes generated via Leonardo AI.
+- **Static Hosting Optimized**: Converted to Next.js `output: export` for free hosting on Render (Static Site).
 
 ---
 
-## Getting Started
+## 🛠 Tech Stack
+| Layer | Technology |
+|---|---|
+| **Frontend** | Next.js 14, TypeScript, Vanilla CSS (Pearl White Theme) |
+| **Backend** | Node.js, Express, Socket.io |
+| **Database** | Firebase Firestore (Real-time sync) |
+| **AI Images** | Leonardo AI (Phoenix Model) |
+| **Hosting** | Render (Static Site for Frontend, Web Service for Backend) |
+
+---
+
+## 🚀 Setup Instructions
 
 ### 1. Firebase Setup
+1. Go to [Firebase Console](https://console.firebase.google.com/) → Project `general-4686c`.
+2. **Enable Firestore**: Ensure Firestore is enabled. 
+3. **Enable GCP API**: Go to [Google Cloud Console](https://console.cloud.google.com/apis/library/firestore.googleapis.com) and click **Enable**.
+4. **Service Account**: Go to Project Settings → Service Accounts → **Generate new private key** (Download JSON).
 
-1. Go to [Firebase Console](https://console.firebase.google.com/) → Create Project
-2. Enable **Firestore Database** (Start in test mode for dev)
-3. Enable **Storage**
-4. Go to **Project Settings → Service Accounts → Generate new private key** → download JSON
-5. Go to **Project Settings → General → Your apps → Add Web App** → copy config
+### 2. Deployment on Render (Free Tier)
 
----
+#### **Service A: Frontend (Static Site)** 
+- **Type**: Static Site
+- **Repository**: `oren001/Seder_Pesah`
+- **Root Directory**: `frontend`
+- **Build Command**: `npm install && npm run build`
+- **Publish Directory**: `frontend/out`
+- **Environment Variables**:
+  | Key | Value |
+  |---|---|
+  | `NEXT_PUBLIC_BACKEND_URL` | *(Your Backend Render URL)* |
+  | `NEXT_PUBLIC_FIREBASE_API_KEY` | `AIzaSyCcnpQDPsQptHdZKHupXOZNqNbO1JOD1Ss` |
+  | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | `general-4686c` |
+  | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | `general-4686c.firebasestorage.app` |
+  | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `810223700186` |
+  | `NEXT_PUBLIC_FIREBASE_APP_ID` | `1:810223700186:web:7eeeac4b4e0f921cd7fde3` |
 
-### 2. Backend Setup
-
-```bash
-cd backend
-cp .env.example .env
-npm install
-```
-
-Edit `.env` with your Firebase Admin credentials from the downloaded JSON:
-
-```env
-PORT=3001
-OPENAI_API_KEY=sk-...
-FRONTEND_URL=http://localhost:3000
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-...@your-project.iam.gserviceaccount.com
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-```
-
-```bash
-npm run dev
-# Server running on http://localhost:3001
-```
-
----
-
-### 3. Frontend Setup
-
-```bash
-cd frontend
-cp .env.local.example .env.local
-npm install
-```
-
-Edit `.env.local` with your Firebase Web App config:
-
-```env
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
-NEXT_PUBLIC_FIREBASE_API_KEY=AIza...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
-NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abc123
-```
-
-```bash
-npm run dev
-# Frontend at http://localhost:3000
-```
+#### **Service B: Backend (Web Service)** 
+- **Type**: Web Service
+- **Repository**: `oren001/Seder_Pesah`
+- **Root Directory**: `backend`
+- **Build Command**: `npm install && npm run build`
+- **Start Command**: `npm start`
+- **Environment Variables**:
+  | Key | Value |
+  |---|---|
+  | `NODE_ENV` | `production` |
+  | `FRONTEND_URL` | *(Your Frontend Render URL)* |
+  | `LEONARDO_API_KEY` | `02fbccd7-7983-4275-8709-69796bb9fc6e` |
+  | `FIREBASE_PROJECT_ID` | `general-4686c` |
+  | `FIREBASE_CLIENT_EMAIL` | `firebase-adminsdk-fbsvc@general-4686c.iam.gserviceaccount.com` |
+  | `FIREBASE_PRIVATE_KEY` | *(Paste full key from JSON including `\n` newline markers)* |
 
 ---
 
-## User Flow
-
-```
-Host → http://localhost:3000
-  └─ Click "Create Seder"
-  └─ Gets room URL: /join/{ROOMID}
-  └─ Shares via WhatsApp
-  └─ Opens /room/{ROOMID}/host
-
-Participant → Opens /join/{ROOMID}
-  └─ Takes selfie
-  └─ Enters Lobby (/room/{ROOMID}/lobby)
-  └─ Sees participant grid + AI hero images
-
-Host → Clicks "Generate Scenes" (shows cost estimate)
-Host → Clicks "Start Seder"
-  └─ All phones auto-navigate to Reader
-  └─ Host controls Next/Prev for everyone
-  └─ AI scenes appear throughout
-
-End → /room/{ROOMID}/gallery
-  └─ All generated images
-  └─ Download memories
-```
+## 📖 User Flow
+1. **Host** creates a Seder at `Seder_Pesah.onrender.com`.
+2. **Host** shares the join link (e.g., `/join/?room=ABCD`) via WhatsApp.
+3. **Participants** take a selfie and enter the Lobby.
+4. **Host** clicks "Generate Scenes" (Leonardo AI creates 23 unique scenes).
+5. **Host** starts the Seder. All screens sync to page 1 of the Hebrew Haggadah.
+6. **Interaction**: Participants vote and view AI scenes overlaying the text.
+7. **End**: View/download the full Seder gallery.
 
 ---
-
-## App Screens
-
-| Screen | URL | Who |
-|---|---|---|
-| Landing | `/` | Host |
-| Host Panel | `/room/{id}/host` | Host only |
-| Join / Selfie | `/join/{id}` | Participants |
-| Lobby | `/room/{id}/lobby` | Everyone |
-| Reader | `/room/{id}/reader` | Everyone |
-| Gallery | `/room/{id}/gallery` | Everyone |
-
----
-
-## Firestore Data Model
-
-```
-rooms/{roomId}
-  id: string
-  hostId: string
-  status: 'lobby' | 'active' | 'finished'
-  currentSectionIndex: number
-  participants: [{id, selfieUrl, joinedAt}]
-  generatedImages: [{id, sceneId, sectionId, imageUrl, participantIds, generatedAt}]
-  votes: [{id, question, choices, status, winnerId}]
-```
-
----
-
-## Haggadah Sections (19)
-
-Kadesh → Urchatz → Karpas → Yachatz → Maggid → Mah Nishtanah → We Were Slaves → Four Sons → Ten Plagues → Dayenu → Pesach/Matzah/Maror → Hallel → The Meal → Afikomen → Barech → Elijah's Cup → Songs of Hallel → Nirtzah → Chad Gadya
-
----
-
-## Scene Generation (23 Scenes)
-
-Each scene has a DALL-E 3 prompt in `backend/src/haggadah/scenes.ts`. The host triggers generation from the host panel. Cost estimate is shown before generation ($0.04/image via DALL-E 3).
-
-Lobby hero scenes (4) are generated for each participant featuring them as:
-- Walking through the Red Sea
-- Standing before the Pyramids  
-- Holding Moses' staff
-- Leading the Exodus
-
----
-
-## Deployment (Render)
-
-1. Push to GitHub
-2. Create two Render services:
-   - **Backend**: Web Service → `backend/` → `npm start` → add env vars
-   - **Frontend**: Static Site or Web Service → `frontend/` → `npm run build` → `npm start`
-3. Update `FRONTEND_URL` in backend env and `NEXT_PUBLIC_BACKEND_URL` in frontend env with live URLs
-
----
-
-## חַג פֶּסַח שָׂמֵחַ! — Happy Passover! 🎉
+## חַג פֶּסַח שָׂמֵחַ! 🎉
