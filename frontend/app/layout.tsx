@@ -2,14 +2,12 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'הגדה פסח אינטראקטיבית | AI Passover Haggadah',
-  description: 'Experience the Passover Seder together — join via link, take a selfie, and appear in AI-generated scenes from the Exodus.',
-  manifest: '/manifest.json',
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Haggadah' },
+  title: 'הגדה של פסח אינטראקטיבית | AI Haggadah',
+  description: 'חוו את ליל הסדר יחד — הצטרפו עם קישור, צלמו סלפי, והופיעו בסצנות AI מיציאת מצרים.',
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0A1628',
+  themeColor: '#FDFBF7',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -24,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body>
-        <div className="starfield" aria-hidden="true" />
+        <div className="exodus-bg" aria-hidden="true" />
         {children}
       </body>
     </html>

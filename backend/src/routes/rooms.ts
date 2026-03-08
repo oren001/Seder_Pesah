@@ -12,8 +12,8 @@ roomsRouter.post('/', async (req, res) => {
     res.json({
         room,
         hostId,
-        joinUrl: `${baseUrl}/join/${room.id}`,
-        hostUrl: `${baseUrl}/room/${room.id}/host?hostId=${hostId}`,
+        joinUrl: `${baseUrl}/join/?room=${room.id}`,
+        hostUrl: `${baseUrl}/host/?room=${room.id}&hostId=${hostId}`,
     });
 });
 

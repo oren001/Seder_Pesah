@@ -15,11 +15,10 @@ export default function HomePage() {
     try {
       const res = await fetch(`${BACKEND}/api/rooms`, { method: 'POST' });
       const data = await res.json();
-      // Store hostId in sessionStorage
       sessionStorage.setItem(`host_${data.room.id}`, data.hostId);
-      router.push(`/room/${data.room.id}/host?hostId=${data.hostId}`);
+      router.push(`/host/?room=${data.room.id}&hostId=${data.hostId}`);
     } catch {
-      setError('Failed to create room. Is the server running?');
+      setError('שגיאה ביצירת החדר. האם השרת פועל?');
       setLoading(false);
     }
   }
@@ -27,26 +26,33 @@ export default function HomePage() {
   return (
     <main className="page">
       <div className="container" style={{ textAlign: 'center', maxWidth: 440 }}>
-        {/* Logo & Title */}
-        <div className="animate-float" style={{ fontSize: '5rem', marginBottom: 16 }}>🕍</div>
-
-        <h1 className="font-hebrew" style={{ fontSize: 'clamp(2rem,7vw,3rem)', color: 'var(--gold)', marginBottom: 8, fontWeight: 900 }}>
-          הַגָּדָה שֶׁל פֶּסַח
-        </h1>
-        <p className="font-latin" style={{ color: 'var(--gold-light)', fontSize: '1.1rem', marginBottom: 4 }}>
-          AI Interactive Haggadah
-        </p>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 40 }}>
-          Appear in the Exodus. Together.
-        </p>
-
-        <div className="card-gold" style={{ marginBottom: 32 }}>
-          <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
-            🎭 Participants take a selfie and appear in AI-generated biblical scenes<br />
-            📱 Everyone reads together, synchronized on their phones<br />
-            🗳️ Vote on who plays the Wise Son, Pharaoh, and more<br />
-            🎨 Every Seder becomes a unique visual story
+        <div style={{ marginBottom: 28 }}>
+          <div className="animate-float" style={{ fontSize: '5rem', marginBottom: 12, filter: 'drop-shadow(0 4px 16px rgba(200,146,42,0.3))' }}>🕍</div>
+          <h1 className="font-hebrew" style={{ fontSize: 'clamp(2rem,7vw,3.2rem)', color: 'var(--gold-dark)', marginBottom: 6, fontWeight: 900, lineHeight: 1.2 }}>
+            הַגָּדָה שֶׁל פֶּסַח
+          </h1>
+          <p className="font-hebrew" style={{ color: 'var(--text-mid)', fontSize: '1.05rem', marginBottom: 4 }}>
+            הגדה אינטראקטיבית עם בינה מלאכותית
           </p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            הופיעו ביציאת מצרים. יחד.
+          </p>
+        </div>
+
+        <div className="card" style={{ marginBottom: 24, textAlign: 'right' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              { icon: '🎭', text: 'צלמו סלפי והופיעו בסצנות AI מההגדה' },
+              { icon: '📱', text: 'כולם קוראים יחד — מסונכרנים בטלפון' },
+              { icon: '🗳️', text: 'הצביעו מי הבן החכם, פרעה ועוד' },
+              { icon: '🎨', text: 'כל סדר — סיפור ויזואלי ייחודי' },
+            ].map(({ icon, text }) => (
+              <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: '1.2rem' }}>{icon}</span>
+                <span className="font-hebrew" style={{ fontSize: '0.9rem', color: 'var(--text-mid)' }}>{text}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <button
@@ -55,33 +61,19 @@ export default function HomePage() {
           disabled={loading}
           id="create-seder-btn"
         >
-          {loading ? (
-            <><span className="spinner" />Creating your Seder…</>
-          ) : (
-            <>✨ Create Seder</>
-          )}
+          {loading ? <><span className="spinner" />יוצר סדר…</> : <>✨ צור סדר פסח</>}
         </button>
 
-        {error && (
-          <p style={{ color: '#FF6B6B', marginTop: 16, fontSize: '0.85rem' }}>{error}</p>
-        )}
+        {error && <p style={{ color: '#C0392B', marginTop: 14, fontSize: '0.85rem' }}>{error}</p>}
 
-        <p style={{ marginTop: 24, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          No account needed · Share link via WhatsApp
+        <p className="font-hebrew" style={{ marginTop: 20, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          ללא הרשמה · שתפו קישור בוואטסאפ
         </p>
       </div>
 
       <style>{`
-        .spinner {
-          display: inline-block;
-          width: 18px;
-          height: 18px;
-          border: 2px solid rgba(10,22,40,0.3);
-          border-top-color: var(--navy);
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { display:inline-block;width:17px;height:17px;border:2px solid rgba(255,255,255,0.35);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
       `}</style>
     </main>
   );
