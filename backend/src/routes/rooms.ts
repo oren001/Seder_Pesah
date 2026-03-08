@@ -6,15 +6,20 @@ export const roomsRouter = Router();
 
 // POST /api/rooms - Create a new Seder room
 roomsRouter.post('/', async (req, res) => {
-    const hostId = uuidv4();
-    const room = await createRoom(hostId);
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.json({
-        room,
-        hostId,
-        joinUrl: `${baseUrl}/join/?room=${room.id}`,
-        hostUrl: `${baseUrl}/host/?room=${room.id}&hostId=${hostId}`,
-    });
+    try {
+        const hostId = uuidv4();
+        const room = await createRoom(hostId);
+        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        res.json({
+            room,
+            hostId,
+            joinUrl: `${baseUrl}/join/?room=${room.id}`,
+            hostUrl: `${baseUrl}/host/?room=${room.id}&hostId=${hostId}`,
+        });
+    } catch (err) {
+        console.error('API Error in /api/rooms:', err);
+        res.status(500).json({ error: 'Internal Server Error', details: err instanceof Error ? err.message : String(err) });
+    }
 });
 
 // GET /api/rooms/:id - Get room state

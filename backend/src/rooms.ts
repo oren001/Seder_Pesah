@@ -18,8 +18,14 @@ export async function createRoom(hostId: string): Promise<Room> {
         generatedImages: [],
         votes: [],
     };
-    await db.collection(ROOMS).doc(id).set(room);
-    return room;
+    try {
+        await db.collection(ROOMS).doc(id).set(room);
+        console.log(`🏠 Room created successfully: ${id}`);
+        return room;
+    } catch (err) {
+        console.error(`❌ Error creating room in Firestore:`, err);
+        throw err;
+    }
 }
 
 export async function getRoom(id: string): Promise<Room | null> {

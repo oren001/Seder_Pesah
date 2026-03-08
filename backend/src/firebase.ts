@@ -17,6 +17,7 @@ if (!getApps().length) {
         }
 
         if (serviceAccount) {
+            console.log(`📡 Attempting to initialize Firebase with Project ID: ${serviceAccount.project_id}`);
             // Ensure private key newlines are handled correctly regardless of JSON escaping
             if (serviceAccount.private_key) {
                 serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
@@ -27,6 +28,7 @@ if (!getApps().length) {
             });
             console.log('✅ Firebase Admin initialized with service account file');
         } else {
+            console.log('📡 Attempting to initialize Firebase with Environment Variables');
             const privateKey = (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
             initializeApp({
                 credential: cert({
