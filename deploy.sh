@@ -36,7 +36,8 @@ echo "🌐 Detected Public IP: $IP_ADDR"
 # 5. Create .env file (printf for CRLF safety)
 echo "📝 Configuring environment..."
 mkdir -p backend
-printf "NEXT_PUBLIC_BACKEND_URL=http://%%s:3002\n" "$IP_ADDR" > backend/.env
+printf "NEXT_PUBLIC_BACKEND_URL=http://$IP_ADDR:3002\n" > backend/.env
+printf "FRONTEND_URL=http://$IP_ADDR\n" >> backend/.env
 printf "NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyCcnpQDPsQptHdZKHupXOZNqNbO1JOD1Ss\n" >> backend/.env
 printf "NEXT_PUBLIC_FIREBASE_PROJECT_ID=general-4686c\n" >> backend/.env
 printf "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=general-4686c.firebasestorage.app\n" >> backend/.env
