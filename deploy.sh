@@ -33,18 +33,19 @@ fi
 IP_ADDR=$(curl -s ifconfig.me)
 echo "🌐 Detected Public IP: $IP_ADDR"
 
-# 5. Create .env file (Line-by-line for CRLF safety)
+# 5. Create .env file (printf for CRLF safety)
 echo "📝 Configuring environment..."
-echo "NEXT_PUBLIC_BACKEND_URL=http://$IP_ADDR:3001" > backend/.env
-echo "NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyCcnpQDPsQptHdZKHupXOZNqNbO1JOD1Ss" >> backend/.env
-echo "NEXT_PUBLIC_FIREBASE_PROJECT_ID=general-4686c" >> backend/.env
-echo "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=general-4686c.firebasestorage.app" >> backend/.env
-echo "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=810223700186" >> backend/.env
-echo "NEXT_PUBLIC_FIREBASE_APP_ID=1:810223700186:web:7eeeac4b4e0f921cd7fde3" >> backend/.env
-echo "PORT=3001" >> backend/.env
-echo "NODE_ENV=production" >> backend/.env
+mkdir -p backend
+printf "NEXT_PUBLIC_BACKEND_URL=http://%s:3001\n" "$IP_ADDR" > backend/.env
+printf "NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyCcnpQDPsQptHdZKHupXOZNqNbO1JOD1Ss\n" >> backend/.env
+printf "NEXT_PUBLIC_FIREBASE_PROJECT_ID=general-4686c\n" >> backend/.env
+printf "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=general-4686c.firebasestorage.app\n" >> backend/.env
+printf "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=810223700186\n" >> backend/.env
+printf "NEXT_PUBLIC_FIREBASE_APP_ID=1:810223700186:web:7eeeac4b4e0f921cd7fde3\n" >> backend/.env
+printf "PORT=3001\n" >> backend/.env
+printf "NODE_ENV=production\n" >> backend/.env
 
-# Copy root .env to frontend build args if needed
+# Copy root .env to frontend build args
 cp backend/.env .env
 
 # 6. Check for Firebase Service Account
@@ -55,15 +56,13 @@ fi
 
 if [ ! -f "backend/service-account.json" ]; then
     echo "⚠️  WARNING: backend/service-account.json NOT FOUND!"
-    echo "The backend container will start but Firestore will fail."
-    echo "Please upload your service-account.json to this folder and restart."
 fi
 
 # 7. Start the stack
 echo "🏗️  Building and starting Docker containers..."
+ls -la .
+ls -la backend
 sudo docker compose up -d --build
 
 echo "✅ DEPLOYMENT COMPLETE!"
 echo "🕍 Your AI Haggadah is live at: http://$IP_ADDR"
-echo "------------------------------------------------"
-echo "Note: If the frontend can't connect, ensure port 3001 is open in your firewall."
