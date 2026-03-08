@@ -34,19 +34,13 @@ ENV NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID
 WORKDIR /app/frontend
 RUN npm run build
 
-# Production stage (Nginx)
-FROM nginx:alpine
-# Copy static files to nginx
-COPY --from=builder /app/frontend/out /usr/share/nginx/html
+# Production stage (Caddy)
+FROM caddy:alpine
+# Copy static files to caddy
+COPY --from=builder /app/frontend/out /usr/share/caddy/html
 
-# Custom nginx config to handle query-param routing and clean URLs
-RUN echo 'server { \
-    listen 80; \
-    location / { \
-        root /usr/share/nginx/html; \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# We'll expect the Caddyfile to be mounted or created
+COPY Caddyfile /etc/caddy/Caddyfile
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 80 443
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
