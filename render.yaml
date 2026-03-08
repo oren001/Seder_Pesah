@@ -25,11 +25,12 @@ services:
         sync: false
 
   # 2. Frontend — Static Site (Free on Render)
-  - type: static
+  - type: web
     name: haggadah-frontend
+    env: static
     rootDir: frontend
     buildCommand: npm install && npm run build
-    publishDir: out
+    staticPublishPath: out
     envVars:
       - key: NEXT_PUBLIC_BACKEND_URL
         sync: false
