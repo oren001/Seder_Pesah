@@ -16,9 +16,9 @@ export function registerSocketHandlers(io: Server) {
         console.log(`Socket connected: ${socket.id}`);
 
         // Participant / host joins the socket room
-        socket.on('join-room', ({ roomId }: { roomId: string }) => {
+        socket.on('join-room', async ({ roomId }: { roomId: string }) => {
             socket.join(roomId);
-            const room = getRoom(roomId);
+            const room = await getRoom(roomId);
             if (room) {
                 socket.emit('room-updated', { room });
             }
@@ -26,39 +26,39 @@ export function registerSocketHandlers(io: Server) {
         });
 
         // Host starts the seder
-        socket.on('start-seder', ({ roomId }: { roomId: string }) => {
-            updateRoomStatus(roomId, 'active');
-            const room = getRoom(roomId);
+        socket.on('start-seder', async ({ roomId }: { roomId: string }) => {
+            await updateRoomStatus(roomId, 'active');
+            const room = await getRoom(roomId);
             io.to(roomId).emit('seder-started', {});
             io.to(roomId).emit('room-updated', { room });
             console.log(`Seder started in room ${roomId}`);
         });
 
         // Host moves to next page
-        socket.on('next-page', ({ roomId }: { roomId: string }) => {
-            const room = getRoom(roomId);
+        socket.on('next-page', async ({ roomId }: { roomId: string }) => {
+            const room = await getRoom(roomId);
             if (!room) return;
             const newIndex = Math.min(
                 room.currentSectionIndex + 1,
                 haggadahSections.length - 1
             );
-            setCurrentSection(roomId, newIndex);
+            await setCurrentSection(roomId, newIndex);
             io.to(roomId).emit('page-changed', { sectionIndex: newIndex });
         });
 
         // Host moves to previous page
-        socket.on('prev-page', ({ roomId }: { roomId: string }) => {
-            const room = getRoom(roomId);
+        socket.on('prev-page', async ({ roomId }: { roomId: string }) => {
+            const room = await getRoom(roomId);
             if (!room) return;
             const newIndex = Math.max(room.currentSectionIndex - 1, 0);
-            setCurrentSection(roomId, newIndex);
+            await setCurrentSection(roomId, newIndex);
             io.to(roomId).emit('page-changed', { sectionIndex: newIndex });
         });
 
         // Host finishes the seder
-        socket.on('finish-seder', ({ roomId }: { roomId: string }) => {
-            updateRoomStatus(roomId, 'finished');
-            const room = getRoom(roomId);
+        socket.on('finish-seder', async ({ roomId }: { roomId: string }) => {
+            await updateRoomStatus(roomId, 'finished');
+            const room = await getRoom(roomId);
             io.to(roomId).emit('seder-finished', {});
             io.to(roomId).emit('room-updated', { room });
         });
@@ -66,7 +66,7 @@ export function registerSocketHandlers(io: Server) {
         // Host opens a vote
         socket.on(
             'open-vote',
-            ({
+            async ({
                 roomId,
                 question,
                 participantIds,
@@ -77,7 +77,7 @@ export function registerSocketHandlers(io: Server) {
                 participantIds: string[];
                 labels: string[];
             }) => {
-                const room = getRoom(roomId);
+                const room = await getRoom(roomId);
                 if (!room) return;
                 const choices: VoteChoice[] = participantIds.map((pid, i) => ({
                     participantId: pid,
@@ -90,7 +90,7 @@ export function registerSocketHandlers(io: Server) {
                     choices,
                     status: 'open',
                 };
-                addVote(roomId, vote);
+                await addVote(roomId, vote);
                 io.to(roomId).emit('vote-opened', { vote });
             }
         );
@@ -98,7 +98,7 @@ export function registerSocketHandlers(io: Server) {
         // Participant casts a vote
         socket.on(
             'cast-vote',
-            ({
+            async ({
                 roomId,
                 voteId,
                 participantId,
@@ -109,32 +109,32 @@ export function registerSocketHandlers(io: Server) {
                 participantId: string;
                 choiceParticipantId: string;
             }) => {
-                const vote = getVote(roomId, voteId);
+                const vote = await getVote(roomId, voteId);
                 if (!vote || vote.status !== 'open') return;
                 // Remove previous vote from this participant
                 vote.choices.forEach((c) => {
-                    c.votes = c.votes.filter((v) => v !== participantId);
+                    c.votes = c.votes.filter((v: string) => v !== participantId);
                 });
                 // Add new vote
                 const choice = vote.choices.find((c) => c.participantId === choiceParticipantId);
                 if (choice) choice.votes.push(participantId);
-                updateVote(roomId, vote);
+                await updateVote(roomId, vote);
                 io.to(roomId).emit('vote-updated', { vote });
             }
         );
 
         // Host closes a vote and broadcasts result
-        socket.on('close-vote', ({ roomId, voteId }: { roomId: string; voteId: string }) => {
-            const vote = getVote(roomId, voteId);
+        socket.on('close-vote', async ({ roomId, voteId }: { roomId: string; voteId: string }) => {
+            const vote = await getVote(roomId, voteId);
             if (!vote) return;
             vote.status = 'closed';
             // Determine winner
-            const winner = vote.choices.reduce((a, b) =>
+            const winner = vote.choices.reduce((a: VoteChoice, b: VoteChoice) =>
                 a.votes.length >= b.votes.length ? a : b
             );
             vote.winnerId = winner.participantId;
             vote.winnerName = winner.label;
-            updateVote(roomId, vote);
+            await updateVote(roomId, vote);
             io.to(roomId).emit('vote-closed', { vote });
         });
 
