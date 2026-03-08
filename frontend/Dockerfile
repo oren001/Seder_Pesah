@@ -40,7 +40,7 @@ FROM caddy:alpine
 COPY --from=builder /app/frontend/out /usr/share/caddy/html
 
 # We'll expect the Caddyfile to be mounted or created
-COPY Caddyfile /etc/caddy/Caddyfile
+COPY frontend/Caddyfile /etc/caddy/Caddyfile
 
 EXPOSE 80 443
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
