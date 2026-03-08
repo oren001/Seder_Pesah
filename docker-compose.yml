@@ -13,7 +13,7 @@ services:
       - PORT=3001
       - NODE_ENV=production
     volumes:
-      - ./backend/service-account.json:/app/service-account.json
+      - ./backend/data:/app/backend/data
 
   frontend:
     build:

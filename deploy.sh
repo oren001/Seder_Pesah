@@ -49,23 +49,10 @@ printf "NODE_ENV=production\n" >> backend/.env
 # Copy root .env to frontend build args
 cp backend/.env .env
 
-# 6. Check for Firebase Service Account
-# Fix: Docker sometimes creates a directory named 'service-account.json' if the file is missing during mount.
-if [ -d "backend/service-account.json" ]; then
-    echo "🧹 Removing rogue service-account.json directory..."
-    rm -rf backend/service-account.json
-fi
-
-if [ -f "/root/service-account.json" ]; then
-    echo "🔑 Restoring service-account.json from /root..."
-    mkdir -p backend
-    cp /root/service-account.json backend/service-account.json
-fi
-
-if [ ! -f "backend/service-account.json" ]; then
-    echo "⚠️  WARNING: backend/service-account.json NOT FOUND! Creating dummy to prevent Docker directory bug."
-    touch backend/service-account.json
-fi
+# 6. Setup Local Data Directory (Bypassing Firebase)
+echo "🗄️ Setting up local JSON database directory..."
+mkdir -p backend/data
+chmod 777 backend/data
 
 # 7. Start the stack
 echo "🏗️  Building and starting Docker containers..."
