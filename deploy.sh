@@ -50,13 +50,21 @@ printf "NODE_ENV=production\n" >> backend/.env
 cp backend/.env .env
 
 # 6. Check for Firebase Service Account
-if [ -f "/root/service-account.json" ] && [ ! -f "backend/service-account.json" ]; then
+# Fix: Docker sometimes creates a directory named 'service-account.json' if the file is missing during mount.
+if [ -d "backend/service-account.json" ]; then
+    echo "🧹 Removing rogue service-account.json directory..."
+    rm -rf backend/service-account.json
+fi
+
+if [ -f "/root/service-account.json" ]; then
     echo "🔑 Restoring service-account.json from /root..."
+    mkdir -p backend
     cp /root/service-account.json backend/service-account.json
 fi
 
 if [ ! -f "backend/service-account.json" ]; then
-    echo "⚠️  WARNING: backend/service-account.json NOT FOUND!"
+    echo "⚠️  WARNING: backend/service-account.json NOT FOUND! Creating dummy to prevent Docker directory bug."
+    touch backend/service-account.json
 fi
 
 # 7. Start the stack
