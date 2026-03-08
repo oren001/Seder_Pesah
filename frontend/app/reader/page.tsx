@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { db } from '@/lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { io } from 'socket.io-client';
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
@@ -54,22 +53,46 @@ function ReaderContent() {
 
     useEffect(() => {
         if (!roomId) return;
+        let isSubscribed = true;
         let prevImageId = '';
-        return onSnapshot(doc(db, 'rooms', roomId), snap => {
-            if (!snap.exists()) return;
-            const data = snap.data() as Room;
+
+        const handleRoomData = (data: Room) => {
+            if (!isSubscribed) return;
             setRoom(data);
             const section = SECTIONS[data.currentSectionIndex];
             if (section) {
-                const imgs = data.generatedImages.filter(i => i.sectionId === section.id);
+                const imgs = data.generatedImages?.filter(i => i.sectionId === section.id) ?? [];
                 if (imgs.length > 0) {
                     const newest = imgs[imgs.length - 1];
-                    if (newest.id !== prevImageId) { prevImageId = newest.id; setLatestImage(newest); setShowImage(true); }
+                    if (newest.id !== prevImageId) {
+                        prevImageId = newest.id;
+                        setLatestImage(newest);
+                        setShowImage(true);
+                    }
                 }
             }
-            setActiveVote(data.votes.find(v => v.status === 'open') ?? null);
+            setActiveVote(data.votes?.find(v => v.status === 'open') ?? null);
             if (data.status === 'finished') router.replace(`/gallery/?room=${roomId}`);
+        };
+
+        fetch(`${BACKEND}/api/rooms/${roomId}`)
+            .then(res => res.json())
+            .then(data => { if (!data.error) handleRoomData(data); })
+            .catch(console.error);
+
+        const s = io(BACKEND);
+        s.emit('join-room', { roomId });
+        s.on('room-updated', ({ room }) => handleRoomData(room));
+        s.on('page-changed', ({ sectionIndex }) => {
+            if (!isSubscribed) return;
+            setRoom(r => r ? { ...r, currentSectionIndex: sectionIndex } : null);
         });
+        s.on('seder-finished', () => router.replace(`/gallery/?room=${roomId}`));
+
+        return () => {
+            isSubscribed = false;
+            s.disconnect();
+        };
     }, [roomId, router]);
 
     const castVote = useCallback(async (choiceParticipantId: string) => {

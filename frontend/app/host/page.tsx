@@ -1,8 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { db } from '@/lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
 import { io, Socket } from 'socket.io-client';
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
@@ -26,19 +24,31 @@ function HostContent() {
 
     useEffect(() => {
         if (!roomId) return;
-        return onSnapshot(doc(db, 'rooms', roomId), snap => { if (snap.exists()) setRoom(snap.data() as Room); });
-    }, [roomId]);
+        let isSubscribed = true;
 
-    useEffect(() => {
-        if (!roomId) return;
+        // Fetch initial state
+        fetch(`${BACKEND}/api/rooms/${roomId}`)
+            .then(res => res.json())
+            .then(data => { if (isSubscribed && data && !data.error) setRoom(data); })
+            .catch(console.error);
+
+        // Setup real-time socket
         const s = io(BACKEND);
         s.emit('join-room', { roomId });
+        s.on('room-updated', ({ room }) => {
+            if (isSubscribed) setRoom(room);
+        });
         s.on('generation-progress', (d: { completed: number; total: number }) => {
+            if (!isSubscribed) return;
             setGenProgress(d);
             if (d.completed >= d.total && d.total > 0) setGenerating(false);
         });
         setSocket(s);
-        return () => { s.disconnect(); };
+
+        return () => {
+            isSubscribed = false;
+            s.disconnect();
+        };
     }, [roomId]);
 
     useEffect(() => {

@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { db } from '@/lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { io } from 'socket.io-client';
+
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
 interface Participant { id: string; selfieUrl: string; }
 interface GeneratedImage { id: string; sceneId: string; imageUrl: string; }
@@ -21,12 +22,30 @@ function LobbyContent() {
 
     useEffect(() => {
         if (!roomId) return;
-        return onSnapshot(doc(db, 'rooms', roomId), (snap) => {
-            if (!snap.exists()) return;
-            const data = snap.data() as Room;
-            setRoom(data);
-            if (data.status === 'active') router.replace(`/reader/?room=${roomId}`);
+        let isSubscribed = true;
+
+        fetch(`${BACKEND}/api/rooms/${roomId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (isSubscribed && data && !data.error) {
+                    setRoom(data);
+                    if (data.status === 'active') router.replace(`/reader/?room=${roomId}`);
+                }
+            })
+            .catch(console.error);
+
+        const s = io(BACKEND);
+        s.emit('join-room', { roomId });
+        s.on('room-updated', ({ room }) => {
+            if (!isSubscribed || !room) return;
+            setRoom(room);
+            if (room.status === 'active') router.replace(`/reader/?room=${roomId}`);
         });
+
+        return () => {
+            isSubscribed = false;
+            s.disconnect();
+        };
     }, [roomId, router]);
 
     const heroImages = room?.generatedImages.filter(img => LOBBY_SCENE_IDS.includes(img.sceneId)) ?? [];

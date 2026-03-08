@@ -24,7 +24,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
-app.use('/api/rooms', roomsRouter);
+app.use('/api/rooms', roomsRouter(io));
 app.use('/api/scenes', scenesRouter(io));
 
 // Socket.io

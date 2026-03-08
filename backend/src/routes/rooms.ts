@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { createRoom, getRoom, addParticipant } from '../rooms';
+import { Server } from 'socket.io';
 
-export const roomsRouter = Router();
+export function roomsRouter(io: Server) {
+    const router = Router();
 
-// POST /api/rooms - Create a new Seder room
-roomsRouter.post('/', async (req, res) => {
+    // POST /api/rooms - Create a new Seder room
+    router.post('/', async (req, res) => {
     try {
         const hostId = uuidv4();
         const room = await createRoom(hostId);
@@ -23,24 +25,32 @@ roomsRouter.post('/', async (req, res) => {
 });
 
 // GET /api/rooms/:id - Get room state
-roomsRouter.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
     const room = await getRoom(req.params.id);
     if (!room) return res.status(404).json({ error: 'Room not found' });
     return res.json(room);
 });
 
-// POST /api/rooms/:id/join - Participant joins with selfie
-roomsRouter.post('/:id/join', async (req, res) => {
-    const { selfieDataUrl } = req.body as { selfieDataUrl: string };
-    if (!selfieDataUrl) return res.status(400).json({ error: 'selfieDataUrl is required' });
+    // POST /api/rooms/:id/join - Participant joins with selfie
+    router.post('/:id/join', async (req, res) => {
+        const { selfieDataUrl } = req.body as { selfieDataUrl: string };
+        if (!selfieDataUrl) return res.status(400).json({ error: 'selfieDataUrl is required' });
 
-    const participant = await addParticipant(req.params.id, selfieDataUrl);
-    if (!participant) return res.status(404).json({ error: 'Room not found' });
+        const participant = await addParticipant(req.params.id, selfieDataUrl);
+        if (!participant) return res.status(404).json({ error: 'Room not found' });
 
-    return res.json({ participant });
-});
+        const room = await getRoom(req.params.id);
+        if (room) {
+            io.to(req.params.id.toUpperCase()).emit('room-updated', { room });
+        }
 
-// GET /api/rooms - List all rooms (host debug only)
-roomsRouter.get('/', (_req, res) => {
-    res.json({ count: 0, rooms: [] }); // hidden for security in prod
-});
+        return res.json({ participant });
+    });
+
+    // GET /api/rooms - List all rooms (host debug only)
+    router.get('/', (_req, res) => {
+        res.json({ count: 0, rooms: [] }); // hidden for security in prod
+    });
+
+    return router;
+}
