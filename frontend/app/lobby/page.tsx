@@ -22,6 +22,10 @@ function LobbyContent() {
     const isHostUser = typeof window !== 'undefined' ? sessionStorage.getItem(`isHost_${roomId}`) === 'true' : false;
     const joinUrl = typeof window !== 'undefined' ? `${window.location.origin}/join/?room=${roomId}` : '';
 
+    const [estimate, setEstimate] = useState<{ participantCount: number; sceneCount: number; estimatedCostUSD: string } | null>(null);
+    const [generating, setGenerating] = useState(false);
+    const [genProgress, setGenProgress] = useState({ completed: 0, total: 0 });
+
     useEffect(() => {
         if (!roomId) return;
         let isSubscribed = true;
@@ -44,6 +48,11 @@ function LobbyContent() {
             setRoom(room);
             if (room.status === 'active') router.replace(`/reader/?room=${roomId}`);
         });
+        s.on('generation-progress', (d: { completed: number; total: number }) => {
+            if (!isSubscribed) return;
+            setGenProgress(d);
+            if (d.completed >= d.total && d.total > 0) setGenerating(false);
+        });
 
         return () => {
             isSubscribed = false;
@@ -60,6 +69,13 @@ function LobbyContent() {
 
     const copy = useCallback(async () => { await navigator.clipboard.writeText(joinUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }, [joinUrl]);
     const startSeder = useCallback(() => { socket?.emit('start-seder', { roomId }); }, [socket, roomId]);
+    const generateScenes = useCallback(async () => { setGenerating(true); setGenProgress({ completed: 0, total: 0 }); await fetch(`${BACKEND}/api/scenes/generate/${roomId}`, { method: 'POST' }); }, [roomId]);
+
+    useEffect(() => {
+        if (!isHostUser || !room || room.participants.length === 0) return;
+        fetch(`${BACKEND}/api/scenes/estimate/${roomId}`).then(r => r.json()).then(setEstimate).catch(() => { });
+    }, [roomId, room?.participants.length, isHostUser]);
+
     const participants = room?.participants ?? [];
     const me = participants.find(p => p.id === participantId);
 
@@ -72,8 +88,14 @@ function LobbyContent() {
                     <img key={heroImages[heroIndex]?.id} src={heroImages[heroIndex]?.imageUrl} alt="סצנת יציאת מצרים" style={{ width: '100%', height: '100%', objectFit: 'cover', animation: 'fadeIn 1s ease' }} />
                 ) : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 10, background: 'rgba(253,251,247,0.7)', backdropFilter: 'blur(12px)' }}>
-                        <div style={{ fontSize: '3rem' }}>🌊</div>
-                        <p className="font-hebrew animate-shimmer" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>מייצר סצנות יציאת מצרים…</p>
+                        <div style={{ fontSize: '3rem' }}>🖼️</div>
+                        {generating ? (
+                            <p className="font-hebrew animate-shimmer" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>מייצר תמונות AI...</p>
+                        ) : (
+                            <p className="font-hebrew" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '0 20px' }}>
+                                תמונות ההגדה יופיעו כאן לאחר שהמארח ייצר אותן.
+                            </p>
+                        )}
                     </div>
                 )}
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 60, background: 'linear-gradient(transparent, var(--pearl))' }} />
@@ -81,10 +103,29 @@ function LobbyContent() {
 
             <h1 className="font-hebrew" style={{ fontSize: '1.5rem', color: 'var(--gold-dark)', fontWeight: 900, marginBottom: 4, textAlign: 'center' }}>{isHostUser ? 'שלום למארח! 👑' : 'ממתינים לתחילת הסדר…'}</h1>
             {isHostUser ? (
-                <div style={{ textAlign: 'center', marginBottom: 18 }}>
-                    <p className="font-hebrew" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 12 }}>ברגע שכולם מופיעים למטה, התחילו את קריאת ההגדה.</p>
-                    <button className="btn btn-primary btn-lg animate-pulse-gold" onClick={startSeder} disabled={participants.length === 0} style={{ width: '100%' }}>
-                        ▶ התחל סדר לכולם!
+                <div className="card-gold" style={{ textAlign: 'center', marginBottom: 18 }}>
+                    <p className="font-hebrew" style={{ color: 'var(--gold-dark)', fontWeight: 700, fontSize: '0.9rem', marginBottom: 10 }}>כלי מארח</p>
+                    <p className="font-hebrew" style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: 12 }}>המתינו שכל האורחים יצטרפו, ולאחר מכן ייצרו את תמונות ה-AI לכולם לפני שמתחילים.</p>
+
+                    {estimate && !generating && (
+                        <p className="font-hebrew" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8 }}>
+                            {estimate.participantCount} משתתפים · {estimate.sceneCount} תמונות · עלות משוערת: ${estimate.estimatedCostUSD}
+                        </p>
+                    )}
+
+                    {generating && genProgress.total > 0 && (
+                        <div style={{ marginBottom: 12 }}>
+                            <p className="font-hebrew" style={{ fontSize: '0.75rem', color: 'var(--gold-dark)', marginBottom: 4 }}>מייצר {genProgress.completed}/{genProgress.total} סצנות…</p>
+                            <div className="progress-bar-outer"><div className="progress-bar-inner" style={{ width: `${(genProgress.completed / genProgress.total) * 100}%` }} /></div>
+                        </div>
+                    )}
+
+                    <button className="btn btn-secondary btn-full btn-sm" onClick={generateScenes} disabled={generating || participants.length === 0} style={{ marginBottom: 12 }}>
+                        {generating ? '⚙️ מייצר תמונות...' : '🎨 ייצר את כל תמונות ה-AI כעת'}
+                    </button>
+
+                    <button className="btn btn-primary btn-full animate-pulse-gold" onClick={startSeder} disabled={participants.length === 0}>
+                        ▶ התחל את הסדר לכולם!
                     </button>
                 </div>
             ) : (
