@@ -15,9 +15,11 @@ function LobbyContent() {
     const searchParams = useSearchParams();
     const roomId = (searchParams.get('room') ?? '').toUpperCase();
     const [room, setRoom] = useState<Room | null>(null);
+    const [socket, setSocket] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
     const [heroIndex, setHeroIndex] = useState(0);
     const [copied, setCopied] = useState(false);
     const participantId = typeof window !== 'undefined' ? sessionStorage.getItem(`participant_${roomId}`) : null;
+    const isHostUser = typeof window !== 'undefined' ? sessionStorage.getItem(`isHost_${roomId}`) === 'true' : false;
     const joinUrl = typeof window !== 'undefined' ? `${window.location.origin}/join/?room=${roomId}` : '';
 
     useEffect(() => {
@@ -35,6 +37,7 @@ function LobbyContent() {
             .catch(console.error);
 
         const s = io(BACKEND);
+        setSocket(s);
         s.emit('join-room', { roomId });
         s.on('room-updated', ({ room }) => {
             if (!isSubscribed || !room) return;
@@ -56,6 +59,7 @@ function LobbyContent() {
     }, [heroImages.length]);
 
     const copy = useCallback(async () => { await navigator.clipboard.writeText(joinUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }, [joinUrl]);
+    const startSeder = useCallback(() => { socket?.emit('start-seder', { roomId }); }, [socket, roomId]);
     const participants = room?.participants ?? [];
     const me = participants.find(p => p.id === participantId);
 
@@ -75,8 +79,17 @@ function LobbyContent() {
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 60, background: 'linear-gradient(transparent, var(--pearl))' }} />
             </div>
 
-            <h1 className="font-hebrew" style={{ fontSize: '1.5rem', color: 'var(--gold-dark)', fontWeight: 900, marginBottom: 4, textAlign: 'center' }}>ממתינים לתחילת הסדר…</h1>
-            <p className="font-hebrew" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginBottom: 18 }}>המארח יתחיל ברגע שכולם מוכנים</p>
+            <h1 className="font-hebrew" style={{ fontSize: '1.5rem', color: 'var(--gold-dark)', fontWeight: 900, marginBottom: 4, textAlign: 'center' }}>{isHostUser ? 'שלום למארח! 👑' : 'ממתינים לתחילת הסדר…'}</h1>
+            {isHostUser ? (
+                <div style={{ textAlign: 'center', marginBottom: 18 }}>
+                    <p className="font-hebrew" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 12 }}>ברגע שכולם מופיעים למטה, התחילו את קריאת ההגדה.</p>
+                    <button className="btn btn-primary btn-lg animate-pulse-gold" onClick={startSeder} disabled={participants.length === 0} style={{ width: '100%' }}>
+                        ▶ התחל סדר לכולם!
+                    </button>
+                </div>
+            ) : (
+                <p className="font-hebrew" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginBottom: 18 }}>המארח יתחיל ברגע שכולם מוכנים</p>
+            )}
 
             {me && (
                 <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
