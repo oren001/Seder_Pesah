@@ -5,12 +5,27 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "80:3001"
     environment:
       - PORT=3001
       - NODE_ENV=production
       - LEONARDO_API_KEY=${LEONARDO_API_KEY}
     restart: always
 
-# Simplified for the current architecture
+  caddy:
+    image: caddy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - DOMAIN=${DOMAIN}
+    depends_on:
+      - app
+    restart: always
+
+volumes:
+  caddy_data:
+  caddy_config:
