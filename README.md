@@ -29,44 +29,37 @@ A modern, interactive digital Seder experience with a Pearl White theme. Partici
 3. **Enable GCP API**: Go to [Google Cloud Console](https://console.cloud.google.com/apis/library/firestore.googleapis.com) and click **Enable**.
 4. **Service Account**: Go to Project Settings → Service Accounts → **Generate new private key** (Download JSON).
 
-### 2. Deployment on Render (Free Tier)
+### 2. Deployment on Vultr (VPS with Docker)
 
-#### **Service A: Frontend (Static Site)** 
-- **Type**: Static Site
-- **Repository**: `oren001/Seder_Pesah`
-- **Root Directory**: `frontend`
-- **Build Command**: `npm install && npm run build`
-- **Publish Directory**: `frontend/out`
-- **Environment Variables**:
-  | Key | Value |
-  |---|---|
-  | `NEXT_PUBLIC_BACKEND_URL` | *(Your Backend Render URL)* |
-  | `NEXT_PUBLIC_FIREBASE_API_KEY` | `AIzaSyCcnpQDPsQptHdZKHupXOZNqNbO1JOD1Ss` |
-  | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | `general-4686c` |
-  | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | `general-4686c.firebasestorage.app` |
-  | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `810223700186` |
-  | `NEXT_PUBLIC_FIREBASE_APP_ID` | `1:810223700186:web:7eeeac4b4e0f921cd7fde3` |
+This is the recommended approach if Render is blocked.
 
-#### **Service B: Backend (Web Service)** 
-- **Type**: Web Service
-- **Repository**: `oren001/Seder_Pesah`
-- **Root Directory**: `backend`
-- **Build Command**: `npm install && npm run build`
-- **Start Command**: `npm start`
-- **Environment Variables**:
-  | Key | Value |
-  |---|---|
-  | `NODE_ENV` | `production` |
-  | `FRONTEND_URL` | *(Your Frontend Render URL)* |
-  | `LEONARDO_API_KEY` | `02fbccd7-7983-4275-8709-69796bb9fc6e` |
-  | `FIREBASE_PROJECT_ID` | `general-4686c` |
-  | `FIREBASE_CLIENT_EMAIL` | `firebase-adminsdk-fbsvc@general-4686c.iam.gserviceaccount.com` |
-  | `FIREBASE_PRIVATE_KEY` | *(Paste full key from JSON including `\n` newline markers)* |
+1.  **Server Setup**:
+    - Deploy a **Cloud Compute** instance (Ubuntu 22.04) on Vultr.
+    - SSH into your server.
+    - Install Docker: `curl -fsSL https://get.docker.com | sh`.
+
+2.  **Configuration**:
+    - Clone the repo: `git clone https://github.com/oren001/Seder_Pesah.git`.
+    - `cd Seder_Pesah`.
+    - Create a `.env` file in the root for building the frontend (used by Docker Compose):
+      ```env
+      NEXT_PUBLIC_BACKEND_URL=http://<YOUR_VPS_IP>:3001
+      NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyCcnpQDPsQptHdZKHupXOZNqNbO1JOD1Ss
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID=general-4686c
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=general-4686c.firebasestorage.app
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=810223700186
+      NEXT_PUBLIC_FIREBASE_APP_ID=1:810223700186:web:7eeeac4b4e0f921cd7fde3
+      ```
+    - Ensure your `backend/service-account.json` is present.
+
+3.  **Run**:
+    - `docker compose up -d --build`
+    - Your Haggadah will be live at `http://<YOUR_VPS_IP>`.
 
 ---
 
 ## 📖 User Flow
-1. **Host** creates a Seder at `Seder_Pesah.onrender.com`.
+1. **Host** creates a Seder at your IP or domain.
 2. **Host** shares the join link (e.g., `/join/?room=ABCD`) via WhatsApp.
 3. **Participants** take a selfie and enter the Lobby.
 4. **Host** clicks "Generate Scenes" (Leonardo AI creates 23 unique scenes).
