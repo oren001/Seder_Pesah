@@ -1,0 +1,439 @@
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Outfit:wght@300;400;500;600;700;900&family=Frank+Ruhl+Libre:wght@400;700;900&display=swap');
+
+/* ─── CSS Variables ─── */
+:root {
+  --gold: #D4A847;
+  --gold-light: #F0C96A;
+  --gold-dark: #A07830;
+  --crimson: #8B1A1A;
+  --navy: #0A1628;
+  --navy-mid: #0F2040;
+  --navy-light: #1A3560;
+  --parchment: #F5EDD6;
+  --parchment-dark: #E8D9B0;
+  --cream: #FBF5E6;
+  --text-primary: #F5EDD6;
+  --text-secondary: #C9A85C;
+  --text-muted: #8A7050;
+  --green-soft: #2D6A4F;
+  --radius: 16px;
+  --radius-lg: 24px;
+  --shadow: 0 8px 40px rgba(0,0,0,0.6);
+  --shadow-gold: 0 4px 24px rgba(212, 168, 71, 0.3);
+}
+
+/* ─── Reset ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--navy);
+  color: var(--text-primary);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ─── Typography ─── */
+.font-hebrew {
+  font-family: 'Frank Ruhl Libre', 'Heebo', serif;
+  direction: rtl;
+  unicode-bidi: embed;
+}
+
+.font-latin { font-family: 'Outfit', sans-serif; }
+
+h1, h2, h3, h4, h5, h6 { line-height: 1.2; }
+
+/* ─── Layout ─── */
+.container {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+}
+
+/* ─── Backgrounds ─── */
+.bg-gradient-dark {
+  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-mid) 50%, var(--navy) 100%);
+}
+
+.bg-gradient-gold {
+  background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold) 50%, var(--gold-light) 100%);
+}
+
+/* ─── Stars Background ─── */
+.starfield {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 20% 50%, rgba(212,168,71,0.05) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(139,26,26,0.08) 0%, transparent 50%),
+              var(--navy);
+  z-index: -1;
+}
+
+/* ─── Cards ─── */
+.card {
+  background: rgba(15, 32, 64, 0.8);
+  border: 1px solid rgba(212, 168, 71, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+}
+
+.card-gold {
+  background: linear-gradient(145deg, rgba(212,168,71,0.12) 0%, rgba(160,120,48,0.08) 100%);
+  border: 1px solid rgba(212, 168, 71, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+}
+
+/* ─── Buttons ─── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 32px;
+  border-radius: 50px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.25s ease;
+  text-decoration: none;
+  letter-spacing: 0.03em;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+  color: var(--navy);
+  box-shadow: var(--shadow-gold);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(212, 168, 71, 0.5);
+}
+
+.btn-primary:active { transform: translateY(0); }
+
+.btn-secondary {
+  background: rgba(255,255,255,0.08);
+  color: var(--text-primary);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.14);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--crimson) 0%, #B02020 100%);
+  color: white;
+}
+
+.btn-lg { padding: 20px 44px; font-size: 1.2rem; }
+.btn-sm { padding: 10px 20px; font-size: 0.9rem; }
+.btn-full { width: 100%; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+/* ─── Inputs ─── */
+.input {
+  width: 100%;
+  padding: 14px 18px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(212,168,71,0.25);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input:focus { border-color: var(--gold); }
+.input::placeholder { color: var(--text-muted); }
+
+/* ─── Hebrew Text (Haggadah Reader) ─── */
+.haggadah-hebrew {
+  font-family: 'Frank Ruhl Libre', 'Heebo', serif;
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  direction: rtl;
+  text-align: right;
+  line-height: 1.8;
+  color: var(--parchment);
+  font-weight: 400;
+}
+
+.haggadah-transliteration {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  color: var(--gold-light);
+  font-style: italic;
+  line-height: 1.9;
+  margin-top: 12px;
+}
+
+.haggadah-english {
+  font-size: clamp(0.85rem, 2.2vw, 1rem);
+  color: var(--text-muted);
+  line-height: 1.8;
+  margin-top: 8px;
+}
+
+.section-title-hebrew {
+  font-family: 'Frank Ruhl Libre', 'Heebo', serif;
+  font-size: clamp(2rem, 6vw, 3rem);
+  direction: rtl;
+  color: var(--gold);
+  font-weight: 900;
+  text-shadow: 0 2px 20px rgba(212,168,71,0.4);
+}
+
+/* ─── Participant Grid ─── */
+.participants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 12px;
+}
+
+.participant-avatar {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(212,168,71,0.4);
+  width: 100%;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.participant-avatar:hover {
+  transform: scale(1.08);
+  border-color: var(--gold);
+}
+
+/* ─── Scene / Image Overlay ─── */
+.scene-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.4s ease;
+  padding: 20px;
+}
+
+.scene-image {
+  max-width: min(100%, 600px);
+  max-height: 80dvh;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 80px rgba(212,168,71,0.25), var(--shadow);
+  object-fit: contain;
+}
+
+/* ─── Badge ─── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-gold {
+  background: rgba(212,168,71,0.15);
+  border: 1px solid rgba(212,168,71,0.35);
+  color: var(--gold-light);
+}
+
+.badge-green {
+  background: rgba(45,106,79,0.25);
+  border: 1px solid rgba(45,106,79,0.5);
+  color: #52B788;
+}
+
+/* ─── Progress Bar ─── */
+.progress-bar-outer {
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-inner {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-dark), var(--gold-light));
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* ─── Dividers ─── */
+.gold-divider {
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  border: none;
+  margin: 0 auto;
+}
+
+/* ─── Animations ─── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212,168,71,0.4); }
+  50% { box-shadow: 0 0 0 12px rgba(212,168,71,0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-fade-in { animation: fadeIn 0.5s ease forwards; }
+.animate-slide-up { animation: slideUp 0.5s ease forwards; }
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-pulse-gold { animation: pulse-gold 2s ease-in-out infinite; }
+
+.shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(212,168,71,0.15) 50%, rgba(255,255,255,0.03) 100%);
+  background-size: 200% auto;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 2px; }
+
+/* ─── Scratch Canvas ─── */
+.scratch-container {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+.scratch-canvas {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  touch-action: none;
+}
+
+/* ─── Voting ─── */
+.vote-choice {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(212,168,71,0.2);
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vote-choice:hover, .vote-choice.selected {
+  border-color: var(--gold);
+  background: rgba(212,168,71,0.1);
+}
+
+.vote-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+
+.vote-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--gold-dark), var(--gold));
+  transition: width 0.4s ease;
+}
+
+/* ─── Gallery ─── */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.gallery-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.gallery-item:hover { transform: scale(1.03); }
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-download {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.gallery-item:hover .gallery-download { opacity: 1; }
+
+/* ─── Responsive ─── */
+@media (max-width: 380px) {
+  .btn { padding: 14px 24px; font-size: 1rem; }
+  .haggadah-hebrew { font-size: 1.5rem; }
+}
