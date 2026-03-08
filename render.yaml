@@ -2,6 +2,7 @@ services:
   # 1. Backend — Node.js Web Service
   - type: web
     name: haggadah-backend
+    plan: free
     runtime: node
     rootDir: backend
     buildCommand: npm install && npm run build
