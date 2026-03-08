@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>פסח יחד – הגדת אשכנז</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍷</text></svg>">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800;900&family=Assistant:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+</head>
+
+<body>
+
+    <!-- ======== LOBBY SCREEN ======== -->
+    <div id="lobby-screen" class="screen active">
+        <div class="lobby-card">
+            <div class="logo-anim">🍷</div>
+            <h1 class="logo-title">פסח יחד</h1>
+            <p class="subtitle">קריאה משותפת של הגדת אשכנז בזמן אמת</p>
+            <button id="btn-create-room" class="btn primary">→ צור חדר חדש</button>
+        </div>
+    </div>
+
+    <!-- ======== SELFIE SCREEN ======== -->
+    <div id="selfie-screen" class="screen hidden">
+        <div class="selfie-card">
+            <h2>תצלם את עצמך</h2>
+            <p class="subtitle">כך כולם בחדר ידעו שאתה כאן</p>
+            <div class="video-wrapper">
+                <video id="selfie-video" autoplay muted playsinline></video>
+                <canvas id="selfie-canvas" class="hidden"></canvas>
+            </div>
+            <button id="btn-take-selfie" class="btn primary">📸 צלם</button>
+            <div id="selfie-preview-wrap" class="hidden">
+                <img id="selfie-preview-img" class="preview-img" alt="preview">
+                <div class="preview-actions">
+                    <button id="btn-retake" class="btn outline">↩ שוב</button>
+                    <button id="btn-join-with-photo" class="btn primary">✓ הצטרף</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== ROOM SCREEN ======== -->
+    <div id="room-screen" class="screen hidden">
+
+        <!-- Header -->
+        <header class="room-header">
+            <div class="brand">🍷 פסח יחד</div>
+
+            <div class="participants-strip">
+                <div id="participants-list" class="avatars-list"></div>
+                <span class="viewers-count"><span id="count-number">1</span> כאן</span>
+            </div>
+
+            <button id="btn-copy-link" class="btn outline small">הזמן חברים</button>
+        </header>
+
+        <!-- Haggadah text area -->
+        <main class="haggadah-container">
+            <div class="page-content" id="page-content">
+                <h2>טוען...</h2>
+            </div>
+        </main>
+
+        <!-- Navigation -->
+        <footer class="room-footer">
+            <button id="btn-prev" class="btn nav-btn" disabled>← הקודם</button>
+
+            <div class="progress-pill">
+                <span id="current-page-num">1</span> / <span id="total-pages">1</span>
+            </div>
+
+            <button id="btn-next" class="btn nav-btn primary">הבא →</button>
+        </footer>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="haggadah_data.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

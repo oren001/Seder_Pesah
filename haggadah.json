@@ -1,0 +1,3 @@
+{
+  "error": "You passed 'Pesach Haggadah', please pass a more specific ref for this book, and try again. 'Pesach Haggadah' is a 'complex' book-level ref. We only support book-level refs in cases of texts with a 'simple' structure. To learn more about the structure of a text on Sefaria, see: https://developers.sefaria.org/docs/the-structure-of-a-simple-text"
+}
