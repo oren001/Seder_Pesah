@@ -60,11 +60,21 @@ async function generateOneImage(prompt: string): Promise<string> {
             alchemy: true,
         }),
     });
-    const data = (await res.json()) as {
-        sdGenerationJob?: { generationId: string };
-    };
+
+    // Read raw response instead of blindly casting
+    const rawText = await res.text();
+    let data;
+    try {
+        data = JSON.parse(rawText);
+    } catch {
+        throw new Error(`Invalid JSON from Leonardo: ${rawText.substring(0, 100)}`);
+    }
+
     const generationId = data.sdGenerationJob?.generationId;
-    if (!generationId) throw new Error('No generationId from Leonardo');
+    if (!generationId) {
+        console.error('Leonardo generation error response:', data);
+        throw new Error('No generationId from Leonardo. Details logged.');
+    }
 
     // Poll until done
     const imageUrl = await pollForImage(generationId);
