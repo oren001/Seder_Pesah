@@ -4,8 +4,8 @@ import type { Room, GeneratedImage } from '../../../shared-types';
 import { scenes, lobbySceneIds } from '../haggadah/scenes';
 import { addGeneratedImage } from '../rooms';
 
-// Leonardo AI Phoenix model ID
-const LEONARDO_PHOENIX_MODEL_ID = '6b645e3a-d64f-4341-a6d8-7a3690fbf042';
+// Use Leonardo Vision XL (Supported on current API tier)
+const LEONARDO_PHOENIX_MODEL_ID = '2067ae52-33fd-4a82-bb92-c2c55e7d2786';
 const LEONARDO_API_URL = 'https://cloud.leonardo.ai/api/rest/v1';
 const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY!;
 
