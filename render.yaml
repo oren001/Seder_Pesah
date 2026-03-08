@@ -1,5 +1,5 @@
 services:
-  # Backend — Node.js + Express + Socket.io
+  # 1. Backend — Node.js Web Service
   - type: web
     name: haggadah-backend
     runtime: node
@@ -11,33 +11,30 @@ services:
         value: 3001
       - key: NODE_ENV
         value: production
-      - key: FRONTEND_URL
-        sync: false   # Set in Render dashboard → your frontend URL
-      - key: LEONARDO_API_KEY
-        sync: false   # Set in Render dashboard
       - key: FIREBASE_PROJECT_ID
         value: general-4686c
       - key: FIREBASE_STORAGE_BUCKET
         value: general-4686c.firebasestorage.app
+      - key: LEONARDO_API_KEY
+        sync: false
       - key: FIREBASE_CLIENT_EMAIL
-        sync: false   # Set in Render dashboard
+        sync: false
       - key: FIREBASE_PRIVATE_KEY
-        sync: false   # Set in Render dashboard (paste the full key with \n)
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
 
-  # Frontend — Next.js
-  - type: web
+  # 2. Frontend — Static Site (Free on Render)
+  - type: static
     name: haggadah-frontend
-    runtime: node
     rootDir: frontend
     buildCommand: npm install && npm run build
-    startCommand: npm start
+    publishDir: out
     envVars:
       - key: NEXT_PUBLIC_BACKEND_URL
-        sync: false   # Set in Render dashboard → your backend URL
+        sync: false
       - key: NEXT_PUBLIC_FIREBASE_API_KEY
         value: AIzaSyCcnpQDPsQptHdZKHupXOZNqNbO1JOD1Ss
-      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-        value: general-4686c.firebaseapp.com
       - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
         value: general-4686c
       - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
