@@ -33,18 +33,28 @@ fi
 IP_ADDR=$(curl -s ifconfig.me)
 echo "🌐 Detected Public IP: $IP_ADDR"
 
-# 5. Create .env file for build
+# 5. Create .env file
 echo "📝 Configuring environment..."
-cat <<EOF > .env
+cat <<EOF > backend/.env
 NEXT_PUBLIC_BACKEND_URL=http://$IP_ADDR:3001
 NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyCcnpQDPsQptHdZKHupXOZNqNbO1JOD1Ss
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=general-4686c
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=general-4686c.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=810223700186
 NEXT_PUBLIC_FIREBASE_APP_ID=1:810223700186:web:7eeeac4b4e0f921cd7fde3
+PORT=3001
+NODE_ENV=production
 EOF
 
+# Copy root .env to frontend build args if needed
+cp backend/.env .env
+
 # 6. Check for Firebase Service Account
+if [ -f "/root/service-account.json" ] && [ ! -f "backend/service-account.json" ]; then
+    echo "🔑 Restoring service-account.json from /root..."
+    cp /root/service-account.json backend/service-account.json
+fi
+
 if [ ! -f "backend/service-account.json" ]; then
     echo "⚠️  WARNING: backend/service-account.json NOT FOUND!"
     echo "The backend container will start but Firestore will fail."
@@ -53,7 +63,8 @@ fi
 
 # 7. Start the stack
 echo "🏗️  Building and starting Docker containers..."
-docker compose up -d --build
+sudo docker compose up -d --build
+
 
 echo "✅ DEPLOYMENT COMPLETE!"
 echo "🕍 Your AI Haggadah is live at: http://$IP_ADDR"
