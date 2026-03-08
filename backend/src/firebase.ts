@@ -7,8 +7,16 @@ import * as fs from 'fs';
 if (!getApps().length) {
     try {
         const saPath = path.join(__dirname, '../service-account.json');
+        const rootSaPath = path.join(process.cwd(), 'service-account.json');
+        let serviceAccount;
+
         if (fs.existsSync(saPath)) {
-            const serviceAccount = require(saPath);
+            serviceAccount = require(saPath);
+        } else if (fs.existsSync(rootSaPath)) {
+            serviceAccount = require(rootSaPath);
+        }
+
+        if (serviceAccount) {
             // Ensure private key newlines are handled correctly regardless of JSON escaping
             if (serviceAccount.private_key) {
                 serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
