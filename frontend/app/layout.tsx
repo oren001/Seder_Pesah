@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import WakeLock from '@/components/WakeLock';
 
 export const metadata: Metadata = {
   title: 'הגדה של פסח אינטראקטיבית | AI Haggadah',
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <div className="exodus-bg" aria-hidden="true" />
+        <WakeLock />
         {children}
       </body>
     </html>
