@@ -56,7 +56,7 @@ io.on('connection', (socket) => {
         callback({ roomId });
     });
 
-    socket.on('join-room', ({ roomId, me: userMe }) => {
+    socket.on('join-room', ({ roomId, photo }, callback) => {
         if (!rooms[roomId]) {
             rooms[roomId] = {
                 id: roomId,
@@ -67,19 +67,29 @@ io.on('connection', (socket) => {
             };
         }
 
-        const photo = userMe?.photo;
-        const participant = { id: socket.id, photo };
+        const participant = { id: socket.id, photo: photo || null };
         rooms[roomId].participants.push(participant);
         socket.join(roomId);
         socket.roomId = roomId; // Store roomId on socket for disconnect
 
         console.log(`User ${socket.id} joined room ${roomId}`);
 
+        if (callback) {
+            callback({
+                success: true,
+                roomId,
+                participant,
+                currentPage: rooms[roomId].currentPage,
+                images: rooms[roomId].images,
+                tasks: rooms[roomId].tasks
+            });
+        }
+
         io.to(roomId).emit('room-updated', {
             participants: rooms[roomId].participants,
             currentPage: rooms[roomId].currentPage,
-            images: rooms[roomId].images, // Send existing images
-            tasks: rooms[roomId].tasks // Send existing tasks
+            images: rooms[roomId].images,
+            tasks: rooms[roomId].tasks
         });
     });
 

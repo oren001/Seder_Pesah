@@ -322,18 +322,54 @@ function renderPage() {
 
     const el = $$('page-content');
     const imageUrl = pageImages[currentPage];
+    const index = currentPage;
 
     el.style.opacity = '0';
     setTimeout(() => {
-        const imgHtml = imageUrl
-            ? `<div class="page-image-wrap"><img class="page-image" src="${imageUrl}" loading="lazy"/></div>`
-            : `<div class="image-shimmer" title="תמונה ביצירה..."></div>`;
+        el.innerHTML = '';
 
-        el.innerHTML = `
-            <div class="page-title">${page.title}</div>
-            ${imgHtml}
-            <div class="page-text">${page.text}</div>
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'page-title';
+        titleDiv.textContent = page.title;
+        el.appendChild(titleDiv);
+
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'page-image-wrap';
+        imgWrap.id = `img-wrap-${index}`;
+        imgWrap.onclick = () => triggerPageGeneration(index);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'status-overlay hidden';
+        overlay.id = `status-overlay-${index}`;
+        overlay.innerHTML = `
+            <div class="status-text">מייצר תמונה...</div>
+            <div class="status-log">לחץ כאן כדי להתחיל</div>
         `;
+        imgWrap.appendChild(overlay);
+
+        if (imageUrl) {
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.className = 'page-image';
+            img.alt = page.title;
+            imgWrap.appendChild(img);
+        } else {
+            const shimmer = document.createElement('div');
+            shimmer.className = 'image-shimmer';
+            imgWrap.appendChild(shimmer);
+
+            // Show overlay with manual prompt
+            overlay.classList.remove('hidden');
+            overlay.querySelector('.status-text').innerText = 'אין תמונה עדיין';
+            overlay.querySelector('.status-log').innerText = 'לחץ כאן כדי לייצר עם AI';
+        }
+
+        el.appendChild(imgWrap);
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'page-text';
+        textDiv.innerText = page.text;
+        el.appendChild(textDiv);
 
         $$('current-page-num').textContent = currentPage + 1;
         $$('btn-prev').disabled = currentPage === 0;
