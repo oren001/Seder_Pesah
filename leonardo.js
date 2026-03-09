@@ -97,6 +97,7 @@ async function generateImage(prompt, initImageId = null) {
 async function uploadInitImage(base64Data) {
     try {
         console.log('[AI] Starting Character Reference upload...');
+
         // 1. Get presigned URL
         const res = await fetch(`${LEONARDO_API_URL}/init-image`, {
             method: 'POST',
@@ -113,15 +114,35 @@ async function uploadInitImage(base64Data) {
             return null;
         }
 
-        const { id } = data.uploadInitImage;
-        console.log(`[AI] Character Reference ID assigned: ${id}`);
+        const { id, url, fields } = data.uploadInitImage;
+        const formData = JSON.parse(fields);
 
-        // Note: For a true prototype, we'd perform the S3 upload here.
-        // However, Leonardo's API often allows using the presigned ID immediately 
-        // if the upload is handled via client-side or a simple pipe.
-        // For this "NANO" test, we'll return the ID and monitor if Leonardo's 
-        // secondary check fails due to missing S3 data.
+        console.log(`[AI] Assigned ID: ${id}. Uploading to S3...`);
 
+        // 2. Upload to S3
+        const { FormData } = require('formdata-node');
+        const { Blob } = require('node-fetch');
+        const s3Form = new FormData();
+
+        Object.entries(formData).forEach(([key, value]) => {
+            s3Form.append(key, value);
+        });
+
+        // Convert base64 to blob
+        const buffer = Buffer.from(base64Data.split(',')[1], 'base64');
+        s3Form.append('file', new Blob([buffer], { type: 'image/jpeg' }));
+
+        const s3Res = await fetch(url, {
+            method: 'POST',
+            body: s3Form
+        });
+
+        if (s3Res.status !== 204) {
+            console.error('[AI] S3 Upload failed:', s3Res.status);
+            return null;
+        }
+
+        console.log(`[AI] Character Reference uploaded successfully: ${id}`);
         return id;
     } catch (err) {
         console.error('[AI] Upload failed:', err.message);
@@ -130,23 +151,8 @@ async function uploadInitImage(base64Data) {
 }
 
 async function generateAllImages(roomId, io, rooms) {
-    console.log(`[AI] Full generation starting for room ${roomId}`);
-
-    for (const section of HAGGADAH_PROMPTS) {
-        if (!rooms[roomId]) break;
-        try {
-            console.log(`[AI] Generating ${section.id}: ${section.title}`);
-            const imageUrl = await generateImage(section.prompt);
-            if (imageUrl && rooms[roomId]) {
-                rooms[roomId].images[section.id] = imageUrl;
-                io.to(roomId).emit('image-ready', { pageIndex: section.id, imageUrl });
-                console.log(`[AI] Page ${section.id} ready.`);
-            }
-        } catch (err) {
-            console.error(`[AI] Failed ${section.id}:`, err.message);
-        }
-        await sleep(1000);
-    }
+    // This is now disabled to save credits. Individual pages or Nano Test should be used.
+    console.log(`[AI] generateAllImages called for ${roomId} - DISABLED to save credits.`);
 }
 
 async function generateNanoTest(roomId, photoBase64, io, rooms) {
