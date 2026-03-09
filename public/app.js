@@ -343,7 +343,13 @@ function renderTasks() {
     if (!list) return;
     list.innerHTML = '';
 
-    roomTasks.forEach(task => {
+    // Sort: Uncompleted first
+    const sortedTasks = [...roomTasks].sort((a, b) => {
+        if (a.completed === b.completed) return 0;
+        return a.completed ? 1 : -1;
+    });
+
+    sortedTasks.forEach(task => {
         const item = document.createElement('div');
         item.className = 'task-item' + (task.completed ? ' completed' : '');
 

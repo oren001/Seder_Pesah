@@ -30,13 +30,12 @@ try {
     }
 } catch (e) { console.error('Failed to load tasks:', e); }
 
-function saveTasks() {
+function saveTasks(roomId, tasks) {
     try {
-        const data = {};
-        Object.keys(rooms).forEach(id => {
-            data[id] = rooms[id].tasks;
-        });
-        fs.writeFileSync(TASKS_FILE, JSON.stringify(data, null, 2));
+        if (roomId && tasks) {
+            persistedTasks[roomId] = tasks;
+        }
+        fs.writeFileSync(TASKS_FILE, JSON.stringify(persistedTasks, null, 2));
     } catch (e) { console.error('Failed to save tasks:', e); }
 }
 
@@ -113,7 +112,7 @@ io.on('connection', (socket) => {
             completed: false
         };
         rooms[roomId].tasks.push(task);
-        saveTasks();
+        saveTasks(roomId, rooms[roomId].tasks);
         io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
     });
 
@@ -122,7 +121,7 @@ io.on('connection', (socket) => {
         const task = rooms[roomId].tasks.find(t => t.id === taskId);
         if (task) {
             task.completed = !task.completed;
-            saveTasks();
+            saveTasks(roomId, rooms[roomId].tasks);
             io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
         }
     });
@@ -130,7 +129,7 @@ io.on('connection', (socket) => {
     socket.on('delete-task', ({ roomId, taskId }) => {
         if (!rooms[roomId]) return;
         rooms[roomId].tasks = rooms[roomId].tasks.filter(t => t.id !== taskId);
-        saveTasks();
+        saveTasks(roomId, rooms[roomId].tasks);
         io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
     });
 
