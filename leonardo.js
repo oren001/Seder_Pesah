@@ -150,7 +150,8 @@ async function uploadInitImage(base64Data) {
 
         const s3Res = await fetch(url, {
             method: 'POST',
-            body: s3Form
+            body: s3Form,
+            headers: s3Form.getHeaders()
         });
 
         if (s3Res.status !== 204) {
