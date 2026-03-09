@@ -41,7 +41,11 @@ printf "PORT=3001\n" >> .env
 printf "NODE_ENV=production\n" >> .env
 printf "LEONARDO_API_KEY=642a8b38-66df-4993-9799-281fd8987d60\n" >> .env
 
-# 5. Start the stack
+# 5. Bump Version
+echo "🏷️  Bumping version..."
+echo "{ \"version\": \"$(date +%s)\" }" > public/version.json
+
+# 6. Start the stack
 echo "🏗️  Building and starting Docker containers..."
 sudo docker compose down || true
 sudo docker compose up -d --build

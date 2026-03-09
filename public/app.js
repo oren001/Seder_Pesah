@@ -19,8 +19,14 @@ const screens = {
 let roomTasks = [];
 
 // --- Init ---
-async function init() {
-    socket = io();
+function init() {
+    setupSocket();
+    setupHaggadah();
+    setupTasks();
+
+    // Start version polling
+    checkVersion();
+    setInterval(checkVersion, 60000); // Check every minute
 
     // Add event listeners
     $$('btn-create-room').addEventListener('click', onCreateRoom);
@@ -28,8 +34,8 @@ async function init() {
     $$('btn-retake').addEventListener('click', onRetake);
     $$('btn-join-with-photo').addEventListener('click', onJoinWithPhoto);
     $$('btn-copy-link').addEventListener('click', onCopyLink);
-    $$('btn-prev').addEventListener('click', () => changePage(-1));
-    $$('btn-next').addEventListener('click', () => changePage(1));
+    $$('btn-prev').addEventListener('click', () => changePage(-1)); // Original handler
+    $$('btn-next').addEventListener('click', () => changePage(1)); // Original handler
 
     // Task Sidebar
     $$('btn-toggle-tasks').addEventListener('click', toggleTasks);
@@ -40,28 +46,76 @@ async function init() {
         if (e.key === 'Enter') addTask();
     });
 
-    // Socket listeners
-    socket.on('room-updated', onRoomUpdated);
-    socket.on('page-changed', onPageChanged);
+    // Initial check for room in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomFromUrl = urlParams.get('room');
+    if (roomFromUrl) {
+        pendingRoomId = roomFromUrl; // Use pendingRoomId for consistency with existing flow
+        showScreen('selfie'); // Original screen name
+        startCamera();
+    } else {
+        showScreen('lobby'); // Original lobby screen display
+    }
+}
+
+async function setupSocket() {
+    socket = io();
+
+    socket.on('connect', () => {
+        console.log('Connected to server');
+    });
+
+    socket.on('room-updated', (data) => {
+        renderParticipants(data.participants);
+        if (data.currentPage !== currentPage) {
+            currentPage = data.currentPage;
+            renderPage();
+        }
+    });
+
+    socket.on('page-changed', (data) => {
+        currentPage = data.currentPage;
+        renderPage();
+    });
+
     socket.on('tasks-updated', (tasks) => {
         roomTasks = tasks;
         renderTasks();
     });
+
     socket.on('image-ready', ({ pageIndex, imageUrl }) => {
         pageImages[pageIndex] = imageUrl;
         if (pageIndex === currentPage) renderPage();
     });
+}
 
-    // Check if arriving via invite link
-    const params = new URLSearchParams(window.location.search);
-    const inviteRoomId = params.get('room');
-    if (inviteRoomId) {
-        pendingRoomId = inviteRoomId;
-        showScreen('selfie');
-        await startCamera();
-    } else {
-        showScreen('lobby');
+function setupTasks() {
+    // Handled via socket events
+}
+
+async function checkVersion() {
+    try {
+        const res = await fetch('version.json?t=' + Date.now());
+        if (!res.ok) return;
+        const data = await res.json();
+        if (currentVersion && currentVersion !== data.version) {
+            notifyNewVersion();
+        }
+        currentVersion = data.version;
+    } catch (err) {
+        console.warn('Version check failed:', err);
     }
+}
+
+function notifyNewVersion() {
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audio.play().catch(() => { });
+
+    const t = $$('toast');
+    t.innerHTML = '✨ גרסה חדשה זמינה! <a href="javascript:location.reload()" style="color:#ffd700;text-decoration:underline;">לחץ כאן לרענון</a>';
+    t.classList.remove('hidden');
+    t.classList.add('show');
 }
 
 // --- Camera ---
@@ -235,7 +289,10 @@ function addTask() {
     const input = $$('input-new-task');
     const text = input.value.trim();
     if (!text) return;
-    socket.emit('add-task', { roomId: currentRoomId, text });
+
+    // Oren's name as author
+    const author = "אורן";
+    socket.emit('add-task', { roomId: currentRoomId, text, author });
     input.value = '';
 }
 
@@ -260,7 +317,10 @@ function renderTasks() {
             <div class="task-checkbox" onclick="toggleTask('${task.id}')">
                 ${task.completed ? '✓' : ''}
             </div>
-            <div class="task-text">${task.text}</div>
+            <div class="task-text">
+                <span class="task-author">${task.author}:</span>
+                ${task.text}
+            </div>
             <button class="btn-delete-task" onclick="deleteTask('${task.id}')">&times;</button>
         `;
         list.appendChild(item);

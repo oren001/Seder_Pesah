@@ -75,9 +75,14 @@ io.on('connection', (socket) => {
     });
 
     // --- Task Board Events ---
-    socket.on('add-task', ({ roomId, text }) => {
+    socket.on('add-task', ({ roomId, text, author }) => {
         if (!rooms[roomId]) return;
-        const task = { id: Date.now().toString(), text, completed: false };
+        const task = {
+            id: Date.now().toString(),
+            text,
+            author: author || 'אורח',
+            completed: false
+        };
         rooms[roomId].tasks.push(task);
         io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
     });

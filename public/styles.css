@@ -586,3 +586,14 @@ body {
 .w-100 {
     width: 100%;
 }
+.task-author {
+    font-weight: 800;
+    color: var(--primary);
+    margin-left: 4px;
+    font-size: 0.85rem;
+}
+
+#toast a {
+    text-decoration: underline;
+    margin-right: 10px;
+}
