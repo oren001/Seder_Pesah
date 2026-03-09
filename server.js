@@ -53,8 +53,16 @@ io.on('connection', (socket) => {
         };
         console.log(`Room created: ${roomId}`);
 
-        // Start AI generation in background
-        generateAllImages(roomId, io, rooms);
+        // Start AI generation for first page (Kadesh) ONLY
+        const { generateImage } = require('./leonardo');
+        const kadeshPrompt = require('./leonardo').HAGGADAH_PROMPTS[0].prompt;
+
+        generateImage(kadeshPrompt).then(imageUrl => {
+            if (imageUrl && rooms[roomId]) {
+                rooms[roomId].images[0] = imageUrl;
+                io.to(roomId).emit('image-ready', { pageIndex: 0, imageUrl });
+            }
+        }).catch(err => console.error('[AI] Kadesh generation failed:', err.message));
 
         callback({ roomId });
     });

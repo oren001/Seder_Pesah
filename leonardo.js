@@ -171,4 +171,4 @@ async function generateNanoTest(roomId, photoBase64, io, rooms) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-module.exports = { generateAllImages, generateNanoTest };
+module.exports = { HAGGADAH_PROMPTS, generateImage, generateAllImages, generateNanoTest };
