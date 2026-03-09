@@ -8,6 +8,7 @@ let currentPage = 0;
 const pageImages = {};  // { [pageIndex]: imageUrl } — grows as AI generates images
 let roomState = null;
 let currentVersion = null;
+let wakeLock = null;
 
 // --- DOM refs ---
 const $$ = id => document.getElementById(id);
@@ -24,6 +25,7 @@ let roomTasks = [];
 function init() {
     setupSocket();
     setupTasks();
+    requestWakeLock();
 
     // Start version polling
     checkVersion();
@@ -88,7 +90,38 @@ async function setupSocket() {
         pageImages[pageIndex] = imageUrl;
         if (pageIndex === currentPage) renderPage();
     });
+
+    socket.on('ai-status', (data) => {
+        showToast(data.message);
+    });
+
+    socket.on('ai-error', (data) => {
+        showToast('❌ ' + data.message, true);
+        console.error('AI Error:', data.message);
+    });
 }
+
+// --- Wake Lock ---
+async function requestWakeLock() {
+    if ('wakeLock' in navigator) {
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('Wake Lock is active');
+            wakeLock.addEventListener('release', () => {
+                console.log('Wake Lock was released');
+            });
+        } catch (err) {
+            console.error(`${err.name}, ${err.message}`);
+        }
+    }
+}
+
+// Re-request wake lock when page becomes visible again
+document.addEventListener('visibilitychange', async () => {
+    if (wakeLock !== null && document.visibilityState === 'visible') {
+        requestWakeLock();
+    }
+});
 
 function setupTasks() {
     // Handled via socket events

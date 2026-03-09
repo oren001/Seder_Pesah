@@ -17,6 +17,29 @@ function generateId() {
     return Math.random().toString(36).substring(2, 8);
 }
 
+const fs = require('fs');
+const DATA_DIR = path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
+
+// Load persisted tasks
+let persistedTasks = {};
+try {
+    if (fs.existsSync(TASKS_FILE)) {
+        persistedTasks = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
+    }
+} catch (e) { console.error('Failed to load tasks:', e); }
+
+function saveTasks() {
+    try {
+        const data = {};
+        Object.keys(rooms).forEach(id => {
+            data[id] = rooms[id].tasks;
+        });
+        fs.writeFileSync(TASKS_FILE, JSON.stringify(data, null, 2));
+    } catch (e) { console.error('Failed to save tasks:', e); }
+}
+
 io.on('connection', (socket) => {
     console.log(`+ Connected: ${socket.id}`);
 
@@ -27,7 +50,7 @@ io.on('connection', (socket) => {
             currentPage: 0,
             participants: [],
             images: {}, // Cache for AI images
-            tasks: [] // Synchronized task board
+            tasks: persistedTasks[roomId] || [] // Synchronized task board
         };
         console.log(`Room created: ${roomId}`);
 
@@ -41,7 +64,13 @@ io.on('connection', (socket) => {
         const { roomId, photo } = typeof data === 'object' ? data : { roomId: data, photo: null };
 
         if (!rooms[roomId]) {
-            rooms[roomId] = { id: roomId, currentPage: 0, participants: [], images: {}, tasks: [] };
+            rooms[roomId] = {
+                id: roomId,
+                currentPage: 0,
+                participants: [],
+                images: {},
+                tasks: persistedTasks[roomId] || []
+            };
         }
 
         socket.join(roomId);
@@ -80,10 +109,11 @@ io.on('connection', (socket) => {
         const task = {
             id: Date.now().toString(),
             text,
-            author: author || 'אורח',
+            author: author || 'אורן',
             completed: false
         };
         rooms[roomId].tasks.push(task);
+        saveTasks();
         io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
     });
 
@@ -92,6 +122,7 @@ io.on('connection', (socket) => {
         const task = rooms[roomId].tasks.find(t => t.id === taskId);
         if (task) {
             task.completed = !task.completed;
+            saveTasks();
             io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
         }
     });
@@ -99,13 +130,17 @@ io.on('connection', (socket) => {
     socket.on('delete-task', ({ roomId, taskId }) => {
         if (!rooms[roomId]) return;
         rooms[roomId].tasks = rooms[roomId].tasks.filter(t => t.id !== taskId);
+        saveTasks();
         io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
     });
 
     socket.on('test-nano-banana', ({ roomId, photo }) => {
         if (!rooms[roomId] || !photo) return;
         console.log(`[AI] Nano Banana Test triggered for room ${roomId}`);
-        generateNanoTest(roomId, photo, io, rooms);
+        io.to(roomId).emit('ai-status', { message: 'מעלה תמונה ל-Leonardo...' });
+        generateNanoTest(roomId, photo, io, rooms).catch(err => {
+            io.to(roomId).emit('ai-error', { message: 'שגיאת Leonardo: ' + err.message });
+        });
     });
 
     socket.on('disconnect', () => {
