@@ -57,7 +57,7 @@ io.on('connection', (socket) => {
         const { generateImage } = require('./leonardo');
         const kadeshPrompt = require('./leonardo').HAGGADAH_PROMPTS[0].prompt;
 
-        generateImage(kadeshPrompt).then(imageUrl => {
+        generateImage(kadeshPrompt, []).then(imageUrl => {
             if (imageUrl && rooms[roomId]) {
                 rooms[roomId].images[0] = imageUrl;
                 io.to(roomId).emit('image-ready', { pageIndex: 0, imageUrl });
