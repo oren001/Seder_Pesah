@@ -39,7 +39,7 @@ DOMAIN="${IP_ADDR}.nip.io"
 printf "DOMAIN=$DOMAIN\n" > .env
 printf "PORT=3001\n" >> .env
 printf "NODE_ENV=production\n" >> .env
-printf "LEONARDO_API_KEY=642a8b38-66df-4993-9799-281fd8987d60\n" >> .env
+printf "LEONARDO_API_KEY=03028d8e-afc4-46f6-b967-069fc4fc01a1\n" >> .env
 
 # 5. Bump Version
 echo "🏷️  Bumping version..."

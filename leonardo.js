@@ -2,7 +2,7 @@
 // Model: Leonardo Phoenix (6b645e3a-d64f-4341-a6d8-7a3690fbf042)
 
 const LEONARDO_API_URL = 'https://cloud.leonardo.ai/api/rest/v1';
-const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY || '642a8b38-66df-4993-9799-281fd8987d60';
+const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY || '03028d8e-afc4-46f6-b967-069fc4fc01a1';
 const PHOENIX_MODEL_ID = '6b645e3a-d64f-4341-a6d8-7a3690fbf042';
 
 // Rich prompts for ALL 23 Chabad Haggadah sections
