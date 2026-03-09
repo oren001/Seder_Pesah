@@ -33,28 +33,6 @@ const HAGGADAH_PROMPTS = [
     { id: 22, title: 'Hallel & Nirtzah', prompt: 'The prophet Elijah entering through an open door, golden Jerusalem in the distance, hope' }
 ];
 
-async function pollForImage(generationId) {
-    const MAX_ATTEMPTS = 30;
-    for (let i = 0; i < MAX_ATTEMPTS; i++) {
-        await sleep(3000);
-        try {
-            // Polling is still typically v1 or common across versions
-            const res = await fetch(`${LEONARDO_API_URL}/generations/${generationId}`, {
-                headers: { Authorization: `Bearer ${LEONARDO_API_KEY}` }
-            });
-            const data = await res.json();
-            const gen = data.generations_by_pk;
-            if (gen?.status === 'COMPLETE' && gen.generated_images?.length > 0) {
-                return gen.generated_images[0].url;
-            }
-            if (gen?.status === 'FAILED') {
-                console.error('[AI] Generation failed:', JSON.stringify(data));
-                return null;
-            }
-        } catch (err) { console.error('Poll error:', err.message); }
-    }
-    return null;
-}
 
 async function generateImage(prompt, initImageIds = null, onStatus = null) {
     const body = {
@@ -157,10 +135,13 @@ async function uploadInitImage(base64Data) {
         const { id, url, fields } = data.uploadInitImage;
         const formData = JSON.parse(fields);
 
-        console.log(`[AI] Assigned ID: ${id}. Uploading to S3...`);
+        console.log(`[AI] Assigned ID: ${id}. Uploading to S3 (${url})...`);
 
-        // 2. Upload to S3
-        const FormData = require('form-data');
+        // Convert base64 to buffer
+        const buffer = Buffer.from(base64Data.split(',')[1], 'base64');
+        console.log(`[AI] Image buffer size: ${buffer.length} bytes`);
+
+        // 2. Upload to S3 using native FormData
         const s3Form = new FormData();
 
         // S3 CRITICAL: Fields from 'fields' must come BEFORE the 'file' field
@@ -168,24 +149,17 @@ async function uploadInitImage(base64Data) {
             s3Form.append(key, value);
         });
 
-        // Convert base64 to buffer
-        const buffer = Buffer.from(base64Data.split(',')[1], 'base64');
-
         // S3 CRITICAL: The 'file' field MUST be last
-        // We use the buffer directly. Some S3 implementations prefer a specific filename extension.
-        s3Form.append('file', buffer, {
-            filename: 'image.jpg',
-            contentType: 'image/jpeg',
-            knownLength: buffer.length
-        });
+        // We use a Blob to ensure binary integrity with native fetch
+        const blob = new Blob([buffer], { type: 'image/jpeg' });
+        s3Form.append('file', blob, 'image.jpg');
 
         const s3Res = await fetch(url, {
             method: 'POST',
-            body: s3Form,
-            headers: s3Form.getHeaders()
+            body: s3Form
         });
 
-        if (s3Res.status !== 204) {
+        if (s3Res.status !== 204 && s3Res.status !== 200) {
             const errorText = await s3Res.text();
             console.error('[AI] S3 Upload failed:', s3Res.status, errorText);
             return null;
@@ -194,7 +168,7 @@ async function uploadInitImage(base64Data) {
         console.log(`[AI] Character Reference uploaded successfully: ${id}`);
         return id;
     } catch (err) {
-        console.error('[AI] Upload failed:', err.message);
+        console.error('[AI] Upload failed:', err.message, err.stack);
         return null;
     }
 }
