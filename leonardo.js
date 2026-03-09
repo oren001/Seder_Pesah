@@ -121,16 +121,17 @@ async function uploadInitImage(base64Data) {
 
         // 2. Upload to S3
         const { FormData } = require('formdata-node');
-        const { Blob } = require('node-fetch');
         const s3Form = new FormData();
 
+        // S3 CRITICAL: Fields from 'fields' must come BEFORE the 'file' field
         Object.entries(formData).forEach(([key, value]) => {
             s3Form.append(key, value);
         });
 
-        // Convert base64 to blob
+        // Convert base64 to buffer
         const buffer = Buffer.from(base64Data.split(',')[1], 'base64');
-        s3Form.append('file', new Blob([buffer], { type: 'image/jpeg' }));
+        // S3 CRITICAL: The 'file' field MUST be last
+        s3Form.append('file', buffer, { filename: 'selfie.jpg', contentType: 'image/jpeg' });
 
         const s3Res = await fetch(url, {
             method: 'POST',
@@ -138,7 +139,8 @@ async function uploadInitImage(base64Data) {
         });
 
         if (s3Res.status !== 204) {
-            console.error('[AI] S3 Upload failed:', s3Res.status);
+            const errorText = await s3Res.text();
+            console.error('[AI] S3 Upload failed:', s3Res.status, errorText);
             return null;
         }
 
