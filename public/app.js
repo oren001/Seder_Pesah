@@ -123,17 +123,18 @@ async function setupSocket() {
         console.error('AI Error:', message);
     });
 
-    function triggerPageGeneration(pageIndex) {
-        if (!currentRoomId) return;
-        const overlay = document.getElementById(`status-overlay-${pageIndex}`);
-        if (overlay) {
-            overlay.classList.remove('hidden');
-            overlay.classList.remove('error');
-            overlay.querySelector('.status-text').innerText = 'מתחיל...';
-            overlay.querySelector('.status-log').innerText = 'שולח בקשה לשרת...';
-        }
-        socket.emit('generate-page', { roomId: currentRoomId, pageIndex });
+}
+
+function triggerPageGeneration(pageIndex) {
+    if (!currentRoomId) return;
+    const overlay = document.getElementById(`status-overlay-${pageIndex}`);
+    if (overlay) {
+        overlay.classList.remove('hidden');
+        overlay.classList.remove('error');
+        overlay.querySelector('.status-text').innerText = 'מתחיל...';
+        overlay.querySelector('.status-log').innerText = 'שולח בקשה לשרת...';
     }
+    socket.emit('generate-page', { roomId: currentRoomId, pageIndex });
 }
 
 // --- Wake Lock ---
