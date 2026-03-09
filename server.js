@@ -141,11 +141,11 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
     });
 
-    socket.on('test-nano-banana', ({ roomId, photo }) => {
-        if (!rooms[roomId] || !photo) return;
+    socket.on('test-nano-banana', ({ roomId }) => {
+        if (!rooms[roomId]) return;
         console.log(`[AI] Nano Banana Test triggered for room ${roomId}`);
-        io.to(roomId).emit('ai-status', { message: 'מעלה תמונה ל-Leonardo...' });
-        generateNanoTest(roomId, photo, io, rooms).catch(err => {
+        io.to(roomId).emit('ai-status', { message: 'מעלה תמונות משתתפים ל-Leonardo (PRO)...' });
+        generateNanoTest(roomId, io, rooms).catch(err => {
             io.to(roomId).emit('ai-error', { message: 'שגיאת Leonardo: ' + err.message });
         });
     });

@@ -3,7 +3,7 @@
 
 const LEONARDO_API_URL = 'https://cloud.leonardo.ai/api/rest/v1';
 const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY || '03028d8e-afc4-46f6-b967-069fc4fc01a1';
-const PHOENIX_MODEL_ID = '6b645e3a-d64f-4341-a6d8-7a3690fbf042';
+const PHOENIX_MODEL_ID = 'de7d3faf-762f-48e0-b3b7-9d0ac3a3fcf3'; // Phoenix 1.0
 
 // Rich prompts for ALL 23 Chabad Haggadah sections
 const HAGGADAH_PROMPTS = [
@@ -62,13 +62,13 @@ async function generateImage(prompt, initImageId = null) {
         presetStyle: 'ILLUSTRATION'
     };
 
-    if (initImageId) {
-        body.controlnets = [{
-            initImageId: initImageId,
+    if (initImageIds && initImageIds.length > 0) {
+        body.controlnets = initImageIds.map(id => ({
+            initImageId: id,
             initImageType: "UPLOADED",
             preprocessorId: 133, // Character Reference
             strengthType: "High"
-        }];
+        }));
     }
 
     const res = await fetch(`${LEONARDO_API_URL}/generations`, {
@@ -155,20 +155,29 @@ async function generateAllImages(roomId, io, rooms) {
     console.log(`[AI] generateAllImages called for ${roomId} - DISABLED to save credits.`);
 }
 
-async function generateNanoTest(roomId, photoBase64, io, rooms) {
+async function generateNanoTest(roomId, io, rooms) {
     if (!rooms[roomId]) return;
     try {
-        console.log(`[AI] NANO TEST for room ${roomId}`);
-        const initImageId = await uploadInitImage(photoBase64);
-        if (!initImageId) throw new Error('Character upload failed');
+        console.log(`[AI] NANO TEST PRO for room ${roomId}`);
+
+        // 1. Upload all valid participant photos
+        const initImageIds = [];
+        for (const p of rooms[roomId].participants) {
+            if (p.photo) {
+                const id = await uploadInitImage(p.photo);
+                if (id) initImageIds.push(id);
+            }
+        }
+
+        if (initImageIds.length === 0) throw new Error('No participant photos found');
 
         const kadeshSection = HAGGADAH_PROMPTS[0];
-        const imageUrl = await generateImage(kadeshSection.prompt, initImageId);
+        const imageUrl = await generateImage(kadeshSection.prompt, initImageIds);
 
         if (imageUrl && rooms[roomId]) {
             rooms[roomId].images[0] = imageUrl;
             io.to(roomId).emit('image-ready', { pageIndex: 0, imageUrl });
-            console.log(`[AI] NANO TEST Page 0 ready.`);
+            console.log(`[AI] NANO TEST PRO Page 0 ready with ${initImageIds.length} characters.`);
         }
     } catch (err) {
         console.error(`[AI] NANO TEST failed:`, err.message);

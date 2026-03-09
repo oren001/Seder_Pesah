@@ -382,12 +382,12 @@ function renderTasks() {
 }
 
 function triggerNanoTest() {
-    if (!currentRoomId || !me || !me.photo) {
-        showToast('יש להצטרף לחדר עם תמונה קודם.');
+    if (!currentRoomId) {
+        showToast('יש להצטרף לחדר קודם.');
         return;
     }
-    showToast('יוצר תמונה מותאמת אישית (NANO BANANA)...');
-    socket.emit('test-nano-banana', { roomId: currentRoomId, photo: me.photo });
+    showToast('יוצר תמונה קבוצתית (NB PRO)...');
+    socket.emit('test-nano-banana', { roomId: currentRoomId });
 }
 
 // --- Utils ---
