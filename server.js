@@ -101,6 +101,22 @@ io.on('connection', (socket) => {
             participants: rooms[roomId].participants,
             currentPage: rooms[roomId].currentPage
         });
+
+        // Auto-trigger NB PRO (Group Generation) if this is the first participant with a photo
+        if (photo && rooms[roomId]) {
+            const hasPersonalized = rooms[roomId].isPersonalized || false;
+            if (!hasPersonalized) {
+                rooms[roomId].isPersonalized = true; // Mark to avoid duplicate triggers
+                setTimeout(() => {
+                    console.log(`[AI] Auto-triggering NB PRO for room ${roomId}`);
+                    const { generateNanoTest } = require('./leonardo');
+                    generateNanoTest(roomId, io, rooms).catch(err => {
+                        console.error('[AI] Auto-NB-PRO failed:', err.message);
+                        rooms[roomId].isPersonalized = false; // Allow retry on next join
+                    });
+                }, 3000); // Wait 3s for more joiners
+            }
+        }
     });
 
     socket.on('change-page', ({ roomId, pageIndex }) => {

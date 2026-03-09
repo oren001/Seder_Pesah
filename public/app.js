@@ -44,7 +44,6 @@ function init() {
     $$('btn-toggle-tasks').addEventListener('click', toggleTasks);
     $$('btn-close-tasks').addEventListener('click', toggleTasks);
     $$('btn-add-task').addEventListener('click', addTask);
-    $$('btn-nano-test').addEventListener('click', triggerNanoTest);
     $$('input-new-task').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') addTask();
     });

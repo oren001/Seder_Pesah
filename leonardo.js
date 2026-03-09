@@ -51,7 +51,7 @@ async function pollForImage(generationId) {
     return null;
 }
 
-async function generateImage(prompt, initImageId = null) {
+async function generateImage(prompt, initImageIds = null) {
     const body = {
         modelId: PHOENIX_MODEL_ID,
         prompt,
@@ -120,7 +120,7 @@ async function uploadInitImage(base64Data) {
         console.log(`[AI] Assigned ID: ${id}. Uploading to S3...`);
 
         // 2. Upload to S3
-        const { FormData } = require('formdata-node');
+        const FormData = require('form-data');
         const s3Form = new FormData();
 
         // S3 CRITICAL: Fields from 'fields' must come BEFORE the 'file' field
@@ -130,8 +130,12 @@ async function uploadInitImage(base64Data) {
 
         // Convert base64 to buffer
         const buffer = Buffer.from(base64Data.split(',')[1], 'base64');
+
         // S3 CRITICAL: The 'file' field MUST be last
-        s3Form.append('file', buffer, { filename: 'selfie.jpg', contentType: 'image/jpeg' });
+        s3Form.append('file', buffer, {
+            filename: 'selfie.jpg',
+            contentType: 'image/jpeg'
+        });
 
         const s3Res = await fetch(url, {
             method: 'POST',
