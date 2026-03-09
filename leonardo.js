@@ -76,7 +76,7 @@ async function generateImage(prompt, initImageIds = null, onStatus = null) {
                     id: id,
                     type: "UPLOADED"
                 },
-                strength: "MID"
+                strength: "HIGH"
             }))
         };
     }
@@ -230,10 +230,15 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
         const section = HAGGADAH_PROMPTS[pageIndex];
         if (!section) throw new Error('Invalid page index');
 
+        let finalPrompt = section.prompt;
+        if (initImageIds.length > 0) {
+            finalPrompt += `, featuring the characters and faces of the people in the reference images, integrated naturally into the scene`;
+        }
+
         io.to(roomId).emit('ai-status', { message: 'אוסף נתונים ושולח פקודת ייצור...', pageIndex });
 
         // 3. Generate Image
-        const imageUrl = await generateImage(section.prompt, initImageIds, (statusMsg) => {
+        const imageUrl = await generateImage(finalPrompt, initImageIds, (statusMsg) => {
             io.to(roomId).emit('ai-status', { message: statusMsg, pageIndex });
         });
 
