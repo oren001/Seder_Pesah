@@ -1,9 +1,10 @@
 // Leonardo Phoenix AI image generation pipeline
 // Model: Leonardo Phoenix (6b645e3a-d64f-4341-a6d8-7a3690fbf042)
 
-const LEONARDO_API_URL = 'https://cloud.leonardo.ai/api/rest/v1';
+const LEONARDO_API_URL = 'https://cloud.leonardo.ai/api/rest/v1'; // Keep v1 for init-image and polling
+const LEONARDO_V2_URL = 'https://cloud.leonardo.ai/api/rest/v2';
 const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY || '03028d8e-afc4-46f6-b967-069fc4fc01a1';
-const PHOENIX_MODEL_ID = 'de7d3faf-762f-48e0-b3b7-9d0ac3a3fcf3'; // Phoenix 1.0
+const NB_PRO_MODEL = 'gemini-image-2';
 
 // Rich prompts for ALL 23 Chabad Haggadah sections
 const HAGGADAH_PROMPTS = [
@@ -37,6 +38,7 @@ async function pollForImage(generationId) {
     for (let i = 0; i < MAX_ATTEMPTS; i++) {
         await sleep(3000);
         try {
+            // Polling is still typically v1 or common across versions
             const res = await fetch(`${LEONARDO_API_URL}/generations/${generationId}`, {
                 headers: { Authorization: `Bearer ${LEONARDO_API_KEY}` }
             });
@@ -45,7 +47,10 @@ async function pollForImage(generationId) {
             if (gen?.status === 'COMPLETE' && gen.generated_images?.length > 0) {
                 return gen.generated_images[0].url;
             }
-            if (gen?.status === 'FAILED') return null;
+            if (gen?.status === 'FAILED') {
+                console.error('[AI] Generation failed:', JSON.stringify(data));
+                return null;
+            }
         } catch (err) { console.error('Poll error:', err.message); }
     }
     return null;
@@ -53,29 +58,35 @@ async function pollForImage(generationId) {
 
 async function generateImage(prompt, initImageIds = null) {
     const body = {
-        modelId: PHOENIX_MODEL_ID,
-        prompt,
-        num_images: 1,
-        width: 896,
-        height: 512,
-        alchemy: true,
-        presetStyle: 'ILLUSTRATION'
+        model: NB_PRO_MODEL,
+        parameters: {
+            prompt,
+            quantity: 1,
+            width: 1024,
+            height: 1024,
+            prompt_enhance: "OFF"
+        },
+        public: false
     };
 
     if (initImageIds && initImageIds.length > 0) {
-        body.controlnets = initImageIds.map(id => ({
-            initImageId: id,
-            initImageType: "UPLOADED",
-            preprocessorId: 133, // Character Reference
-            strengthType: "High"
-        }));
+        body.parameters.guidances = {
+            image_reference: initImageIds.map(id => ({
+                image: {
+                    id: id,
+                    type: "UPLOADED"
+                },
+                strength: "MID"
+            }))
+        };
     }
 
-    const res = await fetch(`${LEONARDO_API_URL}/generations`, {
+    const res = await fetch(`${LEONARDO_V2_URL}/generations`, {
         method: 'POST',
         headers: {
             Authorization: `Bearer ${LEONARDO_API_KEY}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            accept: 'application/json'
         },
         body: JSON.stringify(body)
     });
