@@ -6,6 +6,8 @@ let me = null;
 let currentRoomId = null;
 let currentPage = 0;
 const pageImages = {};  // { [pageIndex]: imageUrl } — grows as AI generates images
+let roomState = null;
+let currentVersion = null;
 
 // --- DOM refs ---
 const $$ = id => document.getElementById(id);
@@ -21,7 +23,6 @@ let roomTasks = [];
 // --- Init ---
 function init() {
     setupSocket();
-    setupHaggadah();
     setupTasks();
 
     // Start version polling
