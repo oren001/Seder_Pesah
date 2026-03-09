@@ -31,18 +31,24 @@
         <div class="selfie-card">
             <h2>תצלם את עצמך</h2>
             <p class="subtitle">כך כולם בחדר ידעו שאתה כאן</p>
-            <div class="video-wrapper">
-                <video id="selfie-video" autoplay muted playsinline></video>
-                <canvas id="selfie-canvas" class="hidden"></canvas>
-                <div id="selfie-preview-wrap" class="hidden">
-                    <img id="selfie-preview-img" class="preview-img" alt="preview">
-                    <div class="preview-actions">
-                        <button id="btn-retake" class="btn outline small">↩ שוב</button>
-                        <button id="btn-join-with-photo" class="btn primary small">✓ הצטרף</button>
+            <div class="video-container">
+                <div class="video-wrapper">
+                    <video id="selfie-video" autoplay muted playsinline></video>
+                    <canvas id="selfie-canvas" class="hidden"></canvas>
+                    <div id="selfie-preview-wrap" class="hidden">
+                        <img id="selfie-preview-img" class="preview-img" alt="preview">
+                    </div>
+                </div>
+
+                <div class="selfie-controls">
+                    <button id="btn-take-selfie" class="btn primary">📸 צלם תמונה</button>
+
+                    <div id="post-selfie-actions" class="preview-actions hidden">
+                        <button id="btn-retake" class="btn outline">↩ שוב</button>
+                        <button id="btn-join-with-photo" class="btn primary">✓ הצטרף עכשיו</button>
                     </div>
                 </div>
             </div>
-            <button id="btn-take-selfie" class="btn primary">📸 צלם תמונה</button>
         </div>
     </div>
 

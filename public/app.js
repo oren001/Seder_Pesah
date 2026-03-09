@@ -112,13 +112,14 @@ function onTakeSelfie() {
     $$('selfie-preview-img').src = selfieDataUrl;
     $$('selfie-preview-wrap').classList.remove('hidden');
     $$('btn-take-selfie').classList.add('hidden');
-    $$('selfie-video').style.display = 'none';
+    $$('post-selfie-actions').classList.remove('hidden');
 }
 
 function onRetake() {
     selfieDataUrl = null;
     $$('selfie-preview-wrap').classList.add('hidden');
     $$('btn-take-selfie').classList.remove('hidden');
+    $$('post-selfie-actions').classList.add('hidden');
     $$('selfie-video').style.display = 'block';
 }
 
