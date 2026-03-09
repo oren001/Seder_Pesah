@@ -53,23 +53,10 @@ io.on('connection', (socket) => {
         };
         console.log(`Room created: ${roomId}`);
 
-        // Start AI generation for first page (Kadesh) ONLY
-        const { generateImage } = require('./leonardo');
-        const kadeshPrompt = require('./leonardo').HAGGADAH_PROMPTS[0].prompt;
-
-        generateImage(kadeshPrompt, []).then(imageUrl => {
-            if (imageUrl && rooms[roomId]) {
-                rooms[roomId].images[0] = imageUrl;
-                io.to(roomId).emit('image-ready', { pageIndex: 0, imageUrl });
-            }
-        }).catch(err => console.error('[AI] Kadesh generation failed:', err.message));
-
         callback({ roomId });
     });
 
-    socket.on('join-room', (data, callback) => {
-        const { roomId, photo } = typeof data === 'object' ? data : { roomId: data, photo: null };
-
+    socket.on('join-room', ({ roomId, me: userMe }) => {
         if (!rooms[roomId]) {
             rooms[roomId] = {
                 id: roomId,
@@ -80,43 +67,30 @@ io.on('connection', (socket) => {
             };
         }
 
-        socket.join(roomId);
-        socket.roomId = roomId;
-
-        const participant = { id: socket.id, photo: photo || null };
+        const photo = userMe?.photo;
+        const participant = { id: socket.id, photo };
         rooms[roomId].participants.push(participant);
+        socket.join(roomId);
+        socket.roomId = roomId; // Store roomId on socket for disconnect
 
         console.log(`User ${socket.id} joined room ${roomId}`);
 
-        callback({
-            success: true,
-            roomId,
-            participant,
-            currentPage: rooms[roomId].currentPage,
-            images: rooms[roomId].images,
-            tasks: rooms[roomId].tasks
-        });
-
         io.to(roomId).emit('room-updated', {
             participants: rooms[roomId].participants,
-            currentPage: rooms[roomId].currentPage
+            currentPage: rooms[roomId].currentPage,
+            images: rooms[roomId].images, // Send existing images
+            tasks: rooms[roomId].tasks // Send existing tasks
         });
+    });
 
-        // Auto-trigger NB PRO (Group Generation) if this is the first participant with a photo
-        if (photo && rooms[roomId]) {
-            const hasPersonalized = rooms[roomId].isPersonalized || false;
-            if (!hasPersonalized) {
-                rooms[roomId].isPersonalized = true; // Mark to avoid duplicate triggers
-                setTimeout(() => {
-                    console.log(`[AI] Auto-triggering NB PRO for room ${roomId}`);
-                    const { generateNanoTest } = require('./leonardo');
-                    generateNanoTest(roomId, io, rooms).catch(err => {
-                        console.error('[AI] Auto-NB-PRO failed:', err.message);
-                        rooms[roomId].isPersonalized = false; // Allow retry on next join
-                    });
-                }, 3000); // Wait 3s for more joiners
-            }
-        }
+    socket.on('generate-page', ({ roomId, pageIndex }) => {
+        if (!rooms[roomId]) return;
+        console.log(`[AI] Manual generation triggered for room ${roomId}, page ${pageIndex}`);
+        const { generatePersonalizedPage } = require('./leonardo');
+        generatePersonalizedPage(roomId, pageIndex, io, rooms).catch(err => {
+            console.error('[AI] Generation failed:', err.message);
+            io.to(roomId).emit('ai-error', { message: 'שגיאת מערכת: ' + err.message, pageIndex });
+        });
     });
 
     socket.on('change-page', ({ roomId, pageIndex }) => {

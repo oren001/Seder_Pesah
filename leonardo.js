@@ -56,7 +56,7 @@ async function pollForImage(generationId) {
     return null;
 }
 
-async function generateImage(prompt, initImageIds = null) {
+async function generateImage(prompt, initImageIds = null, onStatus = null) {
     const body = {
         model: NB_PRO_MODEL,
         parameters: {
@@ -81,6 +81,8 @@ async function generateImage(prompt, initImageIds = null) {
         };
     }
 
+    if (onStatus) onStatus('שולח בקשה למודל (V2)...');
+
     const res = await fetch(`${LEONARDO_V2_URL}/generations`, {
         method: 'POST',
         headers: {
@@ -102,7 +104,32 @@ async function generateImage(prompt, initImageIds = null) {
         console.error('[Leonardo Error] Full Data:', JSON.stringify(data));
         throw new Error('No generationId returned from Leonardo');
     }
-    return pollForImage(generationId);
+
+    if (onStatus) onStatus('הייצור החל, ממתין לתמונה...');
+    return pollForImage(generationId, onStatus);
+}
+
+async function pollForImage(generationId, onStatus = null) {
+    const MAX_ATTEMPTS = 40;
+    for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        await sleep(3000);
+        if (onStatus) onStatus(`בודק סטטוס... (${i + 1}/${MAX_ATTEMPTS})`);
+        try {
+            const res = await fetch(`${LEONARDO_API_URL}/generations/${generationId}`, {
+                headers: { Authorization: `Bearer ${LEONARDO_API_KEY}` }
+            });
+            const data = await res.json();
+            const gen = data.generations_by_pk;
+            if (gen?.status === 'COMPLETE' && gen.generated_images?.length > 0) {
+                return gen.generated_images[0].url;
+            }
+            if (gen?.status === 'FAILED') {
+                console.error('[AI] Generation failed:', JSON.stringify(data));
+                throw new Error('Leonardo fails to generate image');
+            }
+        } catch (err) { console.error('Poll error:', err.message); }
+    }
+    throw new Error('Timeout: הייצור לקח יותר מדי זמן');
 }
 
 async function uploadInitImage(base64Data) {
@@ -168,40 +195,58 @@ async function uploadInitImage(base64Data) {
     }
 }
 
-async function generateAllImages(roomId, io, rooms) {
-    // This is now disabled to save credits. Individual pages or Nano Test should be used.
-    console.log(`[AI] generateAllImages called for ${roomId} - DISABLED to save credits.`);
-}
-
-async function generateNanoTest(roomId, io, rooms) {
+async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
     if (!rooms[roomId]) return;
     try {
-        console.log(`[AI] NANO TEST PRO for room ${roomId}`);
+        console.log(`[AI] Personalized Page Generation for room ${roomId}, page ${pageIndex}`);
+        io.to(roomId).emit('ai-status', { message: 'מתחיל תהליך עיבוד (NB PRO)...', pageIndex });
 
         // 1. Upload all valid participant photos
         const initImageIds = [];
-        for (const p of rooms[roomId].participants) {
-            if (p.photo) {
+        const participantsWithPhotos = rooms[roomId].participants.filter(p => p.photo);
+
+        if (participantsWithPhotos.length === 0) {
+            io.to(roomId).emit('ai-status', { message: 'אין תמונות משתתפים, מייצר תמונה כללית...', pageIndex });
+        } else {
+            io.to(roomId).emit('ai-status', {
+                message: `מעלה ${participantsWithPhotos.length} תמונות משתתפים ל-Leonardo...`,
+                pageIndex
+            });
+            for (const p of participantsWithPhotos) {
                 const id = await uploadInitImage(p.photo);
-                if (id) initImageIds.push(id);
+                if (id) {
+                    initImageIds.push(id);
+                } else {
+                    console.error('[AI] Failed to upload a participant photo');
+                }
             }
         }
 
-        if (initImageIds.length === 0) throw new Error('No participant photos found');
+        // 2. Setup Prompt
+        const section = HAGGADAH_PROMPTS[pageIndex];
+        if (!section) throw new Error('Invalid page index');
 
-        const kadeshSection = HAGGADAH_PROMPTS[0];
-        const imageUrl = await generateImage(kadeshSection.prompt, initImageIds);
+        io.to(roomId).emit('ai-status', { message: 'אוסף נתונים ושולח פקודת ייצור...', pageIndex });
+
+        // 3. Generate Image
+        const imageUrl = await generateImage(section.prompt, initImageIds, (statusMsg) => {
+            io.to(roomId).emit('ai-status', { message: statusMsg, pageIndex });
+        });
 
         if (imageUrl && rooms[roomId]) {
-            rooms[roomId].images[0] = imageUrl;
-            io.to(roomId).emit('image-ready', { pageIndex: 0, imageUrl });
-            console.log(`[AI] NANO TEST PRO Page 0 ready with ${initImageIds.length} characters.`);
+            rooms[roomId].images[pageIndex] = imageUrl;
+            io.to(roomId).emit('image-ready', { pageIndex, imageUrl });
+            console.log(`[AI] Page ${pageIndex} ready for room ${roomId}`);
+            // Status overlay will be cleared by app.js on image-ready
+        } else {
+            throw new Error('לא התקבלה תמונה מ-Leonardo');
         }
     } catch (err) {
-        console.error(`[AI] NANO TEST failed:`, err.message);
+        console.error(`[AI] Generation failed:`, err.message);
+        io.to(roomId).emit('ai-error', { message: err.message, pageIndex });
     }
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-module.exports = { HAGGADAH_PROMPTS, generateImage, generateAllImages, generateNanoTest };
+module.exports = { HAGGADAH_PROMPTS, generateImage, generatePersonalizedPage };

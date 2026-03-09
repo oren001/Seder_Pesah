@@ -102,14 +102,38 @@ async function setupSocket() {
         if (pageIndex === currentPage) renderPage();
     });
 
-    socket.on('ai-status', (data) => {
-        showToast(data.message);
+    socket.on('ai-status', ({ message, pageIndex }) => {
+        const overlay = document.getElementById(`status-overlay-${pageIndex}`);
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            overlay.classList.remove('error');
+            overlay.querySelector('.status-text').innerText = 'מעבד...';
+            overlay.querySelector('.status-log').innerText = message;
+        }
     });
 
-    socket.on('ai-error', (data) => {
-        showToast('❌ ' + data.message, true);
-        console.error('AI Error:', data.message);
+    socket.on('ai-error', ({ message, pageIndex }) => {
+        const overlay = document.getElementById(`status-overlay-${pageIndex}`);
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            overlay.classList.add('error');
+            overlay.querySelector('.status-text').innerText = 'שגיאה בייצור';
+            overlay.querySelector('.status-log').innerText = message;
+        }
+        console.error('AI Error:', message);
     });
+
+    function triggerPageGeneration(pageIndex) {
+        if (!currentRoomId) return;
+        const overlay = document.getElementById(`status-overlay-${pageIndex}`);
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            overlay.classList.remove('error');
+            overlay.querySelector('.status-text').innerText = 'מתחיל...';
+            overlay.querySelector('.status-log').innerText = 'שולח בקשה לשרת...';
+        }
+        socket.emit('generate-page', { roomId: currentRoomId, pageIndex });
+    }
 }
 
 // --- Wake Lock ---
