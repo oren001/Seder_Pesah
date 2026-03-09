@@ -52,12 +52,24 @@ function init() {
     // Initial check for room in URL
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room');
+
+    // Load persisted selfie
+    const savedSelfie = localStorage.getItem('haggadah_selfie');
+    if (savedSelfie) {
+        selfieDataUrl = savedSelfie;
+    }
+
     if (roomFromUrl) {
-        pendingRoomId = roomFromUrl; // Use pendingRoomId for consistency with existing flow
-        showScreen('selfie'); // Original screen name
-        startCamera();
+        pendingRoomId = roomFromUrl;
+        if (selfieDataUrl) {
+            // If we have both, just join
+            joinRoom(roomFromUrl);
+        } else {
+            showScreen('selfie');
+            startCamera();
+        }
     } else {
-        showScreen('lobby'); // Original lobby screen display
+        showScreen('lobby');
     }
 }
 
@@ -196,6 +208,7 @@ function onTakeSelfie() {
     ctx.drawImage(video, (SIZE - drawW) / 2, (SIZE - drawH) / 2, drawW, drawH);
 
     selfieDataUrl = canvas.toDataURL('image/jpeg', 0.5);
+    localStorage.setItem('haggadah_selfie', selfieDataUrl);
 
     $$('selfie-preview-img').src = selfieDataUrl;
     $$('selfie-preview-wrap').classList.remove('hidden');
@@ -205,6 +218,7 @@ function onTakeSelfie() {
 
 function onRetake() {
     selfieDataUrl = null;
+    localStorage.removeItem('haggadah_selfie');
     $$('selfie-preview-wrap').classList.add('hidden');
     $$('btn-take-selfie').classList.remove('hidden');
     $$('post-selfie-actions').classList.add('hidden');
