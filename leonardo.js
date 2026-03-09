@@ -99,9 +99,11 @@ async function generateImage(prompt, initImageIds = null, onStatus = null) {
         throw new Error(`Leonardo API error: ${res.status}`);
     }
 
-    const generationId = data.sdGenerationJob?.generationId;
+    // V2 Response structure: data.generate.generationId
+    const generationId = data.generate?.generationId || data.sdGenerationJob?.generationId;
+
     if (!generationId) {
-        console.error('[Leonardo Error] Full Data:', JSON.stringify(data));
+        console.error('[Leonardo Error] Unexpected Response Structure:', JSON.stringify(data));
         throw new Error('No generationId returned from Leonardo');
     }
 
@@ -170,9 +172,11 @@ async function uploadInitImage(base64Data) {
         const buffer = Buffer.from(base64Data.split(',')[1], 'base64');
 
         // S3 CRITICAL: The 'file' field MUST be last
+        // We use the buffer directly. Some S3 implementations prefer a specific filename extension.
         s3Form.append('file', buffer, {
-            filename: 'selfie.jpg',
-            contentType: 'image/jpeg'
+            filename: 'image.jpg',
+            contentType: 'image/jpeg',
+            knownLength: buffer.length
         });
 
         const s3Res = await fetch(url, {
