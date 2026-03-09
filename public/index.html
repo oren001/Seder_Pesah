@@ -58,8 +58,26 @@
                 <span class="viewers-count"><span id="count-number">1</span> כאן</span>
             </div>
 
-            <button id="btn-copy-link" class="btn outline small">הזמן חברים</button>
+            <div class="header-actions">
+                <button id="btn-toggle-tasks" class="btn outline small">📋 משימות</button>
+                <button id="btn-copy-link" class="btn outline small">הזמן חברים</button>
+            </div>
         </header>
+
+        <!-- Tasks Sidebar -->
+        <div id="task-sidebar" class="sidebar hidden">
+            <div class="sidebar-header">
+                <h3>📋 רשימת משימות</h3>
+                <button id="btn-close-tasks" class="btn-close">&times;</button>
+            </div>
+            <div class="task-input-wrap">
+                <input type="text" id="input-new-task" placeholder="הוסף משימה לתאום...">
+                <button id="btn-add-task" class="btn primary small">+</button>
+            </div>
+            <div id="task-list" class="task-list">
+                <!-- Tasks go here -->
+            </div>
+        </div>
 
         <!-- Haggadah text area -->
         <main class="haggadah-container">

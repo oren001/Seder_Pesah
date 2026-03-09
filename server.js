@@ -26,7 +26,8 @@ io.on('connection', (socket) => {
             id: roomId,
             currentPage: 0,
             participants: [],
-            images: {} // Cache for AI images
+            images: {}, // Cache for AI images
+            tasks: [] // Synchronized task board
         };
         console.log(`Room created: ${roomId}`);
 
@@ -40,7 +41,7 @@ io.on('connection', (socket) => {
         const { roomId, photo } = typeof data === 'object' ? data : { roomId: data, photo: null };
 
         if (!rooms[roomId]) {
-            rooms[roomId] = { id: roomId, currentPage: 0, participants: [], images: {} };
+            rooms[roomId] = { id: roomId, currentPage: 0, participants: [], images: {}, tasks: [] };
         }
 
         socket.join(roomId);
@@ -56,7 +57,8 @@ io.on('connection', (socket) => {
             roomId,
             participant,
             currentPage: rooms[roomId].currentPage,
-            images: rooms[roomId].images
+            images: rooms[roomId].images,
+            tasks: rooms[roomId].tasks
         });
 
         io.to(roomId).emit('room-updated', {
@@ -70,6 +72,29 @@ io.on('connection', (socket) => {
         rooms[roomId].currentPage = pageIndex;
         socket.to(roomId).emit('page-changed', { currentPage: pageIndex });
         console.log(`Room ${roomId} -> page ${pageIndex}`);
+    });
+
+    // --- Task Board Events ---
+    socket.on('add-task', ({ roomId, text }) => {
+        if (!rooms[roomId]) return;
+        const task = { id: Date.now().toString(), text, completed: false };
+        rooms[roomId].tasks.push(task);
+        io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
+    });
+
+    socket.on('toggle-task', ({ roomId, taskId }) => {
+        if (!rooms[roomId]) return;
+        const task = rooms[roomId].tasks.find(t => t.id === taskId);
+        if (task) {
+            task.completed = !task.completed;
+            io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
+        }
+    });
+
+    socket.on('delete-task', ({ roomId, taskId }) => {
+        if (!rooms[roomId]) return;
+        rooms[roomId].tasks = rooms[roomId].tasks.filter(t => t.id !== taskId);
+        io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
     });
 
     socket.on('disconnect', () => {

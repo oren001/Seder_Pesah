@@ -16,6 +16,8 @@ const screens = {
     room: $$('room-screen')
 };
 
+let roomTasks = [];
+
 // --- Init ---
 async function init() {
     socket = io();
@@ -29,9 +31,21 @@ async function init() {
     $$('btn-prev').addEventListener('click', () => changePage(-1));
     $$('btn-next').addEventListener('click', () => changePage(1));
 
+    // Task Sidebar
+    $$('btn-toggle-tasks').addEventListener('click', toggleTasks);
+    $$('btn-close-tasks').addEventListener('click', toggleTasks);
+    $$('btn-add-task').addEventListener('click', addTask);
+    $$('input-new-task').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addTask();
+    });
+
     // Socket listeners
     socket.on('room-updated', onRoomUpdated);
     socket.on('page-changed', onPageChanged);
+    socket.on('tasks-updated', (tasks) => {
+        roomTasks = tasks;
+        renderTasks();
+    });
     socket.on('image-ready', ({ pageIndex, imageUrl }) => {
         pageImages[pageIndex] = imageUrl;
         if (pageIndex === currentPage) renderPage();
@@ -130,11 +144,13 @@ function joinRoom(roomId) {
             me = response.participant;
             currentPage = response.currentPage;
             if (response.images) Object.assign(pageImages, response.images);
+            if (response.tasks) roomTasks = response.tasks;
 
             $$('total-pages').textContent = HAGGADAH.length;
             updateUrlParam('room', currentRoomId);
             showScreen('room');
             renderPage();
+            renderTasks();
         } else {
             alert('החדר לא נמצא.');
             window.location.href = '/';
@@ -206,6 +222,46 @@ function changePage(delta) {
         socket.emit('change-page', { roomId: currentRoomId, pageIndex: next });
         renderPage();
     }
+}
+
+// --- Task Board ---
+function toggleTasks() {
+    $$('task-sidebar').classList.toggle('hidden');
+}
+
+function addTask() {
+    const input = $$('input-new-task');
+    const text = input.value.trim();
+    if (!text) return;
+    socket.emit('add-task', { roomId: currentRoomId, text });
+    input.value = '';
+}
+
+function toggleTask(taskId) {
+    socket.emit('toggle-task', { roomId: currentRoomId, taskId });
+}
+
+function deleteTask(taskId) {
+    socket.emit('delete-task', { roomId: currentRoomId, taskId });
+}
+
+function renderTasks() {
+    const list = $$('task-list');
+    list.innerHTML = '';
+
+    roomTasks.forEach(task => {
+        const item = document.createElement('div');
+        item.className = 'task-item' + (task.completed ? ' completed' : '');
+
+        item.innerHTML = `
+            <div class="task-checkbox" onclick="toggleTask('${task.id}')">
+                ${task.completed ? '✓' : ''}
+            </div>
+            <div class="task-text">${task.text}</div>
+            <button class="btn-delete-task" onclick="deleteTask('${task.id}')">&times;</button>
+        `;
+        list.appendChild(item);
+    });
 }
 
 // --- Utils ---
