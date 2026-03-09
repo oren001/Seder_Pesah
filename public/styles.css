@@ -551,3 +551,20 @@ body {
     display: flex;
     gap: 0.5rem;
 }
+/* --- Sidebar Footer --- */
+.sidebar-footer {
+    padding: 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    background: #fffcf8;
+}
+
+.tiny-text {
+    font-size: 0.75rem;
+    color: var(--light-text);
+    margin-top: 0.5rem;
+    text-align: center;
+}
+
+.w-100 {
+    width: 100%;
+}

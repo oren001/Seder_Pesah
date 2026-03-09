@@ -35,6 +35,7 @@ async function init() {
     $$('btn-toggle-tasks').addEventListener('click', toggleTasks);
     $$('btn-close-tasks').addEventListener('click', toggleTasks);
     $$('btn-add-task').addEventListener('click', addTask);
+    $$('btn-nano-test').addEventListener('click', triggerNanoTest);
     $$('input-new-task').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') addTask();
     });
@@ -247,6 +248,7 @@ function deleteTask(taskId) {
 
 function renderTasks() {
     const list = $$('task-list');
+    if (!list) return;
     list.innerHTML = '';
 
     roomTasks.forEach(task => {
@@ -262,6 +264,15 @@ function renderTasks() {
         `;
         list.appendChild(item);
     });
+}
+
+function triggerNanoTest() {
+    if (!currentRoomId || !me || !me.photo) {
+        showToast('יש להצטרף לחדר עם תמונה קודם.');
+        return;
+    }
+    showToast('יוצר תמונה מותאמת אישית (NANO BANANA)...');
+    socket.emit('test-nano-banana', { roomId: currentRoomId, photo: me.photo });
 }
 
 // --- Utils ---

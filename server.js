@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const { generateAllImages } = require('./leonardo');
+const { generateAllImages, generateNanoTest } = require('./leonardo');
 
 const app = express();
 const server = http.createServer(app);
@@ -95,6 +95,12 @@ io.on('connection', (socket) => {
         if (!rooms[roomId]) return;
         rooms[roomId].tasks = rooms[roomId].tasks.filter(t => t.id !== taskId);
         io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
+    });
+
+    socket.on('test-nano-banana', ({ roomId, photo }) => {
+        if (!rooms[roomId] || !photo) return;
+        console.log(`[AI] Nano Banana Test triggered for room ${roomId}`);
+        generateNanoTest(roomId, photo, io, rooms);
     });
 
     socket.on('disconnect', () => {
