@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const fs = require('fs');
 const { generateAllImages, generateNanoTest } = require('./leonardo');
 const { OAuth2Client } = require('google-auth-library');
 
@@ -19,7 +20,7 @@ try {
     if (fs.existsSync(vPath)) {
         const vData = JSON.parse(fs.readFileSync(vPath, 'utf8'));
         serverVersion = vData.version;
-        console.log(`[Version] Server started with version: \${serverVersion}`);
+        console.log(`[Version] Server started with version: ${serverVersion}`);
     }
 } catch (e) { console.error('Failed to load version:', e); }
 
@@ -32,7 +33,6 @@ function generateId() {
     return Math.random().toString(36).substring(2, 8);
 }
 
-const fs = require('fs');
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');

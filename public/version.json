@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1542",
-    "notes": "Fixed redirect loop, TypeError, and PWA meta tags."
+    "version": "1.0.1544",
+    "notes": "Fixed server-side version detection and removed automatic refresh."
 }

@@ -266,17 +266,12 @@ function notifyNewVersion() {
 
     const t = $$('toast');
     if (t) {
-        t.innerHTML = '✨ <b>גרסה חדשה מוכנה!</b> <br> רענון אוטומטי בעוד 5 שניות... <br> <a href="javascript:location.reload()" style="color:#ffd700;text-decoration:underline;">לחץ כאן לרענון עכשיו</a>';
+        t.innerHTML = '✨ <b>גרסה חדשה מוכנה!</b> <br> מומלץ לרענן את העמוד כדי לקבל את העדכונים האחרונים. <br> <a href="javascript:location.reload()" style="color:#ffd700;text-decoration:underline;">לחץ כאן לרענון עכשיו</a>';
         t.classList.remove('hidden');
         t.classList.add('show');
     } else {
         console.warn('Toast element missing for version notification');
     }
-
-    // Force reload after 5 seconds to bypass cache issues
-    setTimeout(() => {
-        location.reload(true);
-    }, 5000);
 }
 
 // --- Camera ---
