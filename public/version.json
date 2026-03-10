@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1517",
-    "notes": "Camera distortion fix, language toggle fix, and version notification polish."
+    "version": "1.0.1534",
+    "notes": "Triggering version notification. PWA and Google Login polish."
 }
