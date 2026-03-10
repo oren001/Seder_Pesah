@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1568",
-    "notes": "Completely removed Google GIS script to eliminate 401/403 authorization errors for good."
+    "version": "1.0.1570",
+    "notes": "Fixed persistent caching issue by updating sw.js with Network First strategy for index.html. Completely removed Google GIS."
 }
