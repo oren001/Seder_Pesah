@@ -33,7 +33,7 @@ function init() {
 
     // Start version polling
     checkVersion();
-    setInterval(checkVersion, 60000); // Check every minute
+    setInterval(checkVersion, 30000); // Check every 30 seconds for faster feedback during dev
 
     // Add event listeners
     $$('btn-create-room').addEventListener('click', onCreateRoom);
@@ -181,6 +181,11 @@ async function checkVersion() {
         const res = await fetch('version.json?t=' + Date.now());
         if (!res.ok) return;
         const data = await res.json();
+
+        // Show version in sidebar footer if it exists
+        const versionEl = document.getElementById('version-display');
+        if (versionEl) versionEl.textContent = `גרסה: ${data.version}`;
+
         if (currentVersion && currentVersion !== data.version) {
             notifyNewVersion();
         }
@@ -191,12 +196,15 @@ async function checkVersion() {
 }
 
 function notifyNewVersion() {
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    // 📳 Strong Morse-code vibration pattern
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
+
+    // 🔔 Distinct alert sound
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
     audio.play().catch(() => { });
 
     const t = $$('toast');
-    t.innerHTML = '✨ גרסה חדשה זמינה! <a href="javascript:location.reload()" style="color:#ffd700;text-decoration:underline;">לחץ כאן לרענון</a>';
+    t.innerHTML = '✨ <b>גרסה חדשה מוכנה לטסטינג!</b> <br> <a href="javascript:location.reload()" style="color:#ffd700;text-decoration:underline;">לחץ כאן לרענון המערכת</a>';
     t.classList.remove('hidden');
     t.classList.add('show');
 }
