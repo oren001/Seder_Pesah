@@ -437,6 +437,44 @@ body {
     font-weight: 800;
     color: var(--primary);
     font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.btn-sync {
+    background: var(--primary);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.btn-sync:hover {
+    transform: rotate(180deg) scale(1.1);
+}
+
+.btn-sync.hidden {
+    display: none;
+}
+
+.beta-badge {
+    background: #d4af37;
+    color: #2f2721;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.65em;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .nav-btn {

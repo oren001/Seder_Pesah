@@ -10,6 +10,10 @@ let roomState = null;
 let currentVersion = null;
 let wakeLock = null;
 
+// --- Staging State ---
+let isSyncingWithLeader = true;
+let leaderPage = 0;
+
 // --- DOM refs ---
 const $$ = id => document.getElementById(id);
 
@@ -37,8 +41,9 @@ function init() {
     $$('btn-retake').addEventListener('click', onRetake);
     $$('btn-join-with-photo').addEventListener('click', onJoinWithPhoto);
     $$('btn-copy-link').addEventListener('click', onCopyLink);
-    $$('btn-prev').addEventListener('click', () => changePage(-1)); // Original handler
-    $$('btn-next').addEventListener('click', () => changePage(1)); // Original handler
+    $$('btn-prev').addEventListener('click', () => changePage(-1));
+    $$('btn-next').addEventListener('click', () => changePage(1));
+    $$('btn-sync').addEventListener('click', onSyncWithLeader);
 
     // Task Sidebar
     $$('btn-toggle-tasks').addEventListener('click', toggleTasks);
@@ -81,15 +86,23 @@ async function setupSocket() {
 
     socket.on('room-updated', (data) => {
         renderParticipants(data.participants);
-        if (data.currentPage !== currentPage) {
+        leaderPage = data.currentPage;
+        if (isSyncingWithLeader && data.currentPage !== currentPage) {
             currentPage = data.currentPage;
             renderPage();
         }
     });
 
     socket.on('page-changed', (data) => {
-        currentPage = data.currentPage;
-        renderPage();
+        leaderPage = data.currentPage;
+        if (isSyncingWithLeader) {
+            currentPage = data.currentPage;
+            renderPage();
+            showToast(`המנחה עבר לעמוד ${currentPage + 1}`);
+        } else {
+            // Update UI to show we are out of sync
+            renderPage();
+        }
     });
 
     socket.on('tasks-updated', (tasks) => {
@@ -270,6 +283,7 @@ function joinRoom(roomId) {
         if (response.success) {
             currentRoomId = response.roomId;
             me = response.participant;
+            leaderPage = response.currentPage;
             currentPage = response.currentPage;
             if (response.images) Object.assign(pageImages, response.images);
             if (response.tasks) roomTasks = response.tasks;
@@ -375,6 +389,15 @@ function renderPage() {
         $$('current-page-num').textContent = currentPage + 1;
         $$('btn-prev').disabled = currentPage === 0;
         $$('btn-next').disabled = currentPage === HAGGADAH.length - 1;
+
+        // Sync button visibility
+        const syncBtn = $$('btn-sync');
+        if (!isSyncingWithLeader || currentPage !== leaderPage) {
+            syncBtn.classList.remove('hidden');
+        } else {
+            syncBtn.classList.add('hidden');
+        }
+
         el.style.opacity = '1';
     }, 180);
 }
@@ -382,10 +405,27 @@ function renderPage() {
 function changePage(delta) {
     const next = currentPage + delta;
     if (next >= 0 && next < HAGGADAH.length) {
+        const wasSyncing = isSyncingWithLeader;
+
+        // If we move manually, we stop following (Free Browsing)
+        // UNLESS we want to Lead. For now, manual move = stop following.
+        isSyncingWithLeader = false;
         currentPage = next;
-        socket.emit('change-page', { roomId: currentRoomId, pageIndex: next });
+
+        // If we WERE syncing, we also update the server so others can follow
+        if (wasSyncing) {
+            socket.emit('change-page', { roomId: currentRoomId, pageIndex: next });
+        }
+
         renderPage();
     }
+}
+
+function onSyncWithLeader() {
+    isSyncingWithLeader = true;
+    currentPage = leaderPage;
+    renderPage();
+    showToast('חזרת לסנכרון עם המנחה');
 }
 
 // --- Task Board ---

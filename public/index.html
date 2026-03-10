@@ -57,7 +57,10 @@
 
         <!-- Header -->
         <header class="room-header">
-            <div class="brand">🍷 פסח יחד</div>
+            <div class="brand">
+                <div class="beta-badge">BETA</div>
+                🍷 פסח יחד
+            </div>
 
             <div class="participants-strip">
                 <div id="participants-list" class="avatars-list"></div>
@@ -101,6 +104,7 @@
 
             <div class="progress-pill">
                 <span id="current-page-num">1</span> / <span id="total-pages">1</span>
+                <button id="btn-sync" class="btn-sync hidden" title="חזור לסנכרון עם המנחה">🔄</button>
             </div>
 
             <button id="btn-next" class="btn nav-btn primary">הבא →</button>
