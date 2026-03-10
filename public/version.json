@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1565",
-    "notes": "Prioritized Guest Login and hid broken Google Auth button to avoid 401/403 errors."
+    "version": "1.0.1568",
+    "notes": "Completely removed Google GIS script to eliminate 401/403 authorization errors for good."
 }
