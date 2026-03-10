@@ -10,7 +10,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800;900&family=Assistant:wght@300;400;600&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260310_1552">
+    <link rel="stylesheet" href="styles.css?v=20260310_1558">
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -38,11 +38,23 @@
                 </div>
                 <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue"
                     data-text="signin_with" data-size="large" data-logo_alignment="left"></div>
-                <p class="tiny-text" style="margin-top: 1.5rem; opacity: 0.6;">חיבור מאובטח • ללא סיסמה</p>
+
+                <div class="guest-fallback"
+                    style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem;">
+                    <p class="tiny-text" style="margin-bottom: 1rem;">או המשך כאורח:</p>
+                    <input type="text" id="guest-name" placeholder="הכנס שם..." class="input-field"
+                        style="margin-bottom: 1rem; width: 80%; text-align: center;">
+                    <button id="btn-guest-login" class="btn secondary">המשך ללא חשבון גוגל 🧞‍♂️</button>
+                </div>
             </div>
 
             <div id="lobby-actions-section" class="lobby-actions hidden">
                 <button id="btn-create-room" class="btn primary large">צור חדר חדש ← 🍷</button>
+                <div style="margin-top: 1.5rem;">
+                    <button id="btn-sign-out" class="btn tiny"
+                        style="opacity: 0.6; background: none; border: 1px solid rgba(255,255,255,0.2);">החלף משתמש /
+                        התנתק 🚪</button>
+                </div>
             </div>
         </div>
     </div>
@@ -169,8 +181,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
-    <script src="haggadah_data.js?v=20260310_1552"></script>
-    <script src="app.js?v=20260310_1552"></script>
+    <script src="haggadah_data.js?v=20260310_1558"></script>
+    <script src="app.js?v=20260310_1558"></script>
 </body>
 
 </html>

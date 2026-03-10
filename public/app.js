@@ -53,6 +53,24 @@ function init() {
     $$('btn-prev').addEventListener('click', () => changePage(-1));
     $$('btn-next').addEventListener('click', () => changePage(1));
     $$('btn-sync').addEventListener('click', onSyncWithLeader);
+
+    const btnGuest = $$('btn-guest-login');
+    if (btnGuest) btnGuest.addEventListener('click', onGuestLogin);
+
+    // Auto-login from storage
+    const storedUser = localStorage.getItem('haggadah-user');
+    if (storedUser) {
+        me = JSON.parse(storedUser);
+        console.log('[Auth] Restored user:', me.name);
+        const authSection = document.getElementById('lobby-auth-section');
+        const actionsSection = document.getElementById('lobby-actions-section');
+        if (authSection) authSection.classList.add('hidden');
+        if (actionsSection) actionsSection.classList.remove('hidden');
+    }
+
+    const btnSignOut = $$('btn-sign-out');
+    if (btnSignOut) btnSignOut.addEventListener('click', onSignOut);
+
     $$('check-lead-mode').addEventListener('change', () => {
         if ($$('check-lead-mode').checked) {
             isSyncingWithLeader = true; // If you become leader, you are by definition 'synced' with yourself
@@ -274,6 +292,29 @@ function notifyNewVersion() {
     } else {
         console.warn('Toast element missing for version notification');
     }
+}
+
+function onGuestLogin() {
+    const nameInput = document.getElementById('guest-name');
+    const name = nameInput.value.trim() || 'אורח';
+
+    me = {
+        id: 'guest-' + Math.random().toString(36).substring(2, 9),
+        name: name,
+        picture: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`
+    };
+
+    localStorage.setItem('haggadah-user', JSON.stringify(me));
+    showToast(`שלום ${name}! 😄`);
+
+    document.getElementById('lobby-auth-section').classList.add('hidden');
+    document.getElementById('lobby-actions-section').classList.remove('hidden');
+}
+
+function onSignOut() {
+    localStorage.removeItem('haggadah-user');
+    me = null;
+    location.reload(); // Simplest way to reset all states and show login again
 }
 
 // --- Camera ---

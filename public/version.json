@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1552",
-    "notes": "Fixed toast clickability and changed refresh link to a robust button."
+    "version": "1.0.1558",
+    "notes": "Added Guest Login fallback and Sign Out functionality with auto-login persistence."
 }
