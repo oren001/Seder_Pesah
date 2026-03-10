@@ -334,9 +334,11 @@ function onGuestLogin() {
 }
 
 function onSignOut() {
-    localStorage.removeItem('haggadah-user');
+    console.log('[Auth] Signing out... clearing state');
+    localStorage.clear();
     me = null;
-    location.reload(); // Simplest way to reset all states and show login again
+    currentRoomId = null;
+    window.location.href = '/'; // Hard redirect to clear everything and room param
 }
 
 // --- Camera ---

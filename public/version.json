@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1572",
-    "notes": "Added robust reconnection logic to re-join room automatically. Enhanced init logging to debug page refresh issues."
+    "version": "1.0.1575",
+    "notes": "Fixed Sign Out logic: now clears all localStorage and redirects to / to ensure room state is also reset."
 }
