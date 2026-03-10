@@ -88,7 +88,12 @@ io.on('connection', (socket) => {
             currentPage: 0,
             participants: [],
             images: {}, // Cache for AI images
-            tasks: persistedTasks[roomId] || [] // Synchronized task board
+            tasks: persistedTasks[roomId] || [
+                "🍷 קדש", "💧 ורחץ", "🥬 כרפס", "🥪 יחץ",
+                "📖 מגיד", "🧼 רחצה", "🥖 מוציא מצה", "🌿 מרור",
+                "🌯 כורך", "🍽️ שולחן עורך", "🍦 צפון", "🙏 ברך",
+                "🎶 הלל", "✅ נרצה"
+            ]
         };
         console.log(`Room created: ${roomId}`);
 
@@ -102,7 +107,12 @@ io.on('connection', (socket) => {
                 currentPage: 0,
                 participants: [],
                 images: {},
-                tasks: persistedTasks[roomId] || []
+                tasks: persistedTasks[roomId] || [
+                    "🍷 קדש", "💧 ורחץ", "🥬 כרפס", "🥪 יחץ",
+                    "📖 מגיד", "🧼 רחצה", "🥖 מוציא מצה", "🌿 מרור",
+                    "🌯 כורך", "🍽️ שולחן עורך", "🍦 צפון", "🙏 ברך",
+                    "🎶 הלל", "✅ נרצה"
+                ]
             };
         }
 

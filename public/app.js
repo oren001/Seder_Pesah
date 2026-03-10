@@ -485,7 +485,7 @@ function renderPage() {
         el.appendChild(imgWrap);
 
         const textDiv = document.createElement('div');
-        textDiv.className = 'page-text';
+        textDiv.className = 'page-text' + (currentLanguage === 'en' ? ' ltr-mode' : '');
 
         if (page.segments && page.segments.length > 0) {
             page.segments.forEach((seg, sIdx) => {
@@ -493,6 +493,7 @@ function renderPage() {
                 span.className = 'text-segment';
                 span.id = `seg-${index}-${sIdx}`;
                 span.innerText = currentLanguage === 'he' ? seg.he : (seg.en || seg.he);
+                if (currentLanguage === 'en') span.classList.add('ltr');
                 span.onclick = () => onSegmentClick(sIdx);
                 if (highlightedSegmentIndex === sIdx) span.classList.add('highlighted');
                 textDiv.appendChild(span);

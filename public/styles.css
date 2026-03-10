@@ -519,6 +519,19 @@ body {
     display: inline-block;
 }
 
+.text-segment.ltr {
+    direction: ltr;
+    text-align: left;
+    font-family: 'Assistant', sans-serif;
+    letter-spacing: 0.2px;
+    display: inline-block;
+}
+
+.page-text.ltr-mode {
+    direction: ltr;
+    text-align: left;
+}
+
 .text-segment:hover {
     background: rgba(139, 69, 19, 0.05);
 }

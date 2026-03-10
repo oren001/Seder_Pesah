@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1544",
-    "notes": "Fixed server-side version detection and removed automatic refresh."
+    "version": "1.0.1548",
+    "notes": "Pure English transliteration, LTR mode for English, and Seder milestones seeded in tasks."
 }
