@@ -106,8 +106,15 @@ io.on('connection', (socket) => {
     socket.on('change-page', ({ roomId, pageIndex }) => {
         if (!rooms[roomId]) return;
         rooms[roomId].currentPage = pageIndex;
+        rooms[roomId].highlightedSegment = -1; // Reset highlight on page change
         socket.to(roomId).emit('page-changed', { currentPage: pageIndex });
         console.log(`Room ${roomId} -> page ${pageIndex}`);
+    });
+
+    socket.on('set-highlight', ({ roomId, pageIndex, segmentIndex }) => {
+        if (!rooms[roomId]) return;
+        rooms[roomId].highlightedSegment = segmentIndex;
+        socket.to(roomId).emit('highlight-updated', { pageIndex, segmentIndex });
     });
 
     // --- Task Board Events ---
@@ -121,7 +128,7 @@ io.on('connection', (socket) => {
         };
         rooms[roomId].tasks.push(task);
         saveTasks(roomId, rooms[roomId].tasks);
-        io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
+        io.to(roomId).emit('tasks-updated', { tasks: rooms[roomId].tasks });
     });
 
     socket.on('toggle-task', ({ roomId, taskId }) => {
@@ -130,7 +137,10 @@ io.on('connection', (socket) => {
         if (task) {
             task.completed = !task.completed;
             saveTasks(roomId, rooms[roomId].tasks);
-            io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
+            io.to(roomId).emit('tasks-updated', {
+                tasks: rooms[roomId].tasks,
+                completedTask: task.completed ? task.text : null
+            });
         }
     });
 
@@ -138,7 +148,7 @@ io.on('connection', (socket) => {
         if (!rooms[roomId]) return;
         rooms[roomId].tasks = rooms[roomId].tasks.filter(t => t.id !== taskId);
         saveTasks(roomId, rooms[roomId].tasks);
-        io.to(roomId).emit('tasks-updated', rooms[roomId].tasks);
+        io.to(roomId).emit('tasks-updated', { tasks: rooms[roomId].tasks });
     });
 
     socket.on('test-nano-banana', ({ roomId }) => {

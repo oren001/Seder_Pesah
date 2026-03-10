@@ -81,6 +81,7 @@
         <div id="task-sidebar" class="sidebar hidden">
             <div class="sidebar-header">
                 <h3>🛖 הַגָּזִיבּוֹ</h3>
+                <button id="btn-toggle-lang" class="btn outline small" onclick="toggleLanguage()">English</button>
                 <button id="btn-close-tasks" class="btn-close">&times;</button>
             </div>
 
@@ -142,6 +143,10 @@
     <div id="photo-viewer" class="photo-viewer hidden" onclick="closePhotoZoom()">
         <img id="zoomed-photo" src="" alt="Zooma">
     </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
     <script src="haggadah_data.js?v=20260310_1456"></script>
     <script src="app.js?v=20260310_1456"></script>

@@ -13,6 +13,8 @@ let wakeLock = null;
 // --- Staging State ---
 let isSyncingWithLeader = true;
 let leaderPage = 0;
+let currentLanguage = 'he'; // 'he' or 'en'
+let highlightedSegmentIndex = -1;
 
 // --- DOM refs ---
 const $$ = id => document.getElementById(id);
@@ -105,9 +107,28 @@ async function setupSocket() {
         }
     });
 
-    socket.on('tasks-updated', (tasks) => {
+    socket.on('tasks-updated', (data) => {
+        const { tasks, completedTask } = data;
         roomTasks = tasks;
         renderTasks();
+        if (completedTask) {
+            showToast(`✅ משימה הושלמה: ${completedTask}`);
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#8b4513', '#d4af37', '#fdfaf5']
+            });
+        }
+    });
+
+    socket.on('highlight-updated', (data) => {
+        if (data.pageIndex === currentPage) {
+            highlightedSegmentIndex = data.segmentIndex;
+            applyHighlight(data.segmentIndex);
+        } else {
+            highlightedSegmentIndex = -1;
+        }
     });
 
     socket.on('image-ready', ({ pageIndex, imageUrl }) => {
@@ -414,7 +435,22 @@ function renderPage() {
 
         const textDiv = document.createElement('div');
         textDiv.className = 'page-text';
-        textDiv.innerText = page.text;
+
+        if (page.segments && page.segments.length > 0) {
+            page.segments.forEach((seg, sIdx) => {
+                const span = document.createElement('span');
+                span.className = 'text-segment';
+                span.id = `seg-${index}-${sIdx}`;
+                span.innerText = currentLanguage === 'he' ? seg.he : (seg.en || seg.he);
+                span.onclick = () => onSegmentClick(sIdx);
+                if (highlightedSegmentIndex === sIdx) span.classList.add('highlighted');
+                textDiv.appendChild(span);
+                textDiv.appendChild(document.createTextNode(' '));
+            });
+        } else {
+            textDiv.innerText = page.text || "";
+        }
+
         el.appendChild(textDiv);
 
         $$('current-page-num').textContent = currentPage + 1;
@@ -615,3 +651,28 @@ function generatePlaceholderPhoto() {
 }
 
 window.onload = init;
+function onSegmentClick(sIdx) {
+    highlightedSegmentIndex = sIdx;
+    applyHighlight(sIdx);
+    socket.emit('set-highlight', {
+        roomId: currentRoomId,
+        pageIndex: currentPage,
+        segmentIndex: sIdx
+    });
+}
+
+function applyHighlight(sIdx) {
+    document.querySelectorAll('.text-segment').forEach(el => el.classList.remove('highlighted'));
+    const target = document.getElementById(`seg-${currentPage}-${sIdx}`);
+    if (target) {
+        target.classList.add('highlighted');
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function toggleLanguage() {
+    currentLanguage = currentLanguage === 'he' ? 'en' : 'he';
+    const btn = $$('btn-toggle-lang');
+    if (btn) btn.innerText = currentLanguage === 'he' ? 'English' : 'עברית';
+    renderPage();
+}
