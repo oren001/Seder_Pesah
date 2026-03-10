@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1562",
-    "notes": "Fixed task board undefined bug, improved sign-out and guest login prominence."
+    "version": "1.0.1565",
+    "notes": "Prioritized Guest Login and hid broken Google Auth button to avoid 401/403 errors."
 }
