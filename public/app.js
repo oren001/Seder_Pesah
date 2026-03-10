@@ -29,20 +29,25 @@ let roomTasks = [];
 
 // --- Init ---
 function init() {
+    const navType = performance.getEntriesByType('navigation')[0]?.type;
+    console.log(`[Init] App starting... (Navigation: ${navType}, Time: ${Date.now()})`);
+
     setupSocket();
     setupTasks();
     requestWakeLock();
 
     // Register PWA Service Worker
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(err => {
-            console.warn('SW registration failed:', err);
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+            console.log('[SW] Registered', reg.scope);
+        }).catch(err => {
+            console.warn('[SW] Registration failed:', err);
         });
     }
 
     // Start version polling
     checkVersion();
-    setInterval(checkVersion, 30000); // Check every 30 seconds for faster feedback during dev
+    setInterval(checkVersion, 60000); // Check every minute
 
     // Add event listeners
     $$('btn-create-room').addEventListener('click', onCreateRoom);
@@ -117,7 +122,21 @@ async function setupSocket() {
     socket = io();
 
     socket.on('connect', () => {
-        console.log('Connected to server');
+        console.log('[Socket] Connected to server. Socket ID:', socket.id);
+
+        // If we were already in a room, re-join automatically to restore sync
+        if (currentRoomId) {
+            console.log('[Socket] Re-connecting... re-joining room:', currentRoomId);
+            joinRoom(currentRoomId);
+        }
+    });
+
+    socket.on('disconnect', (reason) => {
+        console.warn('[Socket] Disconnected:', reason);
+        if (reason === 'io server disconnect') {
+            // the disconnection was initiated by the server, you need to reconnect manually
+            socket.connect();
+        }
     });
 
     socket.on('room-updated', (data) => {

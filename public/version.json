@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1570",
-    "notes": "Fixed persistent caching issue by updating sw.js with Network First strategy for index.html. Completely removed Google GIS."
+    "version": "1.0.1572",
+    "notes": "Added robust reconnection logic to re-join room automatically. Enhanced init logging to debug page refresh issues."
 }
