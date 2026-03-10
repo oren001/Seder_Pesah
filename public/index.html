@@ -10,19 +10,39 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800;900&family=Assistant:wght@300;400;600&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260310_1516">
+    <link rel="stylesheet" href="styles.css?v=20260310_1525">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
 
     <!-- ======== LOBBY SCREEN ======== -->
     <div id="lobby-screen" class="screen active">
-        <div class="lobby-card">
-            <div class="logo-anim">🍷</div>
-            <h1 class="logo-title">פסח יחד</h1>
-            <p class="subtitle">קריאה משותפת של הגדת אשכנז בזמן אמת</p>
-            <button id="btn-create-room" class="btn primary">→ צור חדר חדש</button>
+        <div class="lobby-card glass">
+            <div class="lobby-header">
+                <img src="haggadah_app_icon.png" alt="Logo" class="lobby-logo">
+                <h1 class="logo-title">פסח יחד</h1>
+                <p class="subtitle">הגדה חכמה ומשותפת לכולם</p>
+            </div>
+
+            <div id="lobby-auth-section" class="auth-section">
+                <div class="auth-instruction" style="margin-bottom: 1.5rem; opacity: 0.8;">התחבר כדי להתחיל את הסדר:
+                </div>
+                <div id="g_id_onload" data-client_id="1046467069134-placeholder.apps.googleusercontent.com"
+                    data-callback="handleGoogleResponse" data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue"
+                    data-text="signin_with" data-size="large" data-logo_alignment="left"></div>
+                <p class="tiny-text" style="margin-top: 1.5rem; opacity: 0.6;">חיבור מאובטח • ללא סיסמה</p>
+            </div>
+
+            <div id="lobby-actions-section" class="lobby-actions hidden">
+                <button id="btn-create-room" class="btn primary large">צור חדר חדש ← 🍷</button>
+            </div>
         </div>
     </div>
 
@@ -129,14 +149,14 @@
 
         <!-- Navigation -->
         <footer class="room-footer">
-            <button id="btn-prev" class="btn nav-btn" disabled>← הקודם</button>
+            <button id="btn-prev" class="btn nav-btn" disabled>הקודם →</button>
 
             <div class="progress-pill">
                 <span id="current-page-num">1</span> / <span id="total-pages">1</span>
                 <button id="btn-sync" class="btn-sync hidden" title="חזור לסנכרון עם המנחה">🔄</button>
             </div>
 
-            <button id="btn-next" class="btn nav-btn primary">הבא →</button>
+            <button id="btn-next" class="btn nav-btn primary">← הבא</button>
         </footer>
     </div>
 
@@ -148,8 +168,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
-    <script src="haggadah_data.js?v=20260310_1516"></script>
-    <script src="app.js?v=20260310_1516"></script>
+    <script src="haggadah_data.js?v=20260310_1525"></script>
+    <script src="app.js?v=20260310_1525"></script>
 </body>
 
 </html>

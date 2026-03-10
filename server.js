@@ -3,6 +3,10 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const { generateAllImages, generateNanoTest } = require('./leonardo');
+const { OAuth2Client } = require('google-auth-library');
+
+const CLIENT_ID = '1046467069134-placeholder.apps.googleusercontent.com';
+const client = new OAuth2Client(CLIENT_ID);
 
 const app = express();
 const server = http.createServer(app);
@@ -41,6 +45,27 @@ function saveTasks(roomId, tasks) {
 
 io.on('connection', (socket) => {
     console.log(`+ Connected: ${socket.id}`);
+
+    socket.on('google-login', async ({ credential }) => {
+        try {
+            const ticket = await client.verifyIdToken({
+                idToken: credential,
+                audience: CLIENT_ID,
+            });
+            const payload = ticket.getPayload();
+            const userData = {
+                id: payload.sub,
+                name: payload.name,
+                email: payload.email,
+                picture: payload.picture
+            };
+            console.log(`[Auth] User logged in: \${userData.name}`);
+            socket.emit('google-login-success', userData);
+        } catch (err) {
+            console.error('[Auth] Login failed:', err.message);
+            socket.emit('google-login-error', { message: 'אימות נכשל' });
+        }
+    });
 
     socket.on('create-room', (callback) => {
         const roomId = generateId();

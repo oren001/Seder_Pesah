@@ -33,6 +33,13 @@ function init() {
     setupTasks();
     requestWakeLock();
 
+    // Register PWA Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(err => {
+            console.warn('SW registration failed:', err);
+        });
+    }
+
     // Start version polling
     checkVersion();
     setInterval(checkVersion, 30000); // Check every 30 seconds for faster feedback during dev
@@ -237,9 +244,18 @@ function notifyNewVersion() {
     audio.play().catch(() => { });
 
     const t = $$('toast');
-    t.innerHTML = '✨ <b>גרסה חדשה מוכנה לטסטינג!</b> <br> <a href="javascript:location.reload()" style="color:#ffd700;text-decoration:underline;">לחץ כאן לרענון המערכת</a>';
-    t.classList.remove('hidden');
-    t.classList.add('show');
+    if (t) {
+        t.innerHTML = '✨ <b>גרסה חדשה מוכנה!</b> <br> רענון אוטומטי בעוד 5 שניות... <br> <a href="javascript:location.reload()" style="color:#ffd700;text-decoration:underline;">לחץ כאן לרענון עכשיו</a>';
+        t.classList.remove('hidden');
+        t.classList.add('show');
+    } else {
+        console.warn('Toast element missing for version notification');
+    }
+
+    // Force reload after 5 seconds to bypass cache issues
+    setTimeout(() => {
+        location.reload(true);
+    }, 5000);
 }
 
 // --- Camera ---
@@ -654,6 +670,11 @@ function onCopyLink() {
 
 function showToast(msg) {
     const t = $$('toast');
+    if (!t) {
+        console.error('Toast element not found! Using alert instead:', msg);
+        // alert(msg); // Optional: fallback to alert
+        return;
+    }
     t.textContent = msg;
     t.classList.remove('hidden');
     t.classList.add('show');
@@ -701,3 +722,20 @@ function toggleLanguage() {
     if (btn) btn.innerText = currentLanguage === 'he' ? 'English' : 'עברית';
     renderPage();
 }
+
+// --- Google Auth ---
+function handleGoogleResponse(response) {
+    const credential = response.credential;
+    console.log('Google credential received');
+    socket.emit('google-login', { credential });
+}
+
+socket.on('google-login-success', (userData) => {
+    me = userData;
+    showToast(`ברוך הבא, ${userData.name}!`);
+    // After login, you can create or join
+    $$('lobby-auth-section').classList.add('hidden');
+    $$('lobby-actions-section').classList.remove('hidden');
+});
+
+window.handleGoogleResponse = handleGoogleResponse;
