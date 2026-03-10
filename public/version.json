@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1578",
-    "notes": "Restored Google Login button and Identity Services script. Kept Guest Login as a primary fallback."
+    "version": "1.0.1582",
+    "notes": "Replaced placeholder with the real Google Client ID. Google Login should now function correctly without 401/403 authorization errors."
 }

@@ -6,7 +6,7 @@ const fs = require('fs');
 const { generateAllImages, generateNanoTest } = require('./leonardo');
 const { OAuth2Client } = require('google-auth-library');
 
-const CLIENT_ID = '1046467069134-placeholder.apps.googleusercontent.com';
+const CLIENT_ID = '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com';
 const client = new OAuth2Client(CLIENT_ID);
 
 const app = express();
