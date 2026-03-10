@@ -71,6 +71,9 @@ function init() {
     const btnSignOut = $$('btn-sign-out');
     if (btnSignOut) btnSignOut.addEventListener('click', onSignOut);
 
+    const btnSignOutGlobal = $$('btn-sign-out-global');
+    if (btnSignOutGlobal) btnSignOutGlobal.addEventListener('click', onSignOut);
+
     $$('check-lead-mode').addEventListener('change', () => {
         if ($$('check-lead-mode').checked) {
             isSyncingWithLeader = true; // If you become leader, you are by definition 'synced' with yourself
@@ -633,16 +636,22 @@ function renderTasks() {
     });
 
     sortedTasks.forEach(task => {
+        // Handle legacy string format or missing properties
+        const taskText = typeof task === 'string' ? task : (task.text || 'משימה');
+        const taskAuthor = task.author || 'סדר';
+        const taskId = task.id || `task-${Math.random()}`;
+        const isCompleted = !!task.completed;
+
         const item = document.createElement('div');
-        item.className = 'task-item' + (task.completed ? ' completed' : '');
+        item.className = 'task-item' + (isCompleted ? ' completed' : '');
 
         item.innerHTML = `
-            <div class="task-checkbox" onclick="toggleTask('${task.id}')">
-                ${task.completed ? '✓' : ''}
+            <div class="task-checkbox" onclick="toggleTask('${taskId}')">
+                ${isCompleted ? '✓' : ''}
             </div>
             <div class="task-text">
-                <span class="task-author">${task.author}:</span>
-                ${task.text}
+                <span class="task-author">${taskAuthor}:</span>
+                ${taskText}
             </div>
             <button class="btn-delete-task" onclick="deleteTask('${task.id}')">&times;</button>
         `;

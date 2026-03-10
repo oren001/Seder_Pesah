@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1558",
-    "notes": "Added Guest Login fallback and Sign Out functionality with auto-login persistence."
+    "version": "1.0.1562",
+    "notes": "Fixed task board undefined bug, improved sign-out and guest login prominence."
 }
