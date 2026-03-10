@@ -96,10 +96,11 @@ io.on('connection', (socket) => {
             participants: [],
             images: {}, // Cache for AI images
             tasks: persistedTasks[roomId] || [
-                "🍷 קדש", "💧 ורחץ", "🥬 כרפס", "🥪 יחץ",
-                "📖 מגיד", "🧼 רחצה", "🥖 מוציא מצה", "🌿 מרור",
-                "🌯 כורך", "🍽️ שולחן עורך", "🍦 צפון", "🙏 ברך",
-                "🎶 הלל", "✅ נרצה"
+                { id: 'dev-1', text: '👑 שליטת מנהל (Host Controls)', completed: false, author: 'אורן (מנהל פרויקט)' },
+                { id: 'dev-2', text: '🩸 אנימציות ואפקטים ויזואליים', completed: false, author: 'אורן (מנהל פרויקט)' },
+                { id: 'dev-3', text: '🤖 שדרוג יכולות ה-AI', completed: false, author: 'אורן (מנהל פרויקט)' },
+                { id: 'dev-4', text: '☁️ חיבור למסד נתונים', completed: false, author: 'אורן (מנהל פרויקט)' },
+                { id: 'dev-5', text: '🎥 שילוב אודיו / וידאו', completed: false, author: 'אורן (מנהל פרויקט)' }
             ]
         };
         console.log(`Room created: ${roomId}`);
@@ -115,10 +116,11 @@ io.on('connection', (socket) => {
                 participants: [],
                 images: {},
                 tasks: persistedTasks[roomId] || [
-                    "🍷 קדש", "💧 ורחץ", "🥬 כרפס", "🥪 יחץ",
-                    "📖 מגיד", "🧼 רחצה", "🥖 מוציא מצה", "🌿 מרור",
-                    "🌯 כורך", "🍽️ שולחן עורך", "🍦 צפון", "🙏 ברך",
-                    "🎶 הלל", "✅ נרצה"
+                    { id: 'dev-1', text: '👑 שליטת מנהל (Host Controls)', completed: false, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'dev-2', text: '🩸 אנימציות ואפקטים ויזואליים', completed: false, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'dev-3', text: '🤖 שדרוג יכולות ה-AI', completed: false, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'dev-4', text: '☁️ חיבור למסד נתונים', completed: false, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'dev-5', text: '🎥 שילוב אודיו / וידאו', completed: false, author: 'אורן (מנהל פרויקט)' }
                 ]
             };
         }

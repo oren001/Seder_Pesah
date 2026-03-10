@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1585",
-    "notes": "Fixed COOP header missing in server.js to allow Google GIS popup communication. Fixed app.js to save Google Login state to localStorage so users stay logged in upon refresh."
+    "version": "1.0.1588",
+    "notes": "Replaced Seder steps with development roadmap tasks in the app's task board."
 }
