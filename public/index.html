@@ -28,10 +28,14 @@
                 <img src="haggadah_app_icon.png" alt="Logo" class="lobby-logo">
                 <h1 class="logo-title">פסח יחד</h1>
                 <p class="subtitle">הגדה חכמה ומשותפת לכולם</p>
+                <div class="sefaria-badge">
+                    <span class="badge-icon">📖</span>
+                    נבדק ואומת ע"י Sefaria
+                </div>
             </div>
 
             <div id="lobby-auth-section" class="auth-section">
-                <div class="auth-instruction" style="margin-bottom: 2rem; font-weight: 800; font-size: 1.2rem;">
+                <div class="auth-instruction" style="margin-bottom: 1rem; font-weight: 800; font-size: 1.1rem;">
                     התקבלת לסדר! 🧞‍♂️✨
                 </div>
 
@@ -42,16 +46,9 @@
                 </div>
                 <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue"
                     data-text="signin_with" data-size="large" data-logo_alignment="left"
-                    style="margin-bottom: 2rem; display: flex; justify-content: center;"></div>
+                    style="margin-bottom: 1rem; display: flex; justify-content: center;"></div>
 
-                <div class="guest-login-card"
-                    style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(212,175,55,0.2); margin-top: 1rem;">
-                    <p class="tiny-text" style="margin-bottom: 1rem; opacity: 0.8;">או הכנס כאורח (מהיר):</p>
-                    <input type="text" id="guest-name" placeholder="הכנס שם..." class="input-field"
-                        style="margin-bottom: 1rem; width: 100%; text-align: center; padding: 10px;">
-                    <button id="btn-guest-login" class="btn secondary" style="width: 100%;">כניסה ללא גוגל
-                        🧞‍♂️</button>
-                </div>
+                <!-- Removed Guest Login as per request -->
 
                 <div style="margin-top: 2rem; opacity: 0.4;">
                     <button id="btn-sign-out-global" class="btn tiny"
@@ -62,7 +59,11 @@
 
             <div id="lobby-actions-section" class="lobby-actions hidden">
                 <button id="btn-create-room" class="btn primary large">צור חדר חדש ← 🍷</button>
-                <div style="margin-top: 1.5rem;">
+                <div style="margin-top: 1rem;">
+                    <button id="btn-rsvp" class="btn secondary" style="width: 100%; padding: 12px;">RSVP & סלפי מראש
+                        📅</button>
+                </div>
+                <div style="margin-top: 1rem;">
                     <button id="btn-sign-out" class="btn tiny"
                         style="opacity: 0.6; background: none; border: 1px solid rgba(255,255,255,0.2);">החלף משתמש /
                         התנתק 🚪</button>
@@ -99,28 +100,49 @@
 
     <!-- ======== ROOM SCREEN ======== -->
     <div id="room-screen" class="screen hidden">
+        <div id="effects-container" class="effects-container hidden"></div>
 
         <!-- Header -->
         <header class="room-header">
-            <div class="brand">
-                <div class="beta-badge">BETA</div>
-                🍷 פסח יחד
+            <div class="header-left">
+                <button id="btn-menu" class="btn-icon hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
             </div>
 
             <div class="participants-strip">
                 <div id="participants-list" class="avatars-list"></div>
-                <span class="viewers-count"><span id="count-number">1</span> כאן</span>
+                <span class="viewers-count"><span id="count-number">1</span></span>
             </div>
 
-            <div class="header-actions">
-                <div class="lead-mode-toggle">
-                    <input type="checkbox" id="check-lead-mode">
-                    <label for="check-lead-mode">📢 הובלה</label>
-                </div>
-                <button id="btn-toggle-tasks" class="btn outline small">🛖 הַגָּזִיבּוֹ</button>
-                <button id="btn-copy-link" class="btn outline small">הזמן חברים</button>
+            <div class="brand">
+                <div class="beta-badge">BETA</div>
+                🍷 פסח יחד
             </div>
         </header>
+
+        <!-- Room Menu Dropdown -->
+        <div id="room-menu" class="room-menu-dropdown hidden">
+            <div class="menu-section">
+                <div class="menu-label">שליטה וניהול</div>
+                <div id="leadership-status" class="leadership-badge">🛡️ מחפש מנהל...</div>
+                <div class="lead-mode-toggle">
+                    <input type="checkbox" id="check-lead-mode">
+                    <label for="check-lead-mode">👑 הובלה</label>
+                </div>
+                <button id="btn-sync" class="btn small glass hidden" style="width: 100%;">לחזור לסנכרון</button>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-label">כלים ואורחים</div>
+                <button id="btn-toggle-tasks" class="btn outline small" style="width: 100%; text-align: right;">🛖
+                    הַגָּזִיבּוֹ</button>
+                <button id="btn-copy-link" class="btn outline small" style="width: 100%; text-align: right;">הזמן
+                    חברים</button>
+            </div>
+        </div>
 
         <!-- The Gazebo (Premium Side Panel) -->
         <div id="task-sidebar" class="sidebar hidden">
@@ -157,6 +179,14 @@
                 <div id="task-list" class="task-list">
                     <!-- Tasks go here -->
                 </div>
+            </div>
+
+            <!-- Sign Out / Switch User -->
+            <div class="sidebar-footer"
+                style="padding: 1.5rem; border-top: 1px solid rgba(0,0,0,0.05); text-align: center;">
+                <button id="btn-sign-out-room" class="btn outline small" style="width: 100%; opacity: 0.7;">
+                    החלף משתמש / התנתק 🚪
+                </button>
             </div>
 
             <div class="sidebar-footer">

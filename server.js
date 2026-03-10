@@ -43,6 +43,7 @@ function generateId() {
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
+const ROOMS_FILE = path.join(DATA_DIR, 'rooms.json');
 
 // Load persisted tasks
 let persistedTasks = {};
@@ -51,6 +52,27 @@ try {
         persistedTasks = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
     }
 } catch (e) { console.error('Failed to load tasks:', e); }
+
+// Load persisted rooms
+try {
+    if (fs.existsSync(ROOMS_FILE)) {
+        const data = JSON.parse(fs.readFileSync(ROOMS_FILE, 'utf8'));
+        // Restore rooms, but reset socket-specific state like 'online'
+        for (const id in data) {
+            rooms[id] = data[id];
+            rooms[id].participants.forEach(p => p.online = false);
+            rooms[id].leaderId = null; // Clear stale socket IDs on restart
+            rooms[id].leaderName = null;
+        }
+        console.log(`[Persistence] Restored ${Object.keys(rooms).length} rooms.`);
+    }
+} catch (e) { console.error('Failed to load rooms:', e); }
+
+function saveRooms() {
+    try {
+        fs.writeFileSync(ROOMS_FILE, JSON.stringify(rooms, null, 2));
+    } catch (e) { console.error('Failed to save rooms:', e); }
+}
 
 function saveTasks(roomId, tasks) {
     try {
@@ -94,7 +116,6 @@ io.on('connection', (socket) => {
             id: roomId,
             currentPage: 0,
             participants: [],
-            images: {}, // Cache for AI images
             tasks: persistedTasks[roomId] || [
                 { id: 'h1', text: '✅ תכנון MVP ראשוני', completed: true, author: 'אורן (מנהל פרויקט)' },
                 { id: 'h2', text: '✅ הקמת שרת (Express, Socket.io)', completed: true, author: 'אורן (מנהל פרויקט)' },
@@ -113,9 +134,12 @@ io.on('connection', (socket) => {
                 { id: 'dev-3', text: '🤖 שדרוג יכולות ה-AI', completed: false, author: 'אורן (מנהל פרויקט)' },
                 { id: 'dev-4', text: '☁️ חיבור למסד נתונים', completed: false, author: 'אורן (מנהל פרויקט)' },
                 { id: 'dev-5', text: '🎥 שילוב אודיו / וידאו', completed: false, author: 'אורן (מנהל פרויקט)' }
-            ]
+            ],
+            leaderId: null,
+            leaderName: null
         };
         console.log(`Room created: ${roomId}`);
+        saveRooms();
 
         callback({ roomId });
     });
@@ -145,14 +169,26 @@ io.on('connection', (socket) => {
                     { id: 'dev-3', text: '🤖 שדרוג יכולות ה-AI', completed: false, author: 'אורן (מנהל פרויקט)' },
                     { id: 'dev-4', text: '☁️ חיבור למסד נתונים', completed: false, author: 'אורן (מנהל פרויקט)' },
                     { id: 'dev-5', text: '🎥 שילוב אודיו / וידאו', completed: false, author: 'אורן (מנהל פרויקט)' }
-                ]
+                ],
+                leaderId: null,
+                leaderName: null
             };
         }
 
-        const participant = { id: socket.id, photo: photo || null };
-        rooms[roomId].participants.push(participant);
+        const participant = { id: socket.id, photo: photo || null, online: true };
+
+        // Handle RSVP: If user with same picture exists, update their ID
+        const existing = rooms[roomId].participants.find(p => p.photo && p.photo === photo);
+        if (existing) {
+            existing.id = socket.id;
+            existing.online = true;
+        } else {
+            rooms[roomId].participants.push(participant);
+        }
+
         socket.join(roomId);
         socket.roomId = roomId; // Store roomId on socket for disconnect
+        saveRooms();
 
         console.log(`User ${socket.id} joined room ${roomId}`);
 
@@ -163,7 +199,9 @@ io.on('connection', (socket) => {
                 participant,
                 currentPage: rooms[roomId].currentPage,
                 images: rooms[roomId].images,
-                tasks: rooms[roomId].tasks
+                tasks: rooms[roomId].tasks,
+                leaderId: rooms[roomId].leaderId,
+                leaderName: rooms[roomId].leaderName
             });
         }
 
@@ -171,12 +209,37 @@ io.on('connection', (socket) => {
             participants: rooms[roomId].participants,
             currentPage: rooms[roomId].currentPage,
             images: rooms[roomId].images,
-            tasks: rooms[roomId].tasks
+            tasks: rooms[roomId].tasks,
+            leaderId: rooms[roomId].leaderId,
+            leaderName: rooms[roomId].leaderName
         });
+    });
+
+    socket.on('take-lead', ({ roomId, name }) => {
+        if (!rooms[roomId]) return;
+        rooms[roomId].leaderId = socket.id;
+        rooms[roomId].leaderName = name || 'משתתף';
+        console.log(`Leadership taken in room ${roomId} by ${rooms[roomId].leaderName}`);
+        saveRooms();
+        io.to(roomId).emit('leader-updated', { leaderId: socket.id, leaderName: rooms[roomId].leaderName });
+    });
+
+    socket.on('trigger-effect', ({ roomId, effectType }) => {
+        if (!rooms[roomId]) return;
+        console.log(`Effect triggered in room ${roomId}: ${effectType}`);
+        io.to(roomId).emit('effect-triggered', { effectType, authorId: socket.id });
     });
 
     socket.on('generate-page', ({ roomId, pageIndex }) => {
         if (!rooms[roomId]) return;
+
+        // --- Leader Constraint ---
+        if (rooms[roomId].leaderId !== socket.id) {
+            console.log(`[AI] Generation denied: User ${socket.id} is not leader.`);
+            socket.emit('ai-error', { message: 'רק עורך הסדר יכול להתחיל יצירת תמונה!', pageIndex });
+            return;
+        }
+
         console.log(`[AI] Manual generation triggered for room ${roomId}, page ${pageIndex}`);
         const { generatePersonalizedPage } = require('./leonardo');
         generatePersonalizedPage(roomId, pageIndex, io, rooms).catch(err => {
@@ -189,8 +252,9 @@ io.on('connection', (socket) => {
         if (!rooms[roomId]) return;
         rooms[roomId].currentPage = pageIndex;
         rooms[roomId].highlightedSegment = -1; // Reset highlight on page change
-        socket.to(roomId).emit('page-changed', { currentPage: pageIndex });
-        console.log(`Room ${roomId} -> page ${pageIndex}`);
+        saveRooms();
+        io.to(roomId).emit('page-updated', { pageIndex, authorId: socket.id });
+        console.log(`Room ${roomId} -> page ${pageIndex} (by ${socket.id})`);
     });
 
     socket.on('set-highlight', ({ roomId, pageIndex, segmentIndex }) => {
@@ -235,6 +299,13 @@ io.on('connection', (socket) => {
 
     socket.on('test-nano-banana', ({ roomId }) => {
         if (!rooms[roomId]) return;
+
+        // --- Leader Constraint ---
+        if (rooms[roomId].leaderId !== socket.id) {
+            socket.emit('ai-error', { message: 'רק עורך הסדר יכול להפעיל בדיקות מערכת!' });
+            return;
+        }
+
         console.log(`[AI] Nano Banana Test triggered for room ${roomId}`);
         io.to(roomId).emit('ai-status', { message: 'מעלה תמונות משתתפים ל-Leonardo (PRO)...' });
         generateNanoTest(roomId, io, rooms).catch(err => {
@@ -246,14 +317,27 @@ io.on('connection', (socket) => {
         const roomId = socket.roomId;
         if (!roomId || !rooms[roomId]) return;
 
-        rooms[roomId].participants = rooms[roomId].participants.filter(p => p.id !== socket.id);
+        const p = rooms[roomId].participants.find(p => p.id === socket.id);
+        if (p) {
+            p.online = false;
+            // If they don't have a photo, remove them (since they didn't join/RSVP properly)
+            // If they HAVE a photo, they are RSVP'd, keep them in the list but offline.
+            if (!p.photo) {
+                rooms[roomId].participants = rooms[roomId].participants.filter(x => x.id !== socket.id);
+            }
+        }
+
         if (rooms[roomId].participants.length === 0) {
-            delete rooms[roomId];
-            console.log(`Room ${roomId} closed`);
+            // Delete room only if absolutely no one is left (not even RSVP'd)
+            // For now, let's keep rooms for 24h? Or just keep them if persistent.
+            // console.log(`Room ${roomId} closed`);
         } else {
+            saveRooms();
             io.to(roomId).emit('room-updated', {
                 participants: rooms[roomId].participants,
-                currentPage: rooms[roomId].currentPage
+                currentPage: rooms[roomId].currentPage,
+                leaderId: rooms[roomId].leaderId,
+                leaderName: rooms[roomId].leaderName
             });
         }
     });

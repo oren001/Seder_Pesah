@@ -177,6 +177,17 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
     if (!rooms[roomId]) return;
     try {
         console.log(`[AI] Personalized Page Generation for room ${roomId}, page ${pageIndex}`);
+
+        // --- Selfie Constraint ---
+        const participants = rooms[roomId].participants;
+        const missingPhotos = participants.filter(p => !p.photo);
+        if (missingPhotos.length > 0) {
+            const msg = `ממתינים לסלפי מ-${missingPhotos.length} משתתפים...`;
+            console.log(`[AI] Generation blocked: ${msg}`);
+            io.to(roomId).emit('ai-error', { message: msg, pageIndex });
+            return;
+        }
+
         io.to(roomId).emit('ai-status', { message: 'מתחיל תהליך עיבוד (NB PRO)...', pageIndex });
 
         // 1. Upload all valid participant photos
@@ -217,9 +228,16 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
         });
 
         if (imageUrl && rooms[roomId]) {
-            rooms[roomId].images[pageIndex] = imageUrl;
-            io.to(roomId).emit('image-ready', { pageIndex, imageUrl });
-            console.log(`[AI] Page ${pageIndex} ready for room ${roomId}`);
+            rooms[roomId].images[pageIndex] = {
+                url: imageUrl,
+                featuredPhotos: participantsWithPhotos.map(p => p.photo)
+            };
+            io.to(roomId).emit('image-ready', {
+                pageIndex,
+                imageUrl: rooms[roomId].images[pageIndex].url,
+                featuredPhotos: rooms[roomId].images[pageIndex].featuredPhotos
+            });
+            console.log(`[AI] Page ${pageIndex} ready for room ${roomId} (Featured: ${participantsWithPhotos.length})`);
             // Status overlay will be cleared by app.js on image-ready
         } else {
             throw new Error('לא התקבלה תמונה מ-Leonardo');

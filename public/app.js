@@ -11,7 +11,9 @@ let currentVersion = null;
 let wakeLock = null;
 
 // --- Staging State ---
-let isSyncingWithLeader = true;
+let isFollowingLeader = true;
+let leaderId = null;
+let leaderName = null;
 let leaderPage = 0;
 let currentLanguage = 'he'; // 'he' or 'en'
 let highlightedSegmentIndex = -1;
@@ -58,9 +60,19 @@ function init() {
     $$('btn-prev').addEventListener('click', () => changePage(-1));
     $$('btn-next').addEventListener('click', () => changePage(1));
     $$('btn-sync').addEventListener('click', onSyncWithLeader);
+    $$('btn-rsvp').addEventListener('click', onRSVP);
+    $$('btn-sign-out-room').addEventListener('click', onSignOut);
+    $$('btn-menu').addEventListener('click', toggleMenu);
 
-    const btnGuest = $$('btn-guest-login');
-    if (btnGuest) btnGuest.addEventListener('click', onGuestLogin);
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        const menu = $$('room-menu');
+        const btn = $$('btn-menu');
+        if (menu && !menu.classList.contains('hidden') && !menu.contains(e.target) && !btn.contains(e.target)) {
+            toggleMenu();
+        }
+    });
+
 
     // Auto-login from storage
     const storedUser = localStorage.getItem('haggadah-user');
@@ -81,13 +93,22 @@ function init() {
 
     $$('check-lead-mode').addEventListener('change', () => {
         if ($$('check-lead-mode').checked) {
-            isSyncingWithLeader = true; // If you become leader, you are by definition 'synced' with yourself
+            // Become Leader
+            if (socket) {
+                socket.emit('take-lead', { roomId: currentRoomId, name: me ? me.name : 'משתתף' });
+            }
+            isFollowingLeader = true;
         }
-        renderPage();
+        updateLeadershipUI();
     });
 
+    $$('btn-sync').addEventListener('click', onSyncWithLeader);
+
     // Task Sidebar
-    $$('btn-toggle-tasks').addEventListener('click', toggleTasks);
+    $$('btn-toggle-tasks').addEventListener('click', () => {
+        toggleTasks();
+        if (!$$('room-menu').classList.contains('hidden')) toggleMenu();
+    });
     $$('btn-close-tasks').addEventListener('click', toggleTasks);
     $$('btn-add-task').addEventListener('click', addTask);
     $$('input-new-task').addEventListener('keypress', (e) => {
@@ -116,6 +137,25 @@ function init() {
     } else {
         showScreen('lobby');
     }
+
+    // Auto-hiding header logic
+    let lastScrollY = 0;
+    const roomHeader = document.querySelector('.room-header');
+    const scrollContainer = document.querySelector('.haggadah-container');
+
+    if (scrollContainer) {
+        scrollContainer.addEventListener('scroll', () => {
+            const currentScrollY = scrollContainer.scrollTop;
+            if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                // Scrolling down - hide header
+                roomHeader.classList.add('header-hidden');
+            } else if (currentScrollY < lastScrollY) {
+                // Scrolling up - show header
+                roomHeader.classList.remove('header-hidden');
+            }
+            lastScrollY = currentScrollY;
+        });
+    }
 }
 
 async function setupSocket() {
@@ -141,11 +181,41 @@ async function setupSocket() {
 
     socket.on('room-updated', (data) => {
         renderParticipants(data.participants);
+        leaderId = data.leaderId;
+        leaderName = data.leaderName;
         leaderPage = data.currentPage;
-        if (isSyncingWithLeader && data.currentPage !== currentPage) {
+
+        updateLeadershipUI();
+
+        if (isFollowingLeader && data.currentPage !== currentPage) {
             currentPage = data.currentPage;
             renderPage();
         }
+    });
+
+    socket.on('leader-updated', (data) => {
+        leaderId = data.leaderId;
+        leaderName = data.leaderName;
+        updateLeadershipUI();
+        if (leaderId === socket.id) {
+            showToast('אתה עכשיו עורך הסדר 👑');
+        } else {
+            showToast(`${leaderName} הוא עורך הסדר החדש`);
+        }
+    });
+
+    socket.on('page-updated', ({ pageIndex, authorId }) => {
+        leaderPage = pageIndex;
+        if (authorId === leaderId || isFollowingLeader) {
+            if (currentPage !== pageIndex) {
+                currentPage = pageIndex;
+                renderPage();
+            }
+        }
+    });
+
+    socket.on('effect-triggered', ({ effectType, authorId }) => {
+        triggerLocalEffect(effectType);
     });
 
     socket.on('page-changed', (data) => {
@@ -184,8 +254,8 @@ async function setupSocket() {
         }
     });
 
-    socket.on('image-ready', ({ pageIndex, imageUrl }) => {
-        pageImages[pageIndex] = imageUrl;
+    socket.on('image-ready', ({ pageIndex, imageUrl, featuredPhotos }) => {
+        pageImages[pageIndex] = { url: imageUrl, featuredPhotos };
         if (pageIndex === currentPage) renderPage();
     });
 
@@ -236,6 +306,13 @@ async function setupSocket() {
 
 function triggerPageGeneration(pageIndex) {
     if (!currentRoomId) return;
+
+    // --- Leader Check (Client Side) ---
+    if (leaderId !== socket.id) {
+        showToast('רק עורך הסדר (המנחה) יכול להתחיל יצירת תמונה 👑');
+        return;
+    }
+
     const overlay = document.getElementById(`status-overlay-${pageIndex}`);
     if (overlay) {
         overlay.classList.remove('hidden');
@@ -317,21 +394,14 @@ function notifyNewVersion() {
     }
 }
 
-function onGuestLogin() {
-    const nameInput = document.getElementById('guest-name');
-    const name = nameInput.value.trim() || 'אורח';
 
-    me = {
-        id: 'guest-' + Math.random().toString(36).substring(2, 9),
-        name: name,
-        picture: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`
-    };
-
-    localStorage.setItem('haggadah-user', JSON.stringify(me));
-    showToast(`שלום ${name}! 😄`);
-
-    document.getElementById('lobby-auth-section').classList.add('hidden');
-    document.getElementById('lobby-actions-section').classList.remove('hidden');
+function onRSVP() {
+    const roomId = prompt('הכנס קוד חדר להרשמה (RSVP):');
+    if (roomId) {
+        pendingRoomId = roomId;
+        showScreen('selfie');
+        startCamera();
+    }
 }
 
 function onSignOut() {
@@ -479,10 +549,11 @@ function renderParticipants(participants) {
 
     participants.forEach(p => {
         const photoUrl = p.photo || generatePlaceholderPhoto();
+        const isOnline = p.online !== false;
 
         // Header Strip
         const div = document.createElement('div');
-        div.className = 'avatar' + (me && p.id === me.id ? ' me' : '');
+        div.className = 'avatar' + (me && p.id === me.id ? ' me' : '') + (!isOnline ? ' offline' : '');
         const img = document.createElement('img');
         img.src = photoUrl;
         img.alt = 'משתתף';
@@ -492,7 +563,7 @@ function renderParticipants(participants) {
         // Gazebo Grid
         if (gazeboList) {
             const gazDiv = document.createElement('div');
-            gazDiv.className = 'gazebo-avatar';
+            gazDiv.className = 'gazebo-avatar' + (!isOnline ? ' offline' : '');
             gazDiv.onclick = () => openPhotoZoom(photoUrl);
             const gazImg = document.createElement('img');
             gazImg.src = photoUrl;
@@ -507,7 +578,7 @@ function renderPage() {
     if (!page) return;
 
     const el = $$('page-content');
-    const imageUrl = pageImages[currentPage];
+    const imageData = pageImages[currentPage];
     const index = currentPage;
 
     el.style.opacity = '0';
@@ -522,7 +593,8 @@ function renderPage() {
         const imgWrap = document.createElement('div');
         imgWrap.className = 'page-image-wrap';
         imgWrap.id = `img-wrap-${index}`;
-        imgWrap.onclick = () => triggerPageGeneration(index);
+        imgWrap.className = 'page-image-wrap';
+        imgWrap.id = `img-wrap-${index}`;
 
         const overlay = document.createElement('div');
         overlay.className = 'status-overlay hidden';
@@ -533,16 +605,48 @@ function renderPage() {
         `;
         imgWrap.appendChild(overlay);
 
-        if (imageUrl) {
+        if (imageData) {
+            const currentImgUrl = typeof imageData === 'string' ? imageData : imageData.url;
             const img = document.createElement('img');
-            img.src = imageUrl;
-            img.className = 'page-image';
+            img.src = currentImgUrl;
+            img.className = 'page-image has-image';
             img.alt = page.title;
+
+            // --- Click to Download (Instead of generate) ---
+            imgWrap.onclick = (e) => {
+                e.stopPropagation();
+                downloadImage(currentImgUrl, `Haggadah_Page_${index + 1}.png`);
+            };
+
+            // Add download hint
+            const hint = document.createElement('div');
+            hint.className = 'download-hint';
+            hint.innerHTML = 'לחץ להורדה 📥';
+            imgWrap.appendChild(hint);
+
             imgWrap.appendChild(img);
+
+            // Add featured participants bubbles if present
+            if (imageData.featuredPhotos && imageData.featuredPhotos.length > 0) {
+                const bubblesContainer = document.createElement('div');
+                bubblesContainer.className = 'featured-bubbles';
+                imageData.featuredPhotos.forEach(photo => {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'featured-participant';
+                    const bImg = document.createElement('img');
+                    bImg.src = photo;
+                    bubble.appendChild(bImg);
+                    bubblesContainer.appendChild(bubble);
+                });
+                imgWrap.appendChild(bubblesContainer);
+            }
         } else {
             const shimmer = document.createElement('div');
             shimmer.className = 'image-shimmer';
             imgWrap.appendChild(shimmer);
+
+            // Click to Generate ONLY if NO image exists
+            imgWrap.onclick = () => triggerPageGeneration(index);
 
             // Show overlay with manual prompt
             overlay.classList.remove('hidden');
@@ -605,21 +709,118 @@ function changePage(delta) {
             currentPage = next;
             socket.emit('change-page', { roomId: currentRoomId, pageIndex: next });
         } else {
-            // Local move (Free Browsing)
-            isSyncingWithLeader = false;
+            // Local move (Free Browsing / Freedom)
+            isFollowingLeader = false;
             currentPage = next;
+            updateLeadershipUI();
         }
 
         renderPage();
+
+        // Auto-trigger effects based on page
+        handlePageEffects(next);
     }
 }
 
 function onSyncWithLeader() {
-    isSyncingWithLeader = true;
+    isFollowingLeader = true;
     if ($$('check-lead-mode')) $$('check-lead-mode').checked = false; // Stop leading if following
     currentPage = leaderPage;
     renderPage();
-    showToast('חזרת לסנכרון עם המנחה');
+    updateLeadershipUI();
+    showToast('חזרת לסנכרון עם עורך הסדר');
+}
+
+function updateLeadershipUI() {
+    const syncBtn = $$('btn-sync');
+    const statusText = $$('leadership-status');
+
+    if (!syncBtn || !statusText) return;
+
+    if (isFollowingLeader || leaderId === socket.id) {
+        syncBtn.classList.add('hidden');
+    } else {
+        syncBtn.classList.remove('hidden');
+    }
+
+    if (leaderId === socket.id) {
+        statusText.innerHTML = '👑 אתה עורך הסדר';
+        statusText.classList.add('is-leading');
+    } else if (leaderId) {
+        statusText.innerHTML = `👤 מנחה: ${leaderName}`;
+        statusText.classList.remove('is-leading');
+    } else {
+        statusText.innerHTML = '🛡️ מחפש מנהל...';
+        statusText.classList.remove('is-leading');
+    }
+}
+
+function handlePageEffects(pageIndex) {
+    const pageText = HAGGADAH[pageIndex]?.he || "";
+
+    if (pageText.includes("דָּם")) {
+        triggerEffect('blood');
+    } else if (pageText.includes("צְפַרְדֵּעַ")) {
+        triggerEffect('frogs');
+    } else if (pageText.includes("קריעת ים סוף") || pageText.includes("הַיָּם")) {
+        triggerEffect('sea');
+    }
+}
+
+function triggerEffect(effectType) {
+    if (socket && $$('check-lead-mode').checked) {
+        socket.emit('trigger-effect', { roomId: currentRoomId, effectType });
+    } else {
+        triggerLocalEffect(effectType);
+    }
+}
+
+function triggerLocalEffect(type) {
+    const container = $$('effects-container');
+    if (!container) return;
+
+    console.log(`[Effect] Triggering local effect: ${type}`);
+    container.innerHTML = '';
+    container.classList.remove('hidden');
+    container.className = 'effects-container ' + type;
+
+    if (type === 'blood') {
+        for (let i = 0; i < 20; i++) {
+            const drop = document.createElement('div');
+            drop.className = 'blood-drop';
+            drop.style.left = Math.random() * 100 + 'vw';
+            drop.style.animationDelay = Math.random() * 3 + 's';
+            container.appendChild(drop);
+        }
+    } else if (type === 'frogs') {
+        for (let i = 0; i < 25; i++) {
+            const frog = document.createElement('div');
+            frog.className = 'frog-anim';
+            frog.innerText = '🐸';
+            frog.style.left = Math.random() * 100 + 'vw';
+            frog.style.bottom = '-50px';
+            frog.style.animationDelay = Math.random() * 2 + 's';
+            container.appendChild(frog);
+        }
+    } else if (type === 'sea') {
+        const leftWave = document.createElement('div');
+        leftWave.className = 'sea-wave-left';
+        const rightWave = document.createElement('div');
+        rightWave.className = 'sea-wave-right';
+        container.appendChild(leftWave);
+        container.appendChild(rightWave);
+
+        // Let them stay for a bit then hide
+        setTimeout(() => {
+            container.classList.add('hidden');
+        }, 5000);
+        return;
+    }
+
+    setTimeout(() => {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+    }, 6000);
 }
 
 // --- Task Board ---
@@ -754,9 +955,19 @@ function updateUrlParam(key, value) {
 }
 
 function onCopyLink() {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-        showToast('🔗 הקישור הועתק!');
+    const url = window.location.origin + '?room=' + currentRoomId;
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('הקישור הועתק! שלח אותו בווטסאפ ✉️');
+        if (!$$('room-menu').classList.contains('hidden')) toggleMenu();
     });
+}
+
+function toggleMenu() {
+    const menu = $$('room-menu');
+    const btn = $$('btn-menu');
+    if (!menu || !btn) return;
+    menu.classList.toggle('hidden');
+    btn.classList.toggle('active');
 }
 
 function showToast(msg) {
@@ -773,6 +984,16 @@ function showToast(msg) {
         t.classList.remove('show');
         setTimeout(() => t.classList.add('hidden'), 300);
     }, 3000);
+}
+
+function downloadImage(url, filename) {
+    showToast('מוריד תמונה... 📥');
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 function generatePlaceholderPhoto() {

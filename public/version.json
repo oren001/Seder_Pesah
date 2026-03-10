@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1592",
-    "notes": "Synced in-app task board with the full project history from task.md."
+    "version": "1.0.1606",
+    "notes": "Added Hamburger Menu and cleaner header. Fixed stale leader logic."
 }
