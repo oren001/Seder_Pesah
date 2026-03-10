@@ -224,6 +224,7 @@ async function setupSocket() {
 
     socket.on('google-login-success', (userData) => {
         me = userData;
+        localStorage.setItem('haggadah-user', JSON.stringify(me)); // Fix: actually save the login state
         showToast(`ברוך הבא, ${userData.name}!`);
         // After login, you can create or join
         const authSection = document.getElementById('lobby-auth-section');

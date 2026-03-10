@@ -10,6 +10,13 @@ const CLIENT_ID = '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleuser
 const client = new OAuth2Client(CLIENT_ID);
 
 const app = express();
+
+// Required by Google Identity Services to allow the popup to communicate with the main window
+app.use((req, res, next) => {
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    next();
+});
+
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
