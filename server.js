@@ -12,6 +12,13 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
+// Version state
+let currentVersion = '1.0.0';
+try {
+    const vData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public/version.json'), 'utf8'));
+    currentVersion = vData.version;
+} catch (e) { console.error('Failed to load version:', e); }
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // In-memory room state
@@ -45,6 +52,9 @@ function saveTasks(roomId, tasks) {
 
 io.on('connection', (socket) => {
     console.log(`+ Connected: ${socket.id}`);
+
+    // Send current version immediately
+    socket.emit('version-sync', { version: currentVersion });
 
     socket.on('google-login', async ({ credential }) => {
         try {

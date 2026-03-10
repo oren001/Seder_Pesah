@@ -170,6 +170,17 @@ async function setupSocket() {
         console.error('AI Error:', message);
     });
 
+    socket.on('version-sync', ({ version }) => {
+        console.log(`[Version] Server: ${version}, Client: ${currentVersion}`);
+        if (!currentVersion) {
+            currentVersion = version;
+            return;
+        }
+        if (currentVersion !== version) {
+            console.log('Version mismatch detected via Socket!');
+            notifyNewVersion();
+        }
+    });
 }
 
 function triggerPageGeneration(pageIndex) {
