@@ -46,6 +46,12 @@ function init() {
     $$('btn-prev').addEventListener('click', () => changePage(-1));
     $$('btn-next').addEventListener('click', () => changePage(1));
     $$('btn-sync').addEventListener('click', onSyncWithLeader);
+    $$('check-lead-mode').addEventListener('change', () => {
+        if ($$('check-lead-mode').checked) {
+            isSyncingWithLeader = true; // If you become leader, you are by definition 'synced' with yourself
+        }
+        renderPage();
+    });
 
     // Task Sidebar
     $$('btn-toggle-tasks').addEventListener('click', toggleTasks);
@@ -461,7 +467,11 @@ function renderPage() {
 
         // Sync button visibility
         const syncBtn = $$('btn-sync');
-        if (!isSyncingWithLeader || currentPage !== leaderPage) {
+        const isLeading = $$('check-lead-mode').checked;
+
+        if (isLeading) {
+            syncBtn.classList.add('hidden');
+        } else if (!isSyncingWithLeader || currentPage !== leaderPage) {
             syncBtn.classList.remove('hidden');
         } else {
             syncBtn.classList.add('hidden');
