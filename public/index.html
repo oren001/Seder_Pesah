@@ -10,12 +10,13 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800;900&family=Assistant:wght@300;400;600&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260310_1575">
+    <link rel="stylesheet" href="styles.css?v=20260310_1578">
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -34,22 +35,28 @@
                     התקבלת לסדר! 🧞‍♂️✨
                 </div>
 
+                <!-- Google Login -->
+                <div id="g_id_onload" data-client_id="1046467069134-placeholder.apps.googleusercontent.com"
+                    data-callback="handleGoogleResponse" data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue"
+                    data-text="signin_with" data-size="large" data-logo_alignment="left"
+                    style="margin-bottom: 2rem; display: flex; justify-content: center;"></div>
+
                 <div class="guest-login-card"
-                    style="background: rgba(255,255,255,0.08); padding: 2rem; border-radius: 20px; border: 1px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-                    <p style="margin-bottom: 1rem; font-size: 1.1rem;">הכנס את שמך כדי להתחיל:</p>
-                    <input type="text" id="guest-name" placeholder="למשל: אורן..." class="input-field"
-                        style="margin-bottom: 1.5rem; width: 100%; text-align: center; font-size: 1.1rem; padding: 12px; border: 2px solid rgba(212,175,55,0.3);">
-                    <button id="btn-guest-login" class="btn primary large" style="width: 100%; font-weight: 900;">כניסה
-                        מהירה ← 🍷</button>
-                    <p class="tiny-text" style="margin-top: 1.5rem; opacity: 0.7;">אין צורך בחשבון גוגל כרגע.</p>
+                    style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(212,175,55,0.2); margin-top: 1rem;">
+                    <p class="tiny-text" style="margin-bottom: 1rem; opacity: 0.8;">או הכנס כאורח (מהיר):</p>
+                    <input type="text" id="guest-name" placeholder="הכנס שם..." class="input-field"
+                        style="margin-bottom: 1rem; width: 100%; text-align: center; padding: 10px;">
+                    <button id="btn-guest-login" class="btn secondary" style="width: 100%;">כניסה ללא גוגל
+                        🧞‍♂️</button>
                 </div>
 
-                <div style="margin-top: 2.5rem; opacity: 0.5;">
+                <div style="margin-top: 2rem; opacity: 0.4;">
                     <button id="btn-sign-out-global" class="btn tiny"
-                        style="background: none; border: 1px solid rgba(255,255,255,0.2); padding: 5px 15px;">התנתק /
-                        נקה הגדרות 🚪</button>
+                        style="background: none; border: 1px solid rgba(255,255,255,0.2); padding: 5px 15px;">איפוס
+                        יציאה 🚪</button>
                 </div>
-
             </div>
 
             <div id="lobby-actions-section" class="lobby-actions hidden">
@@ -185,8 +192,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
-    <script src="haggadah_data.js?v=20260310_1575"></script>
-    <script src="app.js?v=20260310_1575"></script>
+    <script src="haggadah_data.js?v=20260310_1578"></script>
+    <script src="app.js?v=20260310_1578"></script>
 </body>
 
 </html>
