@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1588",
-    "notes": "Replaced Seder steps with development roadmap tasks in the app's task board."
+    "version": "1.0.1592",
+    "notes": "Synced in-app task board with the full project history from task.md."
 }
