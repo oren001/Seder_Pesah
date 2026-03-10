@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1548",
-    "notes": "Pure English transliteration, LTR mode for English, and Seder milestones seeded in tasks."
+    "version": "1.0.1552",
+    "notes": "Fixed toast clickability and changed refresh link to a robust button."
 }

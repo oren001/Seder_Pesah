@@ -266,7 +266,9 @@ function notifyNewVersion() {
 
     const t = $$('toast');
     if (t) {
-        t.innerHTML = '✨ <b>גרסה חדשה מוכנה!</b> <br> מומלץ לרענן את העמוד כדי לקבל את העדכונים האחרונים. <br> <a href="javascript:location.reload()" style="color:#ffd700;text-decoration:underline;">לחץ כאן לרענון עכשיו</a>';
+        t.innerHTML = `✨ <b>גרסה מעודכנת באוויר!</b> <br>
+                       מומלץ לרענן לצפייה בשינויים. <br>
+                       <button onclick="location.reload(true)" class="btn primary tiny" style="margin-top:10px; padding: 5px 15px; font-size: 0.9rem;">רענן עכשיו 🔄</button>`;
         t.classList.remove('hidden');
         t.classList.add('show');
     } else {
