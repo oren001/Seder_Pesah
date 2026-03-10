@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1538",
-    "notes": "Socket-based real-time versioning introduced. Fixed notification bug."
+    "version": "1.0.1542",
+    "notes": "Fixed redirect loop, TypeError, and PWA meta tags."
 }

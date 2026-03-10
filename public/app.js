@@ -181,6 +181,16 @@ async function setupSocket() {
             notifyNewVersion();
         }
     });
+
+    socket.on('google-login-success', (userData) => {
+        me = userData;
+        showToast(`ברוך הבא, ${userData.name}!`);
+        // After login, you can create or join
+        const authSection = document.getElementById('lobby-auth-section');
+        const actionsSection = document.getElementById('lobby-actions-section');
+        if (authSection) authSection.classList.add('hidden');
+        if (actionsSection) actionsSection.classList.remove('hidden');
+    });
 }
 
 function triggerPageGeneration(pageIndex) {
@@ -738,15 +748,11 @@ function toggleLanguage() {
 function handleGoogleResponse(response) {
     const credential = response.credential;
     console.log('Google credential received');
-    socket.emit('google-login', { credential });
+    if (socket) {
+        socket.emit('google-login', { credential });
+    } else {
+        console.error('Socket not initialized during Google login');
+    }
 }
-
-socket.on('google-login-success', (userData) => {
-    me = userData;
-    showToast(`ברוך הבא, ${userData.name}!`);
-    // After login, you can create or join
-    $$('lobby-auth-section').classList.add('hidden');
-    $$('lobby-actions-section').classList.remove('hidden');
-});
 
 window.handleGoogleResponse = handleGoogleResponse;

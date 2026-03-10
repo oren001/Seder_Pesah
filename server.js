@@ -13,10 +13,14 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 // Version state
-let currentVersion = '1.0.0';
+let serverVersion = '1.0.0';
 try {
-    const vData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public/version.json'), 'utf8'));
-    currentVersion = vData.version;
+    const vPath = path.join(__dirname, 'public', 'version.json');
+    if (fs.existsSync(vPath)) {
+        const vData = JSON.parse(fs.readFileSync(vPath, 'utf8'));
+        serverVersion = vData.version;
+        console.log(`[Version] Server started with version: \${serverVersion}`);
+    }
 } catch (e) { console.error('Failed to load version:', e); }
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -54,7 +58,7 @@ io.on('connection', (socket) => {
     console.log(`+ Connected: ${socket.id}`);
 
     // Send current version immediately
-    socket.emit('version-sync', { version: currentVersion });
+    socket.emit('version-sync', { version: serverVersion });
 
     socket.on('google-login', async ({ credential }) => {
         try {

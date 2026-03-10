@@ -1,11 +1,9 @@
-const CACHE_NAME = 'haggadah-cache-v1';
 const ASSETS = [
     '/',
     '/index.html',
     '/styles.css',
     '/app.js',
     '/haggadah_data.js',
-    '/version.json',
     '/haggadah_app_icon.png'
 ];
 
