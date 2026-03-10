@@ -188,6 +188,9 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transform: scaleX(-1) scale(1.15);
+    /* Mirror + slight zoom for flattery */
+    transform-origin: center;
 }
 
 #selfie-preview-wrap {

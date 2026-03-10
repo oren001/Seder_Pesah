@@ -213,7 +213,13 @@ async function checkVersion() {
         const versionEl = document.getElementById('version-display');
         if (versionEl) versionEl.textContent = `גרסה: ${data.version}`;
 
-        if (currentVersion && currentVersion !== data.version) {
+        // Initialize currentVersion on first fetch
+        if (!currentVersion) {
+            currentVersion = data.version;
+            return;
+        }
+
+        if (currentVersion !== data.version) {
             notifyNewVersion();
         }
         currentVersion = data.version;
@@ -240,8 +246,15 @@ function notifyNewVersion() {
 async function startCamera() {
     const video = $$('selfie-video');
     try {
+        // Request a more standard resolution to avoid defaulting to wide-angle lenses
+        // A 1:1 aspect ratio constraint helps center the face
         const stream = await navigator.mediaDevices.getUserMedia({
-            video: { width: 400, height: 400, facingMode: 'user' },
+            video: {
+                width: { ideal: 640 },
+                height: { ideal: 640 },
+                aspectRatio: { exact: 1 },
+                facingMode: 'user'
+            },
             audio: false
         });
         video.srcObject = stream;
@@ -611,6 +624,8 @@ function closePhotoZoom() {
 
 // Global exposure for onclick
 window.closePhotoZoom = closePhotoZoom;
+window.toggleLanguage = toggleLanguage;
+window.onSegmentClick = onSegmentClick;
 
 // --- Utils ---
 function showScreen(name) {

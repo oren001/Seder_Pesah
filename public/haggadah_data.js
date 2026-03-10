@@ -114,11 +114,11 @@ const HAGGADAH = [
     "segments": [
       {
         "he": "כַּרְפַּס פָּחוֹת מִכְּזַיִת בְּמֵי מֶלַח, וּמְבָרְכִין:",
-        "en": ""
+        "en": "Karpas - dip a green vegetable in salt water."
       },
       {
         "he": "בָּרוּךְ אַתָּה יְיָ אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, בּוֹרֵא פְּרִי הָאֲדָמָה.",
-        "en": ""
+        "en": "Baruch Atah Adonai... Borei Pri Ha'adamah."
       }
     ]
   },
@@ -127,7 +127,7 @@ const HAGGADAH = [
     "segments": [
       {
         "he": "בּוֹצֵעַ אֶת הַמַּצָּה הָאֶמְצָעִית לִשְׁנַיִם, וּמַצְפִּין אֶת הַחֵצִי הַגָּדוֹל לַאֲפִיקוֹמָן.",
-        "en": ""
+        "en": "Yachatz - break the middle matzah."
       },
       {
         "he": "מַגִּיד",
