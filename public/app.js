@@ -318,24 +318,47 @@ function onRoomUpdated({ participants, currentPage: pg }) {
 }
 
 function onPageChanged({ currentPage: newPage }) {
-    currentPage = newPage;
-    renderPage();
-    showToast(`העמוד שונה ל-${currentPage + 1}`);
+    leaderPage = newPage;
+    if (isSyncingWithLeader) {
+        currentPage = newPage;
+        renderPage();
+        showToast(`המנחה עבר לעמוד ${currentPage + 1}`);
+    } else {
+        renderPage();
+    }
 }
 
 // --- Render ---
 function renderParticipants(participants) {
     $$('count-number').textContent = participants.length;
     const list = $$('participants-list');
+    const gazeboList = $$('gazebo-participants');
+
     list.innerHTML = '';
+    if (gazeboList) gazeboList.innerHTML = '';
+
     participants.forEach(p => {
+        const photoUrl = p.photo || generatePlaceholderPhoto();
+
+        // Header Strip
         const div = document.createElement('div');
         div.className = 'avatar' + (me && p.id === me.id ? ' me' : '');
         const img = document.createElement('img');
-        img.src = p.photo || generatePlaceholderPhoto();
+        img.src = photoUrl;
         img.alt = 'משתתף';
         div.appendChild(img);
         list.appendChild(div);
+
+        // Gazebo Grid
+        if (gazeboList) {
+            const gazDiv = document.createElement('div');
+            gazDiv.className = 'gazebo-avatar';
+            gazDiv.onclick = () => openPhotoZoom(photoUrl);
+            const gazImg = document.createElement('img');
+            gazImg.src = photoUrl;
+            gazDiv.appendChild(gazImg);
+            gazeboList.appendChild(gazDiv);
+        }
     });
 }
 
@@ -398,6 +421,8 @@ function renderPage() {
         $$('btn-prev').disabled = currentPage === 0;
         $$('btn-next').disabled = currentPage === HAGGADAH.length - 1;
 
+        updateMealProgress();
+
         // Sync button visibility
         const syncBtn = $$('btn-sync');
         if (!isSyncingWithLeader || currentPage !== leaderPage) {
@@ -413,16 +438,16 @@ function renderPage() {
 function changePage(delta) {
     const next = currentPage + delta;
     if (next >= 0 && next < HAGGADAH.length) {
-        const wasSyncing = isSyncingWithLeader;
+        const isLeading = $$('check-lead-mode').checked;
 
-        // If we move manually, we stop following (Free Browsing)
-        // UNLESS we want to Lead. For now, manual move = stop following.
-        isSyncingWithLeader = false;
-        currentPage = next;
-
-        // If we WERE syncing, we also update the server so others can follow
-        if (wasSyncing) {
+        if (isLeading) {
+            // Global move
+            currentPage = next;
             socket.emit('change-page', { roomId: currentRoomId, pageIndex: next });
+        } else {
+            // Local move (Free Browsing)
+            isSyncingWithLeader = false;
+            currentPage = next;
         }
 
         renderPage();
@@ -431,6 +456,7 @@ function changePage(delta) {
 
 function onSyncWithLeader() {
     isSyncingWithLeader = true;
+    if ($$('check-lead-mode')) $$('check-lead-mode').checked = false; // Stop leading if following
     currentPage = leaderPage;
     renderPage();
     showToast('חזרת לסנכרון עם המנחה');
@@ -497,6 +523,48 @@ function triggerNanoTest() {
     showToast('יוצר תמונה קבוצתית (NB PRO)...');
     socket.emit('test-nano-banana', { roomId: currentRoomId });
 }
+
+// --- Gazebo Extras ---
+function updateMealProgress() {
+    const total = HAGGADAH.length;
+    const current = currentPage + 1;
+    const percent = Math.round((current / total) * 100);
+
+    const bar = $$('meal-progress-bar');
+    const text = $$('meal-eta-text');
+
+    if (bar) bar.style.width = percent + '%';
+    if (text) {
+        // Find index of "Shulchan Orech" if it exists, otherwise use total
+        const dinnerIndex = HAGGADAH.findIndex(p => p.title.includes('שולחן עורך'));
+        if (dinnerIndex !== -1) {
+            const remaining = dinnerIndex - currentPage;
+            if (remaining > 0) {
+                text.textContent = `נשארו עוד ${remaining} דפים עד לאוכל 🍗`;
+            } else if (remaining === 0) {
+                text.textContent = `בתיאבון! שולחן עורך כאן 🍷🍗`;
+            } else {
+                text.textContent = `אנחנו אחרי האוכל, ממשיכים בהלל! 🍷`;
+            }
+        } else {
+            text.textContent = `${percent}% מההגדה מאחורינו`;
+        }
+    }
+}
+
+function openPhotoZoom(url) {
+    const viewer = $$('photo-viewer');
+    const img = $$('zoomed-photo');
+    img.src = url;
+    viewer.classList.remove('hidden');
+}
+
+function closePhotoZoom() {
+    $$('photo-viewer').classList.add('hidden');
+}
+
+// Global exposure for onclick
+window.closePhotoZoom = closePhotoZoom;
 
 // --- Utils ---
 function showScreen(name) {

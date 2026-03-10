@@ -68,27 +68,54 @@
             </div>
 
             <div class="header-actions">
-                <button id="btn-toggle-tasks" class="btn outline small">📋 משימות</button>
+                <div class="lead-mode-toggle">
+                    <input type="checkbox" id="check-lead-mode">
+                    <label for="check-lead-mode">📢 הובלה</label>
+                </div>
+                <button id="btn-toggle-tasks" class="btn outline small">🛖 הַגָּזִיבּוֹ</button>
                 <button id="btn-copy-link" class="btn outline small">הזמן חברים</button>
             </div>
         </header>
 
-        <!-- Tasks Sidebar -->
+        <!-- The Gazebo (Premium Side Panel) -->
         <div id="task-sidebar" class="sidebar hidden">
             <div class="sidebar-header">
-                <h3>📋 רשימת משימות</h3>
+                <h3>🛖 הַגָּזִיבּוֹ</h3>
                 <button id="btn-close-tasks" class="btn-close">&times;</button>
             </div>
-            <div class="task-input-wrap">
-                <input type="text" id="input-new-task" placeholder="הוסף משימה לתאום...">
-                <button id="btn-add-task" class="btn primary small">+</button>
+
+            <!-- Gazebo Section: Participants Grid -->
+            <div class="gazebo-section">
+                <div class="gazebo-section-title">👥 מְסֻבִּין</div>
+                <div id="gazebo-participants" class="gazebo-grid">
+                    <!-- Participant photos go here -->
+                </div>
             </div>
-            <div id="task-list" class="task-list">
-                <!-- Tasks go here -->
+
+            <!-- Gazebo Section: Meal Progress -->
+            <div class="gazebo-section">
+                <div class="gazebo-section-title">🍷 הַדֶּרֶךְ לַשֻּׁלְחָן עֹרֶךְ</div>
+                <div class="meal-eta" id="meal-eta-text">טוען התקדמות...</div>
+                <div class="meal-progress-wrap">
+                    <div id="meal-progress-bar" class="meal-progress-bar"></div>
+                </div>
             </div>
+
+            <!-- Gazebo Section: Tasks -->
+            <div class="gazebo-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div class="gazebo-section-title">📋 מְשִׂימוֹת</div>
+                <div class="task-input-wrap">
+                    <input type="text" id="input-new-task" placeholder="הוסף משימה לתאום...">
+                    <button id="btn-add-task" class="btn primary small">+</button>
+                </div>
+                <div id="task-list" class="task-list">
+                    <!-- Tasks go here -->
+                </div>
+            </div>
+
             <div class="sidebar-footer">
-                <p class="tiny-text">התמונות נוצרות אוטומטית לפי המשתתפים בחדר</p>
                 <p class="tiny-text" id="version-display" style="opacity: 0.5;"></p>
+                <p class="tiny-text">התמונות נוצרות אוטומטית לפי המשתתפים</p>
             </div>
         </div>
 
@@ -112,7 +139,9 @@
         </footer>
     </div>
 
-    <div id="toast" class="toast hidden"></div>
+    <div id="photo-viewer" class="photo-viewer hidden" onclick="closePhotoZoom()">
+        <img id="zoomed-photo" src="" alt="Zooma">
+    </div>
 
     <script src="haggadah_data.js"></script>
     <script src="app.js"></script>
