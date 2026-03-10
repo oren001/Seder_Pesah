@@ -355,33 +355,31 @@ body {
 /* AI Image Styles */
 .page-image-wrap {
     width: 100%;
-    border-radius: 12px;
+    border-radius: 20px;
     overflow: hidden;
     margin-bottom: 2rem;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    background: #eef;
-    animation: fadeInScale 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.12);
+    background: #fdfaf5;
+    animation: fadeInScale 0.7s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     cursor: pointer;
+    border: 1px solid rgba(139, 69, 19, 0.08);
 }
 
 .status-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
+    inset: 0;
+    background: rgba(255, 252, 248, 0.9);
+    backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    color: white;
-    z-index: 50;
-    padding: 1rem;
     text-align: center;
-    transition: opacity 0.3s ease;
+    padding: 2.5rem;
+    transition: opacity 0.4s ease;
+    z-index: 50;
+    color: var(--primary);
 }
 
 .status-overlay.hidden {
@@ -390,19 +388,24 @@ body {
 }
 
 .status-overlay .status-text {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
+    font-size: 2.2rem;
+    font-weight: 900;
+    margin-bottom: 0.8rem;
+    font-family: inherit;
+    letter-spacing: -0.5px;
 }
 
 .status-overlay .status-log {
-    font-size: 0.85rem;
-    opacity: 0.8;
-    max-width: 80%;
+    font-size: 1.1rem;
+    color: var(--gold);
+    font-weight: 800;
+    max-width: 85%;
+    line-height: 1.4;
 }
 
 .status-overlay.error {
-    background: rgba(139, 0, 0, 0.8);
+    background: rgba(255, 230, 230, 0.95);
+    color: #8b0000;
 }
 
 @keyframes fadeInScale {
