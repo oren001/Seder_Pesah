@@ -21,7 +21,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 // Version state
-let serverVersion = '1.0.1660';
+let serverVersion = '1.0.1665';
 try {
     const vPath = path.join(__dirname, 'public', 'version.json');
     if (fs.existsSync(vPath)) {
@@ -102,7 +102,8 @@ io.on('connection', (socket) => {
                 email: payload.email,
                 picture: payload.picture
             };
-            console.log(`[Auth] User logged in: ${userData.name}`);
+            socket.userEmail = payload.email; // Store for leadership checks
+            console.log(`[Auth] User logged in: ${userData.name} (${socket.userEmail})`);
             socket.emit('google-login-success', userData);
         } catch (err) {
             console.error('[Auth] Login failed:', err.message);
@@ -187,11 +188,11 @@ io.on('connection', (socket) => {
         };
 
         const room = rooms[roomId];
-        // Auto-assign leader if room has none
-        if (!room.leaderId) {
+        // Only assign leader if it's Oren
+        if (!room.leaderId && socket.userEmail === 'oren001@gmail.com') {
             room.leaderId = socket.id;
-            room.leaderName = 'המארח';
-            console.log(`[Leader] Auto-assigned leader in room ${roomId}: ${socket.id}`);
+            room.leaderName = 'אורן (מנהל הסדר)';
+            console.log(`[Leader] Oren identified and assigned as leader in room ${roomId}`);
         }
 
         const existing = room.participants.find(p => p.photo && p.photo === photo);
@@ -247,8 +248,15 @@ io.on('connection', (socket) => {
 
     socket.on('take-lead', ({ roomId, name }) => {
         if (!rooms[roomId]) return;
+        
+        // Restriction: Only Oren can take lead
+        if (socket.userEmail !== 'oren001@gmail.com') {
+            console.log(`[Leader] Leadership denied for ${socket.id} (not Oren)`);
+            return;
+        }
+
         rooms[roomId].leaderId = socket.id;
-        rooms[roomId].leaderName = name || 'משתתף';
+        rooms[roomId].leaderName = name || 'אורן (מנהל הסדר)';
         console.log(`Leadership taken in room ${roomId} by ${rooms[roomId].leaderName}`);
         saveRooms();
         io.to(roomId).emit('leader-updated', { leaderId: socket.id, leaderName: rooms[roomId].leaderName });

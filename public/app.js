@@ -210,6 +210,13 @@ async function setupSocket() {
     socket.on('connect', () => {
         console.log('[Socket] Connected to server. Socket ID:', socket.id);
 
+        // Auto-re-auth if we have a saved credential
+        const savedCred = localStorage.getItem('haggadah-google-cred');
+        if (savedCred) {
+            console.log('[Auth] Found saved credential, syncing personality...');
+            socket.emit('google-login', { credential: savedCred });
+        }
+
         // If we were already in a room, re-join automatically to restore sync
         if (currentRoomId) {
             console.log('[Socket] Re-connecting... re-joining room:', currentRoomId);
@@ -1172,6 +1179,10 @@ function toggleLanguage() {
 function handleGoogleResponse(response) {
     const credential = response.credential;
     console.log('Google credential received');
+    
+    // Save credential for session persistence
+    localStorage.setItem('haggadah-google-cred', credential);
+    
     if (socket) {
         socket.emit('google-login', { credential });
     } else {
