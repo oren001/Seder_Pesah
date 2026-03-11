@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1700",
-    "notes": "Synchronized versions and hardened leadership logic."
+    "version": "1.0.1705",
+    "notes": "Fixed root cause: Google credential email now restored on startup."
 }

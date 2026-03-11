@@ -7,7 +7,7 @@ let currentRoomId = null;
 let currentPage = 0;
 const pageImages = {};  // { [pageIndex]: imageUrl } — grows as AI generates images
 let roomState = null;
-let currentVersion = '1.0.1700'; // Force local version match
+let currentVersion = '1.0.1705'; // Force local version match
 let wakeLock = null;
 let exodusMap = null;
 let rsvpFlow = null;
@@ -133,11 +133,39 @@ function init() {
     });
 
 
-    // Auto-login from storage
+    // Auto-login from storage — prioritize Google credential over guest session
+    const savedGoogleCred = localStorage.getItem('haggadah-google-cred');
     const storedUser = localStorage.getItem('haggadah-user');
+    
     if (storedUser) {
         me = JSON.parse(storedUser);
         console.log('[Auth] Restored user:', me.name);
+    }
+    
+    // If we have a saved Google credential, decode it to ensure email is available
+    if (savedGoogleCred) {
+        try {
+            // Decode the JWT payload (middle part)
+            const payload = JSON.parse(atob(savedGoogleCred.split('.')[1]));
+            if (payload.email) {
+                // Override the stored user with the Google account info
+                // This ensures me.email is always set if Oren previously logged in
+                me = {
+                    id: payload.sub,
+                    name: payload.name || me?.name || 'אורן',
+                    email: payload.email,
+                    picture: payload.picture,
+                    isGuest: false
+                };
+                localStorage.setItem('haggadah-user', JSON.stringify(me));
+                console.log('[Auth] Restored Google user from credential:', me.email);
+            }
+        } catch(e) {
+            console.warn('[Auth] Failed to decode saved credential:', e);
+        }
+    }
+    
+    if (me) {
         const authSection = document.getElementById('lobby-auth-section');
         const actionsSection = document.getElementById('lobby-actions-section');
         if (authSection) authSection.classList.add('hidden');
