@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1720",
-    "notes": "Fix heartbeat scope — green dot now works."
+    "version": "1.0.1725",
+    "notes": "Lobby scaling, selfie updates (click own avatar), and legacy selfie migration."
 }

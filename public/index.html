@@ -10,7 +10,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800;900&family=Assistant:wght@300;400;600&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.0.1720">
+    <link rel="stylesheet" href="styles.css?v=1.0.1725">
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -146,9 +146,13 @@
                 <p class="subtitle" id="lobby-status-text">מחכים שכולם יתיישבו סביב השולחן</p>
                 
                 <div class="waiting-participants">
-                    <div class="gazebo-section-title">👥 מי כבר כאן?</div>
-                    <div id="room-lobby-participants" class="gazebo-grid" style="grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1.5rem; padding: 1rem;">
-                        <!-- Participants will appear here -->
+                    <p style="font-weight: 800; margin-bottom: 1.5rem; color: #5d4037; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        👥 מי כבר כאן?
+                    </p>
+                    <div class="gazebo-grid-container">
+                        <div id="room-lobby-participants" class="gazebo-grid">
+                            <!-- Participants will appear here -->
+                        </div>
                     </div>
                 </div>
 
@@ -320,10 +324,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
-    <script src="haggadah_data.js?v=1.0.1720"></script>
-    <script src="ExodusMap.js?v=1.0.1720"></script>
-    <script src="RSVPFlow.js?v=1.0.1720"></script>
-    <script src="app.js?v=1.0.1720"></script>
+    <script src="haggadah_data.js?v=1.0.1725"></script>
+    <script src="ExodusMap.js?v=1.0.1725"></script>
+    <script src="RSVPFlow.js?v=1.0.1725"></script>
+    <script src="app.js?v=1.0.1725"></script>
 </body>
 
 </html>

@@ -7,7 +7,7 @@ let currentRoomId = null;
 let currentPage = 0;
 const pageImages = {};  // { [pageIndex]: imageUrl } — grows as AI generates images
 let roomState = null;
-let currentVersion = '1.0.1720'; // Force local version match
+let currentVersion = '1.0.1725'; // Force local version match
 let wakeLock = null;
 let exodusMap = null;
 let rsvpFlow = null;
@@ -723,7 +723,7 @@ function renderLobbyParticipants(participants) {
         const photoUrl = p.photo || generatePlaceholderPhoto();
         const card = document.createElement('div');
         card.className = 'gazebo-avatar lobby-avatar-card';
-        card.style.cssText = 'width:100px;height:100px;position:relative;';
+        card.style.cssText = 'width:85px;height:85px;position:relative;'; // Smaller for grid density
         
         const img = document.createElement('img');
         img.src = photoUrl;
@@ -733,6 +733,28 @@ function renderLobbyParticipants(participants) {
         const dot = document.createElement('div');
         dot.className = 'online-dot' + (p.active ? ' active' : ' offline');
         card.appendChild(dot);
+
+        // 📸 Is it ME? Add badge & retake ability
+        const isMe = (p.id === socket.id);
+        if (isMe) {
+            const meBadge = document.createElement('div');
+            meBadge.className = 'me-badge';
+            meBadge.textContent = 'אני';
+            card.appendChild(meBadge);
+
+            const retake = document.createElement('div');
+            retake.className = 'retake-badge';
+            retake.innerHTML = '🔄';
+            card.appendChild(retake);
+
+            card.title = 'לחץ לעדכון תמונה';
+            card.onclick = () => {
+                if (rsvpFlow) {
+                    // Force retake
+                    rsvpFlow.start(currentRoomId);
+                }
+            };
+        }
         
         grid.appendChild(card);
     });

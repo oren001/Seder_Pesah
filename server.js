@@ -21,7 +21,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 // Version state
-let serverVersion = '1.0.1720';
+let serverVersion = '1.0.1725';
 try {
     const vPath = path.join(__dirname, 'public', 'version.json');
     if (fs.existsSync(vPath)) {
