@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1730",
-    "notes": "Fix TypeError in selfie update flow (rsvpFlow.show)"
+    "version": "1.0.1575",
+    "notes": "Fixed Sign Out logic: now clears all localStorage and redirects to / to ensure room state is also reset."
 }

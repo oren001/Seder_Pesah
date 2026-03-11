@@ -1,4 +1,4 @@
-const CACHE_NAME = 'haggadah-v1.0.1606'; // Incremented to force update
+const CACHE_NAME = 'haggadah-v1.0.1570'; // Incremented to force update
 const ASSETS = [
     '/',
     '/index.html',
