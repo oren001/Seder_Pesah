@@ -627,7 +627,11 @@ function renderPage() {
     updateMealProgress();
     if (exodusMap) exodusMap.updateProgress(currentPage, HAGGADAH.length);
 
-    const el = $$('page-content');
+    const el = $$('haggadah-pages');
+    if (!el) {
+        console.error('[Render] Main container #haggadah-pages not found!');
+        return;
+    }
     const imageData = pageImages[currentPage];
     const index = currentPage;
 
