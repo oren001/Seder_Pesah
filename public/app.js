@@ -660,17 +660,7 @@ function renderLobbyParticipants(participants) {
         img.src = photoUrl;
         card.appendChild(img);
         
-        const nameLabel = document.createElement('div');
-        nameLabel.style.fontSize = '0.7rem';
-        nameLabel.style.marginTop = '5px';
-        nameLabel.textContent = p.name || 'אורח';
-        
-        const wrap = document.createElement('div');
-        wrap.style.textAlign = 'center';
-        wrap.appendChild(card);
-        wrap.appendChild(nameLabel);
-        
-        grid.appendChild(wrap);
+        grid.appendChild(card);
     });
 }
 
