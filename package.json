@@ -1,0 +1,32 @@
+{
+  "name": "passover-haggadah",
+  "version": "1.0.0",
+  "description": "A modern, interactive digital Seder experience with a Pearl White theme. Participants join via a shared link, take a selfie, and are automatically featured in AI-generated Exodus scenes using Leonardo AI.",
+  "main": "compiler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oren001/Seder_Pesah.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/oren001/Seder_Pesah/issues"
+  },
+  "homepage": "https://github.com/oren001/Seder_Pesah#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "form-data": "^4.0.5",
+    "formdata-node": "^6.0.3",
+    "google-auth-library": "^10.6.1",
+    "node-fetch": "^2.7.0",
+    "pdf-parse": "^2.4.5",
+    "socket.io": "^4.8.3"
+  }
+}

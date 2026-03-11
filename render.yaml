@@ -1,0 +1,47 @@
+services:
+  # 1. Backend — Node.js Web Service
+  - type: web
+    name: haggadah-backend
+    plan: free
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
+      - key: FIREBASE_PROJECT_ID
+        value: general-4686c
+      - key: FIREBASE_STORAGE_BUCKET
+        value: general-4686c.firebasestorage.app
+      - key: LEONARDO_API_KEY
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+
+  # 2. Frontend — Static Site (Free on Render)
+  - type: web
+    name: haggadah-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: out
+    envVars:
+      - key: NEXT_PUBLIC_BACKEND_URL
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        value: AIzaSyCcnpQDPsQptHdZKHupXOZNqNbO1JOD1Ss
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        value: general-4686c
+      - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+        value: general-4686c.firebasestorage.app
+      - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+        value: "810223700186"
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        value: "1:810223700186:web:7eeeac4b4e0f921cd7fde3"

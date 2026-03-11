@@ -1,0 +1,17 @@
+{
+    "name": "Haggadah AI - פסח יחד",
+    "short_name": "Haggadah",
+    "description": "Modern, interactive digital Seder experience.",
+    "start_url": "/?pwa=1",
+    "display": "standalone",
+    "background_color": "#8b4513",
+    "theme_color": "#8b4513",
+    "icons": [
+        {
+            "src": "haggadah_app_icon.png",
+            "sizes": "1024x1024",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
