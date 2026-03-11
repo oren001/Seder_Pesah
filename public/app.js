@@ -274,7 +274,7 @@ async function setupSocket() {
 
     socket.on('page-changed', (data) => {
         leaderPage = data.currentPage;
-        if (isSyncingWithLeader) {
+        if (isFollowingLeader) {
             currentPage = data.currentPage;
             renderPage();
             showToast(`המנחה עבר לעמוד ${currentPage + 1}`);
@@ -597,7 +597,7 @@ function onRoomUpdated({ participants, currentPage: pg }) {
 
 function onPageChanged({ currentPage: newPage }) {
     leaderPage = newPage;
-    if (isSyncingWithLeader) {
+    if (isFollowingLeader) {
         currentPage = newPage;
         renderPage();
         showToast(`המנחה עבר לעמוד ${currentPage + 1}`);
