@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1725",
-    "notes": "Lobby scaling, selfie updates (click own avatar), and legacy selfie migration."
+    "version": "1.0.1730",
+    "notes": "Fix TypeError in selfie update flow (rsvpFlow.show)"
 }

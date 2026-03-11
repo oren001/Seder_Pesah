@@ -7,7 +7,7 @@ let currentRoomId = null;
 let currentPage = 0;
 const pageImages = {};  // { [pageIndex]: imageUrl } — grows as AI generates images
 let roomState = null;
-let currentVersion = '1.0.1725'; // Force local version match
+let currentVersion = '1.0.1730'; // Force local version match
 let wakeLock = null;
 let exodusMap = null;
 let rsvpFlow = null;
@@ -751,7 +751,7 @@ function renderLobbyParticipants(participants) {
             card.onclick = () => {
                 if (rsvpFlow) {
                     // Force retake
-                    rsvpFlow.start(currentRoomId);
+                    rsvpFlow.show();
                 }
             };
         }
