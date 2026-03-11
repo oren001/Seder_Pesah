@@ -7,7 +7,7 @@ let currentRoomId = null;
 let currentPage = 0;
 const pageImages = {};  // { [pageIndex]: imageUrl } — grows as AI generates images
 let roomState = null;
-let currentVersion = '1.0.1715'; // Force local version match
+let currentVersion = '1.0.1720'; // Force local version match
 let wakeLock = null;
 let exodusMap = null;
 let rsvpFlow = null;
@@ -252,14 +252,6 @@ async function setupSocket() {
         }
     });
 
-    // Start heartbeat when visible
-    function startHeartbeat(roomId) {
-        setInterval(() => {
-            if (!document.hidden && roomId) {
-                socket.emit('heartbeat', { roomId });
-            }
-        }, 5000);
-    }
 
     socket.on('disconnect', (reason) => {
         console.warn('[Socket] Disconnected:', reason);
@@ -611,6 +603,19 @@ function onJoinWithPhoto() {
     if (!pendingRoomId) return;
     stopCamera();
     joinRoom(pendingRoomId);
+}
+
+// --- Heartbeat: send to server every 5s to show we're actively watching ---
+let heartbeatInterval = null;
+function startHeartbeat(roomId) {
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
+    // Send immediately so the dot turns green right away
+    if (socket && roomId) socket.emit('heartbeat', { roomId });
+    heartbeatInterval = setInterval(() => {
+        if (!document.hidden && socket && roomId) {
+            socket.emit('heartbeat', { roomId });
+        }
+    }, 5000);
 }
 
 function joinRoom(roomId, rsvpData = null) {

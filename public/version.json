@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1715",
-    "notes": "Green online dots and persistent selfie storage."
+    "version": "1.0.1720",
+    "notes": "Fix heartbeat scope — green dot now works."
 }
