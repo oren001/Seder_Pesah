@@ -166,6 +166,37 @@
 
 
     <!-- ======== ROOM SCREEN ======== -->
+    <!-- ======== ROOM LOBBY (WAITING ROOM) ======== -->
+    <div id="room-lobby-screen" class="screen hidden">
+        <div class="lobby-card glass" style="max-width: 600px; width: 95%;">
+            <div class="lobby-header">
+                <h1 class="logo-title">הסדר מתחיל עוד מעט... 🍇</h1>
+                <p class="subtitle" id="lobby-status-text">מחכים שכולם יתיישבו סביב השולחן</p>
+                
+                <div class="waiting-participants">
+                    <div class="gazebo-section-title">👥 מי כבר כאן?</div>
+                    <div id="room-lobby-participants" class="gazebo-grid" style="grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1.5rem; padding: 1rem;">
+                        <!-- Participants will appear here -->
+                    </div>
+                </div>
+
+                <div id="lobby-leader-actions" class="hidden" style="margin-top: 2rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 2rem;">
+                    <p style="margin-bottom: 1rem; font-weight: 600;">מנהל הסדר, כשיש מניין - אפשר להתחיל!</p>
+                    <button id="btn-start-seder" class="btn primary large" style="width: 100%;">התחל את ההגדה 📖🚀</button>
+                </div>
+
+                <div id="lobby-guest-note" style="margin-top: 2rem; opacity: 0.7; font-size: 0.9rem;">
+                    המנחה יתחיל את הסדר בקרוב, הישארו איתנו... ✨
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <button id="btn-lobby-copy-link" class="btn outline small">הזמן עוד אורחים ✉️</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <div id="room-screen" class="screen hidden">
         <div id="effects-container" class="effects-container hidden"></div>
 

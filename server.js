@@ -114,8 +114,10 @@ io.on('connection', (socket) => {
         const roomId = generateId();
         rooms[roomId] = {
             id: roomId,
-            currentPage: 0,
             participants: [],
+            currentPage: 0,
+            leaderId: null,
+            leaderName: null,
             tasks: persistedTasks[roomId] || [
                 { id: 'h1', text: '✅ תכנון MVP ראשוני', completed: true, author: 'אורן (מנהל פרויקט)' },
                 { id: 'h2', text: '✅ הקמת שרת (Express, Socket.io)', completed: true, author: 'אורן (מנהל פרויקט)' },
@@ -135,8 +137,8 @@ io.on('connection', (socket) => {
                 { id: 'dev-4', text: '☁️ חיבור למסד נתונים', completed: false, author: 'אורן (מנהל פרויקט)' },
                 { id: 'dev-5', text: '🎥 שילוב אודיו / וידאו', completed: false, author: 'אורן (מנהל פרויקט)' }
             ],
-            leaderId: null,
-            leaderName: null
+            sederStarted: false,
+            createdAt: new Date().toISOString()
         };
         console.log(`Room created: ${roomId}`);
         saveRooms();
@@ -171,7 +173,9 @@ io.on('connection', (socket) => {
                     { id: 'dev-5', text: '🎥 שילוב אודיו / וידאו', completed: false, author: 'אורן (מנהל פרויקט)' }
                 ],
                 leaderId: null,
-                leaderName: null
+                leaderName: null,
+                sederStarted: false, // Initialize sederStarted for new rooms
+                createdAt: new Date().toISOString()
             };
         }
 
@@ -199,15 +203,17 @@ io.on('connection', (socket) => {
         console.log(`User ${socket.id} joined room ${roomId}`);
 
         if (callback) {
+            const room = rooms[roomId]; // Get the room object for convenience
             callback({
                 success: true,
                 roomId,
                 participant,
-                currentPage: rooms[roomId].currentPage,
-                images: rooms[roomId].images,
-                tasks: rooms[roomId].tasks,
-                leaderId: rooms[roomId].leaderId,
-                leaderName: rooms[roomId].leaderName
+                currentPage: room.currentPage,
+                sederStarted: room.sederStarted, // Add sederStarted status
+                images: room.images,
+                tasks: room.tasks,
+                leaderId: room.leaderId,
+                leaderName: room.leaderName
             });
         }
 
@@ -268,6 +274,17 @@ io.on('connection', (socket) => {
             console.error('[AI] Generation failed:', err.message);
             io.to(roomId).emit('ai-error', { message: 'שגיאת מערכת: ' + err.message, pageIndex });
         });
+    });
+
+    socket.on('start-seder', ({ roomId }) => {
+        const room = rooms[roomId];
+        if (!room) return;
+        if (socket.id !== room.leaderId) return;
+
+        room.sederStarted = true;
+        room.currentPage = 0; // Ensure we start at Kadesh
+        io.to(roomId).emit('seder-started', { currentPage: room.currentPage });
+        saveRooms();
     });
 
     socket.on('change-page', ({ roomId, pageIndex }) => {

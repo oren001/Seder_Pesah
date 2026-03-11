@@ -1439,3 +1439,33 @@ body {
 
 #rsvp-screen .btn-lobby-only { display: none; }
 #rsvp-screen .btn-rsvp-only { display: block; }
+
+/* --- Room Lobby --- */
+#room-lobby-screen {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: var(--bg);
+}
+
+#room-lobby-screen.active {
+    display: flex !important;
+}
+
+.lobby-card {
+    background: white;
+    padding: 3rem 2rem;
+    border-radius: 32px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(197, 160, 89, 0.2);
+}
+
+.waiting-participants {
+    margin-top: 3rem;
+    background: rgba(197, 160, 89, 0.05);
+    padding: 2rem;
+    border-radius: 24px;
+    border: 1px dashed var(--gold);
+}

@@ -26,6 +26,7 @@ const $$ = id => document.getElementById(id);
 const screens = {
     lobby: $$('lobby-screen'),
     rsvp: $$('rsvp-screen'),
+    roomLobby: $$('room-lobby-screen'),
     room: $$('room-screen')
 };
 
@@ -112,6 +113,8 @@ function init() {
     });
     safeAddListener('btn-close-tasks', 'click', toggleTasks);
     safeAddListener('btn-add-task', 'click', addTask);
+    safeAddListener('btn-start-seder', 'click', onStartSeder);
+    safeAddListener('btn-lobby-copy-link', 'click', onCopyLink);
     
     const inputNewTask = $$('input-new-task');
     if (inputNewTask) {
@@ -218,16 +221,30 @@ async function setupSocket() {
 
     socket.on('room-updated', (data) => {
         renderParticipants(data.participants);
+        renderLobbyParticipants(data.participants);
         leaderId = data.leaderId;
         leaderName = data.leaderName;
         leaderPage = data.currentPage;
 
         updateLeadershipUI();
+        updateLobbyUI(data.sederStarted);
 
         if (isFollowingLeader && data.currentPage !== currentPage) {
             currentPage = data.currentPage;
             renderPage();
         }
+    });
+
+    socket.on('seder-started', (data) => {
+        showScreen('room');
+        currentPage = data.currentPage || 0;
+        renderPage();
+        showToast('🍷 הסדר מתחיל! חג שמח!');
+        confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
     });
 
     socket.on('leader-updated', (data) => {
@@ -552,8 +569,15 @@ function joinRoom(roomId, rsvpData = null) {
 
             $$('total-pages').textContent = HAGGADAH.length;
             updateUrlParam('room', currentRoomId);
-            showScreen('room');
-            renderPage();
+            
+            if (response.sederStarted) {
+                showScreen('room');
+                renderPage();
+            } else {
+                showScreen('roomLobby');
+                renderLobbyParticipants(response.participant ? [response.participant] : []);
+                updateLobbyUI(false);
+            }
             renderTasks();
         } else {
             alert('החדר לא נמצא.');
@@ -597,6 +621,81 @@ function renderParticipants(participants) {
     participants.forEach(p => {
         const photoUrl = p.photo || generatePlaceholderPhoto();
         const isOnline = p.online !== false;
+        
+        // Header Strip
+        const div = document.createElement('div');
+        div.className = 'avatar' + (me && p.id === me.id ? ' me' : '') + (!isOnline ? ' offline' : '');
+        const img = document.createElement('img');
+        img.src = photoUrl;
+        img.alt = 'משתתף';
+        div.appendChild(img);
+        list.appendChild(div);
+
+        // Gazebo Grid
+        if (gazeboList) {
+            const gazDiv = document.createElement('div');
+            gazDiv.className = 'gazebo-avatar' + (!isOnline ? ' offline' : '');
+            gazDiv.onclick = () => openPhotoZoom(photoUrl);
+            const gazImg = document.createElement('img');
+            gazImg.src = photoUrl;
+            gazDiv.appendChild(gazImg);
+            gazeboList.appendChild(gazDiv);
+        }
+    });
+}
+
+function renderLobbyParticipants(participants) {
+    const grid = $$('room-lobby-participants');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    participants.forEach(p => {
+        const photoUrl = p.photo || generatePlaceholderPhoto();
+        const card = document.createElement('div');
+        card.className = 'gazebo-avatar';
+        card.style.width = '100px';
+        card.style.height = '100px';
+        
+        const img = document.createElement('img');
+        img.src = photoUrl;
+        card.appendChild(img);
+        
+        const nameLabel = document.createElement('div');
+        nameLabel.style.fontSize = '0.7rem';
+        nameLabel.style.marginTop = '5px';
+        nameLabel.textContent = p.name || 'אורח';
+        
+        const wrap = document.createElement('div');
+        wrap.style.textAlign = 'center';
+        wrap.appendChild(card);
+        wrap.appendChild(nameLabel);
+        
+        grid.appendChild(wrap);
+    });
+}
+
+function updateLobbyUI(sederStarted) {
+    if (sederStarted) return;
+    
+    const isLeader = leaderId === socket.id;
+    const leaderActions = $$('lobby-leader-actions');
+    const guestNote = $$('lobby-guest-note');
+    
+    if (leaderActions) {
+        if (isLeader) {
+            leaderActions.classList.remove('hidden');
+            if (guestNote) guestNote.classList.add('hidden');
+        } else {
+            leaderActions.classList.add('hidden');
+            if (guestNote) guestNote.classList.remove('hidden');
+        }
+    }
+}
+
+function onStartSeder() {
+    if (!currentRoomId) return;
+    socket.emit('start-seder', { roomId: currentRoomId });
+}
 
         // Header Strip
         const div = document.createElement('div');
