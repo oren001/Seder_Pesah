@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1606",
-    "notes": "Added Hamburger Menu and cleaner header. Fixed stale leader logic."
+    "version": "1.0.1615",
+    "notes": "Fixed Lobby scrolling issue, constrained layout, and hardened RSVP flow."
 }
