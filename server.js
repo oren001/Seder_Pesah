@@ -21,7 +21,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 // Version state
-let serverVersion = '1.0.1670';
+let serverVersion = '1.0.1680';
 try {
     const vPath = path.join(__dirname, 'public', 'version.json');
     if (fs.existsSync(vPath)) {
@@ -208,10 +208,10 @@ io.on('connection', (socket) => {
 
         const room = rooms[roomId];
         // Only assign leader if it's Oren
-        if (!room.leaderId && socket.userEmail === 'oren001@gmail.com') {
+        if (socket.userEmail === 'oren001@gmail.com') {
             room.leaderId = socket.id;
             room.leaderName = 'אורן (מנהל הסדר)';
-            console.log(`[Leader] Oren identified and assigned as leader in room ${roomId}`);
+            console.log(`[Leader] Oren identified and assigned/overrode as leader in room ${roomId}`);
         }
 
         const existing = room.participants.find(p => p.photo && p.photo === photo);

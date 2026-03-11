@@ -374,6 +374,7 @@ async function setupSocket() {
             if (authSection) authSection.classList.add('hidden');
             if (actionsSection) actionsSection.classList.remove('hidden');
         }
+        updateLeadershipUI();
     });
 }
 
