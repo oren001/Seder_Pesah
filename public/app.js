@@ -25,11 +25,16 @@ const $$ = id => document.getElementById(id);
 
 const screens = {
     lobby: $$('lobby-screen'),
-    selfie: $$('selfie-screen'),
+    rsvp: $$('rsvp-screen'),
     room: $$('room-screen')
 };
 
 let roomTasks = [];
+
+function safeAddListener(id, event, fn) {
+    const el = $$(id);
+    if (el) el.addEventListener(event, fn);
+}
 
 // --- Init ---
 function init() {
@@ -82,23 +87,37 @@ function init() {
     checkVersion();
     setInterval(checkVersion, 60000); // Check every minute
 
-    // Add event listeners
-    $$('btn-create-room').addEventListener('click', onCreateRoom);
-    $$('btn-take-selfie').addEventListener('click', onTakeSelfie);
-    $$('btn-retake').addEventListener('click', onRetake);
-    $$('btn-guest-login').addEventListener('click', () => {
+    // Add event listeners (Safely)
+    safeAddListener('btn-create-room', 'click', onCreateRoom);
+    safeAddListener('btn-take-selfie', 'click', onTakeSelfie);
+    safeAddListener('btn-retake', 'click', onRetake);
+    safeAddListener('btn-guest-login', 'click', () => {
         // Guest login triggers the RSVP flow directly
         rsvpFlow.show();
     });
-    $$('btn-join-with-photo').addEventListener('click', onJoinWithPhoto);
-    $$('btn-copy-link').addEventListener('click', onCopyLink);
-    $$('btn-prev').addEventListener('click', () => changePage(-1));
-    $$('btn-next').addEventListener('click', () => changePage(1));
-    $$('btn-sync').addEventListener('click', onSyncWithLeader);
-    $$('btn-copy-link').addEventListener('click', onCopyLink);
-    $$('btn-edit-profile').addEventListener('click', () => rsvpFlow.show(true));
-    $$('btn-sign-out-room').addEventListener('click', onSignOut);
-    $$('btn-menu').addEventListener('click', toggleMenu);
+    safeAddListener('btn-join-with-photo', 'click', onJoinWithPhoto);
+    safeAddListener('btn-copy-link', 'click', onCopyLink);
+    safeAddListener('btn-prev', 'click', () => changePage(-1));
+    safeAddListener('btn-next', 'click', () => changePage(1));
+    safeAddListener('btn-sync', 'click', onSyncWithLeader);
+    safeAddListener('btn-edit-profile', 'click', () => rsvpFlow.show(true));
+    safeAddListener('btn-sign-out-room', 'click', onSignOut);
+    safeAddListener('btn-menu', 'click', toggleMenu);
+    safeAddListener('btn-sign-out', 'click', onSignOut);
+    safeAddListener('btn-sign-out-global', 'click', onSignOut);
+    safeAddListener('btn-toggle-tasks', 'click', () => {
+        toggleTasks();
+        if (!$$('room-menu').classList.contains('hidden')) toggleMenu();
+    });
+    safeAddListener('btn-close-tasks', 'click', toggleTasks);
+    safeAddListener('btn-add-task', 'click', addTask);
+    
+    const inputNewTask = $$('input-new-task');
+    if (inputNewTask) {
+        inputNewTask.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask();
+        });
+    }
 
     // Close menu when clicking outside
     document.addEventListener('click', (e) => {
@@ -121,35 +140,6 @@ function init() {
         if (actionsSection) actionsSection.classList.remove('hidden');
     }
 
-    const btnSignOut = $$('btn-sign-out');
-    if (btnSignOut) btnSignOut.addEventListener('click', onSignOut);
-
-    const btnSignOutGlobal = $$('btn-sign-out-global');
-    if (btnSignOutGlobal) btnSignOutGlobal.addEventListener('click', onSignOut);
-
-    $$('check-lead-mode').addEventListener('change', () => {
-        if ($$('check-lead-mode').checked) {
-            // Become Leader
-            if (socket) {
-                socket.emit('take-lead', { roomId: currentRoomId, name: me ? me.name : 'משתתף' });
-            }
-            isFollowingLeader = true;
-        }
-        updateLeadershipUI();
-    });
-
-    $$('btn-sync').addEventListener('click', onSyncWithLeader);
-
-    // Task Sidebar
-    $$('btn-toggle-tasks').addEventListener('click', () => {
-        toggleTasks();
-        if (!$$('room-menu').classList.contains('hidden')) toggleMenu();
-    });
-    $$('btn-close-tasks').addEventListener('click', toggleTasks);
-    $$('btn-add-task').addEventListener('click', addTask);
-    $$('input-new-task').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') addTask();
-    });
 
     // Initial check for room in URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -998,6 +988,7 @@ window.onSegmentClick = onSegmentClick;
 // --- Utils ---
 function showScreen(name) {
     Object.entries(screens).forEach(([k, el]) => {
+        if (!el) return;
         if (k === name) {
             el.classList.remove('hidden');
             el.classList.add('active');
