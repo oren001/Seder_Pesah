@@ -27,13 +27,15 @@ class RSVPFlow {
 
     setupEventListeners() {
         // Step Welcome
-        $$('btn-rsvp-share').onclick = () => {
+        const btnShare = $$('btn-rsvp-share');
+        if (btnShare) btnShare.onclick = () => {
             const url = window.location.origin + '?room=' + currentRoomId;
             navigator.clipboard.writeText(url).then(() => {
                 showToast('הקישור הועתק! 📝 שלחו אותו בווטסאפ');
             });
         };
-        $$('btn-rsvp-next-1').onclick = () => {
+        const btnNext1 = $$('btn-rsvp-next-1');
+        if (btnNext1) btnNext1.onclick = () => {
             if (window.me) {
                 this.goToStep('guests');
             } else {
