@@ -607,8 +607,8 @@ function onPageChanged({ currentPage: newPage }) {
 
 // --- Render ---
 function renderParticipants(participants) {
-    const totalSouls = participants.reduce((sum, p) => sum + (p.guestCount || 1), 0);
-    $$('count-number').textContent = participants.length;
+    const totalSouls = participants.length;
+    $$('count-number').textContent = totalSouls;
     if ($$('total-souls')) $$('total-souls').textContent = totalSouls;
 
     const list = $$('participants-list');

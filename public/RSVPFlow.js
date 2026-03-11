@@ -40,35 +40,10 @@ class RSVPFlow {
         });
 
         this.safeClick('btn-rsvp-next-1', () => {
-            if (window.me) {
-                this.goToStep('guests');
-            } else {
-                this.goToStep('name');
-            }
+            this.goToStep('look');
         });
 
-        // Step Name
-        this.safeClick('btn-rsvp-next-name', () => {
-            const name = $$('rsvp-guest-name').value.trim();
-            if (name) {
-                this.data.name = name;
-                this.goToStep('guests');
-            } else {
-                showToast('בבקשה הכניסו שם');
-            }
-        });
-
-        // Step Guests
-        document.querySelectorAll('.guest-btn').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelectorAll('.guest-btn').forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                this.data.guestCount = parseInt(btn.dataset.count);
-                const nextBtn = $$('btn-rsvp-next-2');
-                if (nextBtn) nextBtn.disabled = false;
-            };
-        });
-        this.safeClick('btn-rsvp-next-2', () => this.goToStep('look'));
+        // Steps Name and Guests removed from JS flow logic
 
         // Step Look
         this.safeClick('choice-selfie', () => {
