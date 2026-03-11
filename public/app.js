@@ -54,10 +54,11 @@ function init() {
             console.log('[RSVP] Flow complete:', data);
             
             // If we're a guest (not logged in with Google), create a dummy user
-            if (!window.me && data.name) {
+            if (!window.me) {
+                const guestName = data.name || 'אורח ' + Math.floor(Math.random() * 900 + 100);
                 window.me = {
                     id: 'guest_' + Math.random().toString(36).substr(2, 9),
-                    name: data.name,
+                    name: guestName,
                     isGuest: true
                 };
                 localStorage.setItem('haggadah-user', JSON.stringify(window.me));
@@ -628,10 +629,8 @@ function renderPage() {
     if (exodusMap) exodusMap.updateProgress(currentPage, HAGGADAH.length);
 
     const el = $$('haggadah-pages');
-    if (!el) {
-        console.error('[Render] Main container #haggadah-pages not found!');
-        return;
-    }
+    if (!el) return;
+
     const imageData = pageImages[currentPage];
     const index = currentPage;
 

@@ -171,13 +171,8 @@ class RSVPFlow {
 
     show(isEliteEdit = false) {
         showScreen('rsvp');
-        if (isEliteEdit) {
-            this.goToStep('guests');
-        } else if (window.me) {
-            this.goToStep('guests');
-        } else {
-            this.goToStep('name');
-        }
+        // Always go to guests, never ask for name
+        this.goToStep('guests');
     }
 
     complete() {
