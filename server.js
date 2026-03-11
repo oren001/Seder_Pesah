@@ -21,7 +21,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 // Version state
-let serverVersion = '1.0.1650';
+let serverVersion = '1.0.1660';
 try {
     const vPath = path.join(__dirname, 'public', 'version.json');
     if (fs.existsSync(vPath)) {
@@ -186,12 +186,20 @@ io.on('connection', (socket) => {
             online: true 
         };
 
-        const existing = rooms[roomId].participants.find(p => p.photo && p.photo === photo);
+        const room = rooms[roomId];
+        // Auto-assign leader if room has none
+        if (!room.leaderId) {
+            room.leaderId = socket.id;
+            room.leaderName = 'המארח';
+            console.log(`[Leader] Auto-assigned leader in room ${roomId}: ${socket.id}`);
+        }
+
+        const existing = room.participants.find(p => p.photo && p.photo === photo);
         if (existing) {
             existing.id = socket.id;
             existing.online = true;
         } else {
-            rooms[roomId].participants.push(participant);
+            room.participants.push(participant);
         }
 
         socket.join(roomId);
@@ -201,7 +209,6 @@ io.on('connection', (socket) => {
         console.log(`User ${socket.id} joined room ${roomId}`);
 
         if (callback) {
-            const room = rooms[roomId];
             callback({
                 success: true,
                 roomId,
@@ -216,8 +223,10 @@ io.on('connection', (socket) => {
         }
 
         io.to(roomId).emit('room-updated', { 
-            participants: rooms[roomId].participants,
-            sederStarted: rooms[roomId].sederStarted
+            participants: room.participants,
+            sederStarted: room.sederStarted,
+            leaderId: room.leaderId,
+            leaderName: room.leaderName
         });
     });
 

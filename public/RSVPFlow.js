@@ -152,6 +152,9 @@ class RSVPFlow {
 
     complete() {
         this.stopRSVPCamera();
+        if (this.data.photo) {
+            localStorage.setItem('haggadah_selfie', this.data.photo);
+        }
         this.goToStep('finish');
         $$('btn-go-to-haggadah').onclick = () => {
             if (this.callbacks.onComplete) {

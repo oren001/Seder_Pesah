@@ -158,8 +158,14 @@ function init() {
     if (roomFromUrl) {
         pendingRoomId = roomFromUrl;
         if (me) {
-            // User already logged in, show RSVP flow to join the room
-            rsvpFlow.show();
+            // If we have a saved selfie and are logged in, join automatically
+            const savedSelfie = localStorage.getItem('haggadah_selfie');
+            if (savedSelfie) {
+                console.log('[Init] Auto-joining with saved selfie...');
+                joinRoom(pendingRoomId);
+            } else {
+                rsvpFlow.show();
+            }
         } else {
             // Show auth, but hide actions to avoid empty space
             showScreen('lobby');
@@ -555,12 +561,17 @@ function onJoinWithPhoto() {
 }
 
 function joinRoom(roomId, rsvpData = null) {
-    const photo = rsvpData ? rsvpData.photo : (selfieDataUrl || generatePlaceholderPhoto());
+    const photo = rsvpData ? rsvpData.photo : (localStorage.getItem('haggadah_selfie') || selfieDataUrl || generatePlaceholderPhoto());
     
     socket.emit('join-room', { roomId, photo }, (response) => {
         if (response.success) {
             currentRoomId = response.roomId;
             me = response.participant;
+            
+            // Sync leader from response
+            leaderId = response.leaderId;
+            leaderName = response.leaderName;
+            
             leaderPage = response.currentPage;
             currentPage = response.currentPage;
             if (response.images) Object.assign(pageImages, response.images);
@@ -574,10 +585,11 @@ function joinRoom(roomId, rsvpData = null) {
                 renderPage();
             } else {
                 showScreen('roomLobby');
-                renderLobbyParticipants(response.participant ? [response.participant] : []);
+                renderLobbyParticipants(response.participants || [response.participant]);
                 updateLobbyUI(false);
             }
             renderTasks();
+            updateLeadershipUI(); // Ensure leadership UI is correct (host badge etc)
         } else {
             alert('החדר לא נמצא.');
             window.location.href = '/';
