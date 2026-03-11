@@ -21,7 +21,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 // Version state
-let serverVersion = '1.0.1645';
+let serverVersion = '1.0.1650';
 try {
     const vPath = path.join(__dirname, 'public', 'version.json');
     if (fs.existsSync(vPath)) {
@@ -102,7 +102,7 @@ io.on('connection', (socket) => {
                 email: payload.email,
                 picture: payload.picture
             };
-            console.log(`[Auth] User logged in: \${userData.name}`);
+            console.log(`[Auth] User logged in: ${userData.name}`);
             socket.emit('google-login-success', userData);
         } catch (err) {
             console.error('[Auth] Login failed:', err.message);
@@ -186,30 +186,28 @@ io.on('connection', (socket) => {
             online: true 
         };
 
-        // Handle RSVP: If user with same picture exists, update their ID
         const existing = rooms[roomId].participants.find(p => p.photo && p.photo === photo);
         if (existing) {
             existing.id = socket.id;
             existing.online = true;
-            // guestCount removed from update logic as per instruction
         } else {
             rooms[roomId].participants.push(participant);
         }
 
         socket.join(roomId);
-        socket.roomId = roomId; // Store roomId on socket for disconnect
+        socket.roomId = roomId;
         saveRooms();
 
         console.log(`User ${socket.id} joined room ${roomId}`);
 
         if (callback) {
-            const room = rooms[roomId]; // Get the room object for convenience
+            const room = rooms[roomId];
             callback({
                 success: true,
                 roomId,
                 participant,
                 currentPage: room.currentPage,
-                sederStarted: room.sederStarted, // Add sederStarted status
+                sederStarted: room.sederStarted,
                 images: room.images,
                 tasks: room.tasks,
                 leaderId: room.leaderId,
@@ -217,28 +215,23 @@ io.on('connection', (socket) => {
             });
         }
 
-        io.to(roomId).emit('room-updated', {
+        io.to(roomId).emit('room-updated', { 
             participants: rooms[roomId].participants,
-            currentPage: rooms[roomId].currentPage,
-            images: rooms[roomId].images,
-            tasks: rooms[roomId].tasks,
-            leaderId: rooms[roomId].leaderId,
-            leaderName: rooms[roomId].leaderName
+            sederStarted: rooms[roomId].sederStarted
         });
     });
 
-    socket.on('update-profile', ({ roomId, photo }) => { // guestCount removed
-        if (!rooms[roomId]) return;
-        const p = rooms[roomId].participants.find(p => p.id === socket.id);
+    socket.on('update-profile', ({ roomId, photo }) => {
+        const room = rooms[roomId];
+        if (!room) return;
+        const p = room.participants.find(p => p.id === socket.id);
         if (p) {
             if (photo) p.photo = photo;
-            // guestCount removed from update logic as per instruction
+            p.guestCount = 1;
             saveRooms();
-            io.to(roomId).emit('room-updated', {
-                participants: rooms[roomId].participants,
-                currentPage: rooms[roomId].currentPage,
-                leaderId: rooms[roomId].leaderId,
-                leaderName: rooms[roomId].leaderName
+            io.to(roomId).emit('room-updated', { 
+                participants: room.participants,
+                sederStarted: room.sederStarted 
             });
         }
     });
@@ -254,24 +247,17 @@ io.on('connection', (socket) => {
 
     socket.on('trigger-effect', ({ roomId, effectType }) => {
         if (!rooms[roomId]) return;
-        console.log(`Effect triggered in room ${roomId}: ${effectType}`);
         io.to(roomId).emit('effect-triggered', { effectType, authorId: socket.id });
     });
 
     socket.on('generate-page', ({ roomId, pageIndex }) => {
         if (!rooms[roomId]) return;
-
-        // --- Leader Constraint ---
         if (rooms[roomId].leaderId !== socket.id) {
-            console.log(`[AI] Generation denied: User ${socket.id} is not leader.`);
             socket.emit('ai-error', { message: 'רק עורך הסדר יכול להתחיל יצירת תמונה!', pageIndex });
             return;
         }
-
-        console.log(`[AI] Manual generation triggered for room ${roomId}, page ${pageIndex}`);
         const { generatePersonalizedPage } = require('./leonardo');
         generatePersonalizedPage(roomId, pageIndex, io, rooms).catch(err => {
-            console.error('[AI] Generation failed:', err.message);
             io.to(roomId).emit('ai-error', { message: 'שגיאת מערכת: ' + err.message, pageIndex });
         });
     });
@@ -280,9 +266,8 @@ io.on('connection', (socket) => {
         const room = rooms[roomId];
         if (!room) return;
         if (socket.id !== room.leaderId) return;
-
         room.sederStarted = true;
-        room.currentPage = 0; // Ensure we start at Kadesh
+        room.currentPage = 0;
         io.to(roomId).emit('seder-started', { currentPage: room.currentPage });
         saveRooms();
     });
@@ -290,10 +275,9 @@ io.on('connection', (socket) => {
     socket.on('change-page', ({ roomId, pageIndex }) => {
         if (!rooms[roomId]) return;
         rooms[roomId].currentPage = pageIndex;
-        rooms[roomId].highlightedSegment = -1; // Reset highlight on page change
+        rooms[roomId].highlightedSegment = -1;
         saveRooms();
         io.to(roomId).emit('page-updated', { pageIndex, authorId: socket.id });
-        console.log(`Room ${roomId} -> page ${pageIndex} (by ${socket.id})`);
     });
 
     socket.on('set-highlight', ({ roomId, pageIndex, segmentIndex }) => {
@@ -302,15 +286,9 @@ io.on('connection', (socket) => {
         socket.to(roomId).emit('highlight-updated', { pageIndex, segmentIndex });
     });
 
-    // --- Task Board Events ---
     socket.on('add-task', ({ roomId, text, author }) => {
         if (!rooms[roomId]) return;
-        const task = {
-            id: Date.now().toString(),
-            text,
-            author: author || 'אורן',
-            completed: false
-        };
+        const task = { id: Date.now().toString(), text, author: author || 'אורח', completed: false };
         rooms[roomId].tasks.push(task);
         saveTasks(roomId, rooms[roomId].tasks);
         io.to(roomId).emit('tasks-updated', { tasks: rooms[roomId].tasks });
@@ -322,10 +300,7 @@ io.on('connection', (socket) => {
         if (task) {
             task.completed = !task.completed;
             saveTasks(roomId, rooms[roomId].tasks);
-            io.to(roomId).emit('tasks-updated', {
-                tasks: rooms[roomId].tasks,
-                completedTask: task.completed ? task.text : null
-            });
+            io.to(roomId).emit('tasks-updated', { tasks: rooms[roomId].tasks, completedTask: task.completed ? task.text : null });
         }
     });
 
@@ -338,15 +313,7 @@ io.on('connection', (socket) => {
 
     socket.on('test-nano-banana', ({ roomId }) => {
         if (!rooms[roomId]) return;
-
-        // --- Leader Constraint ---
-        if (rooms[roomId].leaderId !== socket.id) {
-            socket.emit('ai-error', { message: 'רק עורך הסדר יכול להפעיל בדיקות מערכת!' });
-            return;
-        }
-
-        console.log(`[AI] Nano Banana Test triggered for room ${roomId}`);
-        io.to(roomId).emit('ai-status', { message: 'מעלה תמונות משתתפים ל-Leonardo (PRO)...' });
+        if (rooms[roomId].leaderId !== socket.id) return;
         generateNanoTest(roomId, io, rooms).catch(err => {
             io.to(roomId).emit('ai-error', { message: 'שגיאת Leonardo: ' + err.message });
         });
@@ -355,30 +322,15 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         const roomId = socket.roomId;
         if (!roomId || !rooms[roomId]) return;
-
         const p = rooms[roomId].participants.find(p => p.id === socket.id);
         if (p) {
             p.online = false;
-            // If they don't have a photo, remove them (since they didn't join/RSVP properly)
-            // If they HAVE a photo, they are RSVP'd, keep them in the list but offline.
             if (!p.photo) {
                 rooms[roomId].participants = rooms[roomId].participants.filter(x => x.id !== socket.id);
             }
         }
-
-        if (rooms[roomId].participants.length === 0) {
-            // Delete room only if absolutely no one is left (not even RSVP'd)
-            // For now, let's keep rooms for 24h? Or just keep them if persistent.
-            // console.log(`Room ${roomId} closed`);
-        } else {
-            saveRooms();
-            io.to(roomId).emit('room-updated', {
-                participants: rooms[roomId].participants,
-                currentPage: rooms[roomId].currentPage,
-                leaderId: rooms[roomId].leaderId,
-                leaderName: rooms[roomId].leaderName
-            });
-        }
+        saveRooms();
+        io.to(roomId).emit('room-updated', { participants: rooms[roomId].participants, currentPage: rooms[roomId].currentPage, leaderId: rooms[roomId].leaderId, leaderName: rooms[roomId].leaderName });
     });
 });
 
