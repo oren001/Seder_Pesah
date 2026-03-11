@@ -126,21 +126,31 @@ class RSVPFlow {
     takeRSVPSelfie() {
         const video = $$('rsvp-video');
         const canvas = $$('rsvp-canvas');
-        canvas.width = 200;
-        canvas.height = 200;
+        canvas.width = 400;
+        canvas.height = 400;
         const ctx = canvas.getContext('2d');
         
-        // Mirror fix
-        ctx.translate(200, 0);
+        // Calculate dimensions for center cropping
+        const videoW = video.videoWidth;
+        const videoH = video.videoHeight;
+        const size = Math.min(videoW, videoH);
+        const sourceX = (videoW - size) / 2;
+        const sourceY = (videoH - size) / 2;
+
+        // Mirror and draw square crop
+        ctx.translate(400, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0, 200, 200);
+        ctx.drawImage(video, sourceX, sourceY, size, size, 0, 0, 400, 400);
         
-        this.data.photo = canvas.toDataURL('image/jpeg', 0.6);
-        $$('rsvp-preview-img').src = this.data.photo;
-        $$('rsvp-preview-wrap').classList.remove('hidden');
-        $$('rsvp-video').classList.add('hidden');
-        $$('btn-rsvp-take').classList.add('hidden');
-        $$('rsvp-post-selfie').classList.remove('hidden');
+        this.data.photo = canvas.toDataURL('image/jpeg', 0.8);
+        const previewImg = $$('rsvp-preview-img');
+        if (previewImg) {
+            previewImg.src = this.data.photo;
+            $$('rsvp-preview-wrap').classList.remove('hidden');
+            $$('rsvp-video').classList.add('hidden');
+            $$('btn-rsvp-take').classList.add('hidden');
+            $$('rsvp-post-selfie').classList.remove('hidden');
+        }
     }
 
     retakeRSVPSelfie() {
