@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1615",
-    "notes": "Fixed Lobby scrolling issue, constrained layout, and hardened RSVP flow."
+    "version": "1.0.1690",
+    "notes": "Fixed leadership race conditions and identity persistence."
 }
