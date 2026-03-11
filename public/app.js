@@ -742,7 +742,7 @@ function renderPage() {
 
         if (isLeading) {
             syncBtn.classList.add('hidden');
-        } else if (!isSyncingWithLeader || currentPage !== leaderPage) {
+        } else if (!isFollowingLeader || currentPage !== leaderPage) {
             syncBtn.classList.remove('hidden');
         } else {
             syncBtn.classList.add('hidden');
