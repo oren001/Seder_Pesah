@@ -21,30 +21,34 @@ class RSVPFlow {
     }
 
     init() {
-        this.setupEventListeners();
         this.renderAvatars();
+        this.setupEventListeners();
+    }
+
+    safeClick(id, fn) {
+        const el = $$(id);
+        if (el) el.onclick = fn;
     }
 
     setupEventListeners() {
         // Step Welcome
-        const btnShare = $$('btn-rsvp-share');
-        if (btnShare) btnShare.onclick = () => {
+        this.safeClick('btn-rsvp-share', () => {
             const url = window.location.origin + '?room=' + currentRoomId;
             navigator.clipboard.writeText(url).then(() => {
                 showToast('הקישור הועתק! 📝 שלחו אותו בווטסאפ');
             });
-        };
-        const btnNext1 = $$('btn-rsvp-next-1');
-        if (btnNext1) btnNext1.onclick = () => {
+        });
+
+        this.safeClick('btn-rsvp-next-1', () => {
             if (window.me) {
                 this.goToStep('guests');
             } else {
                 this.goToStep('name');
             }
-        };
+        });
 
         // Step Name
-        $$('btn-rsvp-next-name').onclick = () => {
+        this.safeClick('btn-rsvp-next-name', () => {
             const name = $$('rsvp-guest-name').value.trim();
             if (name) {
                 this.data.name = name;
@@ -52,7 +56,7 @@ class RSVPFlow {
             } else {
                 showToast('בבקשה הכניסו שם');
             }
-        };
+        });
 
         // Step Guests
         document.querySelectorAll('.guest-btn').forEach(btn => {
@@ -60,29 +64,30 @@ class RSVPFlow {
                 document.querySelectorAll('.guest-btn').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 this.data.guestCount = parseInt(btn.dataset.count);
-                $$('btn-rsvp-next-2').disabled = false;
+                const nextBtn = $$('btn-rsvp-next-2');
+                if (nextBtn) nextBtn.disabled = false;
             };
         });
-        $$('btn-rsvp-next-2').onclick = () => this.goToStep('look');
+        this.safeClick('btn-rsvp-next-2', () => this.goToStep('look'));
 
         // Step Look
-        $$('choice-selfie').onclick = () => {
+        this.safeClick('choice-selfie', () => {
             this.data.type = 'selfie';
             this.goToStep('selfie');
             this.startRSVPCamera();
-        };
-        $$('choice-avatar').onclick = () => {
+        });
+        this.safeClick('choice-avatar', () => {
             this.data.type = 'avatar';
             this.goToStep('avatar');
-        };
+        });
 
         // Step Avatar
-        $$('btn-finish-avatar').onclick = () => this.complete();
+        this.safeClick('btn-finish-avatar', () => this.complete());
 
         // Step Selfie
-        $$('btn-rsvp-take').onclick = () => this.takeRSVPSelfie();
-        $$('btn-rsvp-retake').onclick = () => this.retakeRSVPSelfie();
-        $$('btn-finish-selfie').onclick = () => this.complete();
+        this.safeClick('btn-rsvp-take', () => this.takeRSVPSelfie());
+        this.safeClick('btn-rsvp-retake', () => this.retakeRSVPSelfie());
+        this.safeClick('btn-finish-selfie', () => this.complete());
     }
 
     renderAvatars() {
@@ -156,7 +161,13 @@ class RSVPFlow {
 
     show(isEliteEdit = false) {
         showScreen('rsvp');
-        this.goToStep(isEliteEdit ? 'guests' : 'welcome');
+        if (isEliteEdit) {
+            this.goToStep('guests');
+        } else if (window.me) {
+            this.goToStep('guests');
+        } else {
+            this.goToStep('name');
+        }
     }
 
     complete() {

@@ -167,11 +167,21 @@ function init() {
             // User already logged in, show RSVP flow to join the room
             rsvpFlow.show();
         } else {
+            // Show auth, but hide actions to avoid empty space
             showScreen('lobby');
+            $$('lobby-auth-section').classList.remove('hidden');
+            $$('lobby-actions-section').classList.add('hidden');
             showToast('הוזמנת לסדר! התחבר כדי להצטרף 🍷');
         }
     } else {
         showScreen('lobby');
+        if (me) {
+            $$('lobby-auth-section').classList.add('hidden');
+            $$('lobby-actions-section').classList.remove('hidden');
+        } else {
+            $$('lobby-auth-section').classList.remove('hidden');
+            $$('lobby-actions-section').classList.add('hidden');
+        }
     }
 
     // Auto-hiding header logic

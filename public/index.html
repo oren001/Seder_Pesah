@@ -55,17 +55,13 @@
 
                 <div style="margin-top: 2rem; opacity: 0.4;">
                     <button id="btn-sign-out-global" class="btn tiny"
-                        style="background: none; border: 1px solid rgba(255,255,255,0.2); padding: 5px 15px;">איפוס
+                        style="background: none; border: 1px solid rgba(255,255,255,0.1); padding: 5px 15px;">איפוס
                         יציאה 🚪</button>
                 </div>
             </div>
 
             <div id="lobby-actions-section" class="lobby-actions hidden">
                 <button id="btn-create-room" class="btn primary large">צור חדר חדש ← 🍷</button>
-                <div style="margin-top: 1rem;">
-                    <button id="btn-rsvp" class="btn secondary" style="width: 100%; padding: 12px;">RSVP & סלפי מראש
-                        📅</button>
-                </div>
                 <div style="margin-top: 1rem;">
                     <button id="btn-sign-out" class="btn tiny"
                         style="opacity: 0.6; background: none; border: 1px solid rgba(255,255,255,0.2);">החלף משתמש /
@@ -78,18 +74,6 @@
     <!-- ======== RSVP / ONBOARDING SCREEN ======== -->
     <div id="rsvp-screen" class="screen hidden">
         <div class="rsvp-card glass">
-            <!-- Step 0: Welcome -->
-            <div id="rsvp-step-welcome" class="rsvp-step">
-                <div class="rsvp-icon">✉️</div>
-                <h2>שמחים שבאתם!</h2>
-                <p>הסדר הזה הולך להיות חכם, מצחיק ומיוחד. <br> <b>שלחו את הקישור לכל מי שיושב איתכם סביב השולחן!</b></p>
-                <div class="rsvp-actions">
-                    <button id="btn-create-room" class="btn primary btn-lobby-only" style="width: 100%;">יצירת סדר חדש ✨</button>
-                    <button id="btn-rsvp-share" class="btn primary btn-rsvp-only" style="width: 100%;">Copy & Share הקישור 📱</button>
-                    <button id="btn-rsvp-next-1" class="btn secondary btn-rsvp-only" style="width: 100%; margin-top: 10px;">המשכנו! ←</button>
-                </div>
-                <p class="tiny-text">טיפ: אנחנו הולכים לקרוא יחד מהניידים או הטאבלטים 📱📖</p>
-            </div>
 
             <!-- Step 0.5: Guest Name (Only if not logged in) -->
             <div id="rsvp-step-name" class="rsvp-step hidden">
@@ -160,7 +144,11 @@
                     </div>
                 </div>
                 <div class="rsvp-actions">
-                    <button id="btn-finish-selfie" class="btn primary">מעולה! ←</button>
+                    <button id="btn-rsvp-take" class="btn primary large">📸 צלם עכשיו</button>
+                    <div id="rsvp-post-selfie" class="hidden" style="width: 100%;">
+                        <button id="btn-finish-selfie" class="btn primary" style="width: 100%;">זהו, סיימנו! ←</button>
+                        <button id="btn-rsvp-retake" class="btn outline tiny" style="width: 100%; margin-top: 10px;">צילום מחדש 🔄</button>
+                    </div>
                 </div>
             </div>
 
