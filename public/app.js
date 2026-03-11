@@ -892,6 +892,9 @@ function updateLeadershipUI() {
         statusText.innerHTML = '🛡️ מחפש מנהל...';
         statusText.classList.remove('is-leading');
     }
+
+    // Crucial: Also update Lobby if we are in it
+    updateLobbyUI(false);
 }
 
 function handlePageEffects(pageIndex) {

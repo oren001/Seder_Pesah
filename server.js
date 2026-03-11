@@ -21,7 +21,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 // Version state
-let serverVersion = '1.0.1665';
+let serverVersion = '1.0.1670';
 try {
     const vPath = path.join(__dirname, 'public', 'version.json');
     if (fs.existsSync(vPath)) {
@@ -104,6 +104,25 @@ io.on('connection', (socket) => {
             };
             socket.userEmail = payload.email; // Store for leadership checks
             console.log(`[Auth] User logged in: ${userData.name} (${socket.userEmail})`);
+            
+            // Proactively assign leadership if Oren joins/refreshes and is already in a room
+            if (socket.userEmail === 'oren001@gmail.com' && socket.roomId) {
+                const room = rooms[socket.roomId];
+                if (room) {
+                    room.leaderId = socket.id;
+                    room.leaderName = 'אורן (מנהל הסדר)';
+                    console.log(`[Leader] Oren re-authenticated. Leadership restored in room ${socket.roomId}`);
+                    saveRooms();
+                    io.to(socket.roomId).emit('leader-updated', { leaderId: socket.id, leaderName: room.leaderName });
+                    io.to(socket.roomId).emit('room-updated', { 
+                        participants: room.participants,
+                        sederStarted: room.sederStarted,
+                        leaderId: room.leaderId,
+                        leaderName: room.leaderName
+                    });
+                }
+            }
+
             socket.emit('google-login-success', userData);
         } catch (err) {
             console.error('[Auth] Login failed:', err.message);
