@@ -697,27 +697,6 @@ function onStartSeder() {
     socket.emit('start-seder', { roomId: currentRoomId });
 }
 
-        // Header Strip
-        const div = document.createElement('div');
-        div.className = 'avatar' + (me && p.id === me.id ? ' me' : '') + (!isOnline ? ' offline' : '');
-        const img = document.createElement('img');
-        img.src = photoUrl;
-        img.alt = 'משתתף';
-        div.appendChild(img);
-        list.appendChild(div);
-
-        // Gazebo Grid
-        if (gazeboList) {
-            const gazDiv = document.createElement('div');
-            gazDiv.className = 'gazebo-avatar' + (!isOnline ? ' offline' : '');
-            gazDiv.onclick = () => openPhotoZoom(photoUrl);
-            const gazImg = document.createElement('img');
-            gazImg.src = photoUrl;
-            gazDiv.appendChild(gazImg);
-            gazeboList.appendChild(gazDiv);
-        }
-    });
-}
 
 function renderPage() {
     const page = HAGGADAH[currentPage];
