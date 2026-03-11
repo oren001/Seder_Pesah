@@ -7,7 +7,7 @@ let currentRoomId = null;
 let currentPage = 0;
 const pageImages = {};  // { [pageIndex]: imageUrl } — grows as AI generates images
 let roomState = null;
-let currentVersion = null;
+let currentVersion = '1.0.1695'; // Force local version match
 let wakeLock = null;
 let exodusMap = null;
 let rsvpFlow = null;
@@ -705,6 +705,32 @@ function updateLobbyUI(sederStarted) {
         } else {
             leaderActions.classList.add('hidden');
             if (guestNote) guestNote.classList.remove('hidden');
+            
+            // Fallback: If let's say Oren is logged in but server didn't sync yet
+            if (me && me.email === 'oren001@gmail.com') {
+                guestNote.innerHTML = `
+                    <div style="background: rgba(139, 69, 19, 0.1); padding: 1rem; border-radius: 12px; border: 1px dashed #8b4513;">
+                        <p style="margin-bottom: 0.5rem; color: #8b4513; font-weight: 600;">👑 אורן, המערכת מזהה אותך!</p>
+                        <button onclick="socket.emit('take-lead', { roomId: currentRoomId })" class="btn primary small">קח פיקוד על הסדר 🚀</button>
+                    </div>
+                `;
+            } else if (!me || me.isGuest) {
+                guestNote.innerHTML = `
+                    <div id="g-login-lobby" style="margin-top: 1rem;">
+                        <p style="margin-bottom: 0.5rem;">מנהל הסדר? התחבר כדי לקבל שליטה:</p>
+                        <div id="g_id_onload"
+                            data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
+                            data-callback="handleGoogleResponse">
+                        </div>
+                        <div class="g_id_signin" data-type="standard"></div>
+                    </div>
+                `;
+                // Re-init Google button if needed
+                if (window.google) window.google.accounts.id.renderButton(
+                    document.querySelector(".g_id_signin"),
+                    { theme: "outline", size: "large" }
+                );
+            }
         }
     }
 }
