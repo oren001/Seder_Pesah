@@ -171,8 +171,8 @@ class RSVPFlow {
 
     show(isEliteEdit = false) {
         showScreen('rsvp');
-        // Always go to guests, never ask for name
-        this.goToStep('guests');
+        // Skip name and guests - go straight to 'look' (Selfie vs Avatar)
+        this.goToStep('look');
     }
 
     complete() {
