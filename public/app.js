@@ -9,6 +9,8 @@ const pageImages = {};  // { [pageIndex]: imageUrl } — grows as AI generates i
 let roomState = null;
 let currentVersion = null;
 let wakeLock = null;
+let exodusMap = null;
+let rsvpFlow = null;
 
 // --- Staging State ---
 let isFollowingLeader = true;
@@ -38,6 +40,35 @@ function init() {
     setupTasks();
     requestWakeLock();
 
+    // Initialize Exodus Map
+    exodusMap = new ExodusMap('exodus-map-root');
+
+    // Initialize RSVP Flow
+    rsvpFlow = new RSVPFlow({
+        onComplete: (data) => {
+            console.log('[RSVP] Flow complete:', data);
+            
+            // If we're a guest (not logged in with Google), create a dummy user
+            if (!window.me && data.name) {
+                window.me = {
+                    id: 'guest_' + Math.random().toString(36).substr(2, 9),
+                    name: data.name,
+                    isGuest: true
+                };
+                localStorage.setItem('haggadah-user', JSON.stringify(window.me));
+            }
+
+            if (currentRoomId) {
+                // Updating existing profile
+                socket.emit('update-profile', { roomId: currentRoomId, photo: data.photo, guestCount: data.guestCount });
+                showScreen('room');
+            } else if (pendingRoomId) {
+                // Joining for the first time
+                joinRoom(pendingRoomId, data);
+            }
+        }
+    });
+
     // Register PWA Service Worker
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').then(reg => {
@@ -55,12 +86,17 @@ function init() {
     $$('btn-create-room').addEventListener('click', onCreateRoom);
     $$('btn-take-selfie').addEventListener('click', onTakeSelfie);
     $$('btn-retake').addEventListener('click', onRetake);
+    $$('btn-guest-login').addEventListener('click', () => {
+        // Guest login triggers the RSVP flow directly
+        rsvpFlow.show();
+    });
     $$('btn-join-with-photo').addEventListener('click', onJoinWithPhoto);
     $$('btn-copy-link').addEventListener('click', onCopyLink);
     $$('btn-prev').addEventListener('click', () => changePage(-1));
     $$('btn-next').addEventListener('click', () => changePage(1));
     $$('btn-sync').addEventListener('click', onSyncWithLeader);
-    $$('btn-rsvp').addEventListener('click', onRSVP);
+    $$('btn-copy-link').addEventListener('click', onCopyLink);
+    $$('btn-edit-profile').addEventListener('click', () => rsvpFlow.show(true));
     $$('btn-sign-out-room').addEventListener('click', onSignOut);
     $$('btn-menu').addEventListener('click', toggleMenu);
 
@@ -127,12 +163,12 @@ function init() {
 
     if (roomFromUrl) {
         pendingRoomId = roomFromUrl;
-        if (selfieDataUrl) {
-            // If we have both, just join
-            joinRoom(roomFromUrl);
+        if (me) {
+            // User already logged in, show RSVP flow to join the room
+            rsvpFlow.show();
         } else {
-            showScreen('selfie');
-            startCamera();
+            showScreen('lobby');
+            showToast('הוזמנת לסדר! התחבר כדי להצטרף 🍷');
         }
     } else {
         showScreen('lobby');
@@ -294,13 +330,19 @@ async function setupSocket() {
 
     socket.on('google-login-success', (userData) => {
         me = userData;
-        localStorage.setItem('haggadah-user', JSON.stringify(me)); // Fix: actually save the login state
+        localStorage.setItem('haggadah-user', JSON.stringify(me));
         showToast(`ברוך הבא, ${userData.name}!`);
-        // After login, you can create or join
-        const authSection = document.getElementById('lobby-auth-section');
-        const actionsSection = document.getElementById('lobby-actions-section');
-        if (authSection) authSection.classList.add('hidden');
-        if (actionsSection) actionsSection.classList.remove('hidden');
+        
+        // Check if we were trying to join a room
+        if (pendingRoomId) {
+            rsvpFlow.show();
+        } else {
+            // Switch to actions (Create Room)
+            const authSection = document.getElementById('lobby-auth-section');
+            const actionsSection = document.getElementById('lobby-actions-section');
+            if (authSection) authSection.classList.add('hidden');
+            if (actionsSection) actionsSection.classList.remove('hidden');
+        }
     });
 }
 
@@ -484,8 +526,7 @@ function onRetake() {
 function onCreateRoom() {
     socket.emit('create-room', (response) => {
         pendingRoomId = response.roomId;
-        showScreen('selfie');
-        startCamera();
+        rsvpFlow.show();
     });
 }
 
@@ -495,9 +536,11 @@ function onJoinWithPhoto() {
     joinRoom(pendingRoomId);
 }
 
-function joinRoom(roomId) {
-    const photo = selfieDataUrl || generatePlaceholderPhoto();
-    socket.emit('join-room', { roomId, photo }, (response) => {
+function joinRoom(roomId, rsvpData = null) {
+    const photo = rsvpData ? rsvpData.photo : (selfieDataUrl || generatePlaceholderPhoto());
+    const guestCount = rsvpData ? rsvpData.guestCount : 1;
+    
+    socket.emit('join-room', { roomId, photo, guestCount }, (response) => {
         if (response.success) {
             currentRoomId = response.roomId;
             me = response.participant;
@@ -540,7 +583,10 @@ function onPageChanged({ currentPage: newPage }) {
 
 // --- Render ---
 function renderParticipants(participants) {
+    const totalSouls = participants.reduce((sum, p) => sum + (p.guestCount || 1), 0);
     $$('count-number').textContent = participants.length;
+    if ($$('total-souls')) $$('total-souls').textContent = totalSouls;
+
     const list = $$('participants-list');
     const gazeboList = $$('gazebo-participants');
 
@@ -576,6 +622,10 @@ function renderParticipants(participants) {
 function renderPage() {
     const page = HAGGADAH[currentPage];
     if (!page) return;
+
+    // Update Gazebo Extras
+    updateMealProgress();
+    if (exodusMap) exodusMap.updateProgress(currentPage, HAGGADAH.length);
 
     const el = $$('page-content');
     const imageData = pageImages[currentPage];

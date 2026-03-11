@@ -144,7 +144,7 @@ io.on('connection', (socket) => {
         callback({ roomId });
     });
 
-    socket.on('join-room', ({ roomId, photo }, callback) => {
+    socket.on('join-room', ({ roomId, photo, guestCount }, callback) => {
         if (!rooms[roomId]) {
             rooms[roomId] = {
                 id: roomId,
@@ -175,13 +175,19 @@ io.on('connection', (socket) => {
             };
         }
 
-        const participant = { id: socket.id, photo: photo || null, online: true };
+        const participant = { 
+            id: socket.id, 
+            photo: photo || null, 
+            guestCount: guestCount || 1,
+            online: true 
+        };
 
         // Handle RSVP: If user with same picture exists, update their ID
         const existing = rooms[roomId].participants.find(p => p.photo && p.photo === photo);
         if (existing) {
             existing.id = socket.id;
             existing.online = true;
+            if (guestCount) existing.guestCount = guestCount;
         } else {
             rooms[roomId].participants.push(participant);
         }
@@ -213,6 +219,22 @@ io.on('connection', (socket) => {
             leaderId: rooms[roomId].leaderId,
             leaderName: rooms[roomId].leaderName
         });
+    });
+
+    socket.on('update-profile', ({ roomId, photo, guestCount }) => {
+        if (!rooms[roomId]) return;
+        const p = rooms[roomId].participants.find(p => p.id === socket.id);
+        if (p) {
+            if (photo) p.photo = photo;
+            if (guestCount) p.guestCount = guestCount;
+            saveRooms();
+            io.to(roomId).emit('room-updated', {
+                participants: rooms[roomId].participants,
+                currentPage: rooms[roomId].currentPage,
+                leaderId: rooms[roomId].leaderId,
+                leaderName: rooms[roomId].leaderName
+            });
+        }
     });
 
     socket.on('take-lead', ({ roomId, name }) => {

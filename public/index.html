@@ -48,7 +48,10 @@
                     data-text="signin_with" data-size="large" data-logo_alignment="left"
                     style="margin-bottom: 1rem; display: flex; justify-content: center;"></div>
 
-                <!-- Removed Guest Login as per request -->
+                <!-- Moved Guest Login back for fallback -->
+                <div style="margin-top: 1rem;">
+                    <button id="btn-guest-login" class="btn outline" style="width: 100%; padding: 10px;">כניסת אורח (ללא גוגל) 👤</button>
+                </div>
 
                 <div style="margin-top: 2rem; opacity: 0.4;">
                     <button id="btn-sign-out-global" class="btn tiny"
@@ -72,38 +75,112 @@
         </div>
     </div>
 
-    <!-- ======== SELFIE SCREEN ======== -->
-    <div id="selfie-screen" class="screen hidden">
-        <div class="selfie-card">
-            <h2>תצלם את עצמך</h2>
-            <p class="subtitle">כך כולם בחדר ידעו שאתה כאן</p>
-            <div class="video-container">
-                <div class="video-wrapper">
-                    <video id="selfie-video" autoplay muted playsinline></video>
-                    <canvas id="selfie-canvas" class="hidden"></canvas>
-                    <div id="selfie-preview-wrap" class="hidden">
-                        <img id="selfie-preview-img" class="preview-img" alt="preview">
+    <!-- ======== RSVP / ONBOARDING SCREEN ======== -->
+    <div id="rsvp-screen" class="screen hidden">
+        <div class="rsvp-card glass">
+            <!-- Step 0: Welcome -->
+            <div id="rsvp-step-welcome" class="rsvp-step">
+                <div class="rsvp-icon">✉️</div>
+                <h2>שמחים שבאתם!</h2>
+                <p>הסדר הזה הולך להיות חכם, מצחיק ומיוחד. <br> <b>שלחו את הקישור לכל מי שיושב איתכם סביב השולחן!</b></p>
+                <div class="lobby-actions">
+                    <button id="btn-create-room" class="btn primary" style="width: 100%;">יצירת סדר חדש ✨</button>
+                </div>
+                <p class="tiny-text">טיפ: אנחנו הולכים לקרוא יחד מהניידים או הטאבלטים 📱📖</p>
+            </div>
+
+            <!-- Step 0.5: Guest Name (Only if not logged in) -->
+            <div id="rsvp-step-name" class="rsvp-step hidden">
+                <div class="rsvp-icon">👤</div>
+                <h2>איך קוראים לכם?</h2>
+                <p>הכניסו שם כדי שכולם ידעו מי אתם בסדר:</p>
+                <input type="text" id="rsvp-guest-name" class="rsvp-input" placeholder="השם שלכם..." dir="rtl">
+                <div class="rsvp-actions">
+                    <button id="btn-rsvp-next-name" class="btn primary">המשכנו! ←</button>
+                </div>
+            </div>
+
+            <!-- Step 1: Guest Count -->
+            <div id="rsvp-step-guests" class="rsvp-step hidden">
+                <div class="rsvp-icon">👨‍👩‍👧‍👦</div>
+                <h2>כמה אתם?</h2>
+                <p>כמה נפשות מצטרפות אלינו מהמכשיר הזה? <br>(כולל אתכם)</p>
+                <div class="guest-selector">
+                    <button class="guest-btn" data-count="1">1</button>
+                    <button class="guest-btn" data-count="2">2</button>
+                    <button class="guest-btn" data-count="3">3</button>
+                    <button class="guest-btn" data-count="4">4</button>
+                    <button class="guest-btn" data-count="5">5+</button>
+                </div>
+                <div class="rsvp-actions">
+                    <button id="btn-rsvp-next-2" class="btn primary" disabled>מעולה, ואיך תופיעו? ←</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Look Choice -->
+            <div id="rsvp-step-look" class="rsvp-step hidden">
+                <div class="rsvp-icon">🎭</div>
+                <h2>איך תופיעו בהגדה?</h2>
+                <p>בחרו איך כולם יראו אתכם ברשימת המשתתפים:</p>
+                <div class="look-choice-grid">
+                    <div id="choice-selfie" class="look-option">
+                        <div class="look-icon">📸</div>
+                        <span>סלפי חי</span>
+                    </div>
+                    <div id="choice-avatar" class="look-option">
+                        <div class="look-icon">🍷</div>
+                        <span>אייקון מגניב</span>
                     </div>
                 </div>
+            </div>
 
-                <div class="selfie-controls">
-                    <button id="btn-take-selfie" class="btn primary">📸 צלם תמונה</button>
-
-                    <div id="post-selfie-actions" class="preview-actions hidden">
-                        <button id="btn-retake" class="btn outline">↩ שוב</button>
-                        <button id="btn-join-with-photo" class="btn primary">✓ הצטרף עכשיו</button>
+            <!-- Step 3a: Avatar Picker -->
+            <div id="rsvp-step-avatar" class="rsvp-step hidden">
+                <h2>בחרו אייקון</h2>
+                <div id="avatar-grid" class="avatar-grid">
+                    <!-- Icons filled by JS -->
+                </div>
+                <div class="rsvp-actions">
+                    <button id="btn-finish-avatar" class="btn primary">מוכן! בואו נתחיל 🍷</button>
+                </div>
+            </div>
+            
+            <!-- Step 3b: Selfie (Reusing existing camera logic) -->
+            <div id="rsvp-step-selfie" class="rsvp-step hidden">
+                <h2>חייכו למצלמה! 📸</h2>
+                <div class="video-container small">
+                    <div class="video-wrapper">
+                        <video id="rsvp-video" autoplay muted playsinline></video>
+                        <canvas id="rsvp-canvas" class="hidden"></canvas>
+                        <div id="rsvp-preview-wrap" class="hidden">
+                            <img id="rsvp-preview-img" class="preview-img" alt="preview">
+                        </div>
                     </div>
+                </div>
+                <div class="rsvp-actions">
+                    <button id="btn-finish-selfie" class="btn primary">מעולה! ←</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Final Excitement -->
+            <div id="rsvp-step-finish" class="rsvp-step hidden">
+                <div class="rsvp-icon">🍷✨</div>
+                <h2>איזה כיף! הכל מוכן.</h2>
+                <p>הפרופיל שלכם בפנים. <br> <b>עכשיו רק נשאר לשבת סביב השולחן ולהתחיל את ההגדה יחד!</b></p>
+                <div class="rsvp-actions">
+                    <button id="btn-go-to-haggadah" class="btn primary">אני בשולחן, בואו נתחיל! 📖🚀</button>
                 </div>
             </div>
         </div>
     </div>
+
 
     <!-- ======== ROOM SCREEN ======== -->
     <div id="room-screen" class="screen hidden">
         <div id="effects-container" class="effects-container hidden"></div>
 
         <!-- Header -->
-        <header class="room-header">
+        <header class="room-header glass">
             <div class="header-left">
                 <button id="btn-menu" class="btn-icon hamburger">
                     <span></span>
@@ -112,14 +189,16 @@
                 </button>
             </div>
 
-            <div class="participants-strip">
-                <div id="participants-list" class="avatars-list"></div>
-                <span class="viewers-count"><span id="count-number">1</span></span>
-            </div>
-
-            <div class="brand">
+            <div class="brand-center">
                 <div class="beta-badge">BETA</div>
                 🍷 פסח יחד
+            </div>
+
+            <div class="header-right">
+                <div class="participants-strip">
+                    <div id="participants-list" class="avatars-list"></div>
+                    <span class="viewers-count"><span id="count-number">1</span></span>
+                </div>
             </div>
         </header>
 
@@ -154,9 +233,18 @@
 
             <!-- Gazebo Section: Participants Grid -->
             <div class="gazebo-section">
-                <div class="gazebo-section-title">👥 מְסֻבִּין</div>
+                <div class="gazebo-section-title">👥 מְסֻבִּין (<span id="total-souls">1</span> נפשות)</div>
                 <div id="gazebo-participants" class="gazebo-grid">
                     <!-- Participant photos go here -->
+                </div>
+                <button id="btn-edit-profile" class="btn tiny outline" style="width:100%; margin-top:10px; font-size: 0.8rem;">עדכון פרופיל / תמונה 🎭</button>
+            </div>
+
+            <!-- Gazebo Section: Exodus Map -->
+            <div class="gazebo-section">
+                <div class="gazebo-section-title">🗺️ מַפַּת יְצִיאַת מִצְרַיִם</div>
+                <div id="exodus-map-root" class="exodus-map-container">
+                    <!-- Exodus Map will be rendered here -->
                 </div>
             </div>
 
@@ -224,6 +312,8 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
     <script src="haggadah_data.js?v=20260310_1585"></script>
+    <script src="ExodusMap.js?v=20260310_1585"></script>
+    <script src="RSVPFlow.js?v=20260310_1585"></script>
     <script src="app.js?v=20260310_1585"></script>
 </body>
 
