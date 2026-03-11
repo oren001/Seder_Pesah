@@ -67,8 +67,8 @@ function init() {
 
             if (currentRoomId) {
                 // Updating existing profile
-                socket.emit('update-profile', { roomId: currentRoomId, photo: data.photo, guestCount: data.guestCount });
-                showScreen('room');
+                socket.emit('update-profile', { roomId: currentRoomId, photo: data.photo });
+                showScreen('roomLobby');
             } else if (pendingRoomId) {
                 // Joining for the first time
                 joinRoom(pendingRoomId, data);
@@ -556,9 +556,8 @@ function onJoinWithPhoto() {
 
 function joinRoom(roomId, rsvpData = null) {
     const photo = rsvpData ? rsvpData.photo : (selfieDataUrl || generatePlaceholderPhoto());
-    const guestCount = rsvpData ? rsvpData.guestCount : 1;
     
-    socket.emit('join-room', { roomId, photo, guestCount }, (response) => {
+    socket.emit('join-room', { roomId, photo }, (response) => {
         if (response.success) {
             currentRoomId = response.roomId;
             me = response.participant;
