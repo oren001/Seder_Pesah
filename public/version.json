@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1705",
-    "notes": "Fixed root cause: Google credential email now restored on startup."
+    "version": "1.0.1710",
+    "notes": "Added permanent Google Login button to room lobby."
 }
