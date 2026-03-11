@@ -21,7 +21,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 // Version state
-let serverVersion = '1.0.1680';
+let serverVersion = '1.0.1690';
 try {
     const vPath = path.join(__dirname, 'public', 'version.json');
     if (fs.existsSync(vPath)) {
@@ -199,20 +199,23 @@ io.on('connection', (socket) => {
             };
         }
 
-        const participant = { 
-            id: socket.id, 
-            photo: photo || null, 
-            guestCount: 1, 
-            online: true 
-        };
-
         const room = rooms[roomId];
+        socket.roomId = roomId; // Set this early!
+        socket.join(roomId);
+
         // Only assign leader if it's Oren
         if (socket.userEmail === 'oren001@gmail.com') {
             room.leaderId = socket.id;
             room.leaderName = 'אורן (מנהל הסדר)';
             console.log(`[Leader] Oren identified and assigned/overrode as leader in room ${roomId}`);
         }
+
+        const participant = { 
+            id: socket.id, 
+            photo: photo || null, 
+            guestCount: 1, 
+            online: true 
+        };
 
         const existing = room.participants.find(p => p.photo && p.photo === photo);
         if (existing) {
@@ -221,9 +224,6 @@ io.on('connection', (socket) => {
         } else {
             room.participants.push(participant);
         }
-
-        socket.join(roomId);
-        socket.roomId = roomId;
         saveRooms();
 
         console.log(`User ${socket.id} joined room ${roomId}`);

@@ -374,6 +374,14 @@ async function setupSocket() {
             if (authSection) authSection.classList.add('hidden');
             if (actionsSection) actionsSection.classList.remove('hidden');
         }
+
+        // RE-SYNC: If we are already in a room, re-join now that we are authenticated
+        // This ensures the server recognizes us as Oren (leader)
+        if (currentRoomId) {
+            console.log('[Auth] Re-joining room after login to sync leadership...');
+            joinRoom(currentRoomId);
+        }
+
         updateLeadershipUI();
     });
 }
