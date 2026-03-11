@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1690",
-    "notes": "Fixed leadership race conditions and identity persistence."
+    "version": "1.0.1700",
+    "notes": "Synchronized versions and hardened leadership logic."
 }
