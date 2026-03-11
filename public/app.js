@@ -7,7 +7,7 @@ let currentRoomId = null;
 let currentPage = 0;
 const pageImages = {};  // { [pageIndex]: imageUrl } — grows as AI generates images
 let roomState = null;
-let currentVersion = '1.0.1705'; // Force local version match
+let currentVersion = '1.0.1710'; // Force local version match
 let wakeLock = null;
 let exodusMap = null;
 let rsvpFlow = null;
@@ -763,6 +763,28 @@ function updateLobbyUI(sederStarted) {
                     );
                 }, 100);
             }
+        }
+    }
+
+    // Hide the host login section if we are the leader; show and init it otherwise
+    const hostLoginBox = $$('lobby-host-login');
+    if (hostLoginBox) {
+        if (isLeader) {
+            hostLoginBox.style.display = 'none';
+        } else {
+            hostLoginBox.style.display = '';
+            setTimeout(() => {
+                const signinDiv = document.querySelector('.g_id_signin_lobby');
+                if (signinDiv && window.google && !signinDiv.hasChildNodes()) {
+                    google.accounts.id.initialize({
+                        client_id: '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com',
+                        callback: handleGoogleResponse
+                    });
+                    google.accounts.id.renderButton(signinDiv, { 
+                        theme: 'outline', size: 'medium', text: 'continue_with'
+                    });
+                }
+            }, 200);
         }
     }
 }

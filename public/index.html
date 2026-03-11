@@ -10,7 +10,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800;900&family=Assistant:wght@300;400;600&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.0.1705">
+    <link rel="stylesheet" href="styles.css?v=1.0.1710">
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -138,7 +138,6 @@
     </div>
 
 
-    <!-- ======== ROOM SCREEN ======== -->
     <!-- ======== ROOM LOBBY (WAITING ROOM) ======== -->
     <div id="room-lobby-screen" class="screen hidden">
         <div class="lobby-card glass" style="max-width: 600px; width: 95%;">
@@ -153,13 +152,29 @@
                     </div>
                 </div>
 
+                <!-- Leader controls: only visible to the leader -->
                 <div id="lobby-leader-actions" class="hidden" style="margin-top: 2rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 2rem;">
                     <p style="margin-bottom: 1rem; font-weight: 600;">מנהל הסדר, כשיש מניין - אפשר להתחיל!</p>
                     <button id="btn-start-seder" class="btn primary large" style="width: 100%;">התחל את ההגדה 📖🚀</button>
                 </div>
 
-                <div id="lobby-guest-note" style="margin-top: 2rem; opacity: 0.7; font-size: 0.9rem;">
+                <!-- Guest note / Google login for the host -->
+                <div id="lobby-guest-note" style="margin-top: 2rem; font-size: 0.9rem;">
                     המנחה יתחיל את הסדר בקרוב, הישארו איתנו... ✨
+                </div>
+
+                <!-- Always-visible host login section -->
+                <div id="lobby-host-login" style="margin-top: 1.5rem; padding: 1rem; background: rgba(139,69,19,0.06); border-radius: 12px; border: 1px dashed rgba(139,69,19,0.3);">
+                    <p style="margin-bottom: 0.8rem; font-size: 0.85rem; color: #8b4513; font-weight: 600;">👑 מנהל הסדר? התחבר כדי להתחיל:</p>
+                    <div id="g_id_onload_lobby"
+                        data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
+                        data-callback="handleGoogleResponse">
+                    </div>
+                    <div class="g_id_signin_lobby" data-type="standard"></div>
+                    <button onclick="(function(){ const d=document.createElement('div'); d.id='g_id_onload_lobby'; d.setAttribute('data-client_id','256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com'); d.setAttribute('data-callback','handleGoogleResponse'); document.body.appendChild(d); if(window.google){ google.accounts.id.initialize({client_id:'256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com',callback:handleGoogleResponse}); google.accounts.id.prompt(); } })()" 
+                        class="btn outline small" style="margin-top: 0.5rem; width: 100%; font-size: 0.85rem;">
+                        🔑 התחבר עם Google
+                    </button>
                 </div>
 
                 <div style="margin-top: 2rem;">
@@ -305,10 +320,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
-    <script src="haggadah_data.js?v=1.0.1705"></script>
-    <script src="ExodusMap.js?v=1.0.1705"></script>
-    <script src="RSVPFlow.js?v=1.0.1705"></script>
-    <script src="app.js?v=1.0.1705"></script>
+    <script src="haggadah_data.js?v=1.0.1710"></script>
+    <script src="ExodusMap.js?v=1.0.1710"></script>
+    <script src="RSVPFlow.js?v=1.0.1710"></script>
+    <script src="app.js?v=1.0.1710"></script>
 </body>
 
 </html>
