@@ -21,7 +21,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 // Version state
-let serverVersion = '1.0.1710';
+let serverVersion = '1.0.1715';
 try {
     const vPath = path.join(__dirname, 'public', 'version.json');
     if (fs.existsSync(vPath)) {
@@ -70,8 +70,39 @@ try {
 
 function saveRooms() {
     try {
-        fs.writeFileSync(ROOMS_FILE, JSON.stringify(rooms, null, 2));
+        // Don't save photo data inside rooms (save separately)
+        const roomsToSave = {};
+        for (const id in rooms) {
+            roomsToSave[id] = {
+                ...rooms[id],
+                participants: rooms[id].participants.map(p => ({
+                    ...p,
+                    photo: undefined // Strip photos from room file; they're in selfies.json
+                }))
+            };
+        }
+        fs.writeFileSync(ROOMS_FILE, JSON.stringify(roomsToSave, null, 2));
     } catch (e) { console.error('Failed to save rooms:', e); }
+}
+
+// --- Selfie persistence ---
+const SELFIES_FILE = path.join(DATA_DIR, 'selfies.json');
+let selfies = {}; // { fingerprint: photoDataUrl }
+try {
+    if (fs.existsSync(SELFIES_FILE)) selfies = JSON.parse(fs.readFileSync(SELFIES_FILE, 'utf8'));
+    console.log(`[Selfies] Loaded ${Object.keys(selfies).length} saved selfies.`);
+} catch(e) { console.error('Failed to load selfies:', e); }
+
+function saveSelfies() {
+    try { fs.writeFileSync(SELFIES_FILE, JSON.stringify(selfies)); } catch(e) {}
+}
+
+function getParticipantsWithStatus(room) {
+    const now = Date.now();
+    return room.participants.map(p => ({
+        ...p,
+        active: p.online && p.lastSeen && (now - p.lastSeen) < 8000
+    }));
 }
 
 function saveTasks(roomId, tasks) {
@@ -210,17 +241,27 @@ io.on('connection', (socket) => {
             console.log(`[Leader] Oren identified and assigned/overrode as leader in room ${roomId}`);
         }
 
+        // Save selfie if new, restore saved selfie if this socket has none
+        const photoKey = socket.userEmail || socket.id;
+        if (photo) {
+            selfies[photoKey] = photo;
+            saveSelfies();
+        }
+        const resolvedPhoto = photo || selfies[photoKey] || null;
+
         const participant = { 
             id: socket.id, 
-            photo: photo || null, 
+            photo: resolvedPhoto, 
             guestCount: 1, 
-            online: true 
+            online: true,
+            lastSeen: Date.now()
         };
 
-        const existing = room.participants.find(p => p.photo && p.photo === photo);
+        const existing = room.participants.find(p => p.photo && p.photo === resolvedPhoto);
         if (existing) {
             existing.id = socket.id;
             existing.online = true;
+            existing.lastSeen = Date.now();
         } else {
             room.participants.push(participant);
         }
@@ -353,6 +394,24 @@ io.on('connection', (socket) => {
         generateNanoTest(roomId, io, rooms).catch(err => {
             io.to(roomId).emit('ai-error', { message: 'שגיאת Leonardo: ' + err.message });
         });
+    });
+
+    // Heartbeat: client pings to show they're still watching
+    socket.on('heartbeat', ({ roomId }) => {
+        if (!rooms[roomId]) return;
+        const p = rooms[roomId].participants.find(p => p.id === socket.id);
+        if (p) {
+            p.lastSeen = Date.now();
+            p.online = true;
+            // Broadcast updated statuses
+            io.to(roomId).emit('room-updated', {
+                participants: getParticipantsWithStatus(rooms[roomId]),
+                sederStarted: rooms[roomId].sederStarted,
+                leaderId: rooms[roomId].leaderId,
+                leaderName: rooms[roomId].leaderName,
+                currentPage: rooms[roomId].currentPage
+            });
+        }
     });
 
     socket.on('disconnect', () => {

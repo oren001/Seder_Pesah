@@ -7,7 +7,7 @@ let currentRoomId = null;
 let currentPage = 0;
 const pageImages = {};  // { [pageIndex]: imageUrl } — grows as AI generates images
 let roomState = null;
-let currentVersion = '1.0.1710'; // Force local version match
+let currentVersion = '1.0.1715'; // Force local version match
 let wakeLock = null;
 let exodusMap = null;
 let rsvpFlow = null;
@@ -251,6 +251,15 @@ async function setupSocket() {
             joinRoom(currentRoomId);
         }
     });
+
+    // Start heartbeat when visible
+    function startHeartbeat(roomId) {
+        setInterval(() => {
+            if (!document.hidden && roomId) {
+                socket.emit('heartbeat', { roomId });
+            }
+        }, 5000);
+    }
 
     socket.on('disconnect', (reason) => {
         console.warn('[Socket] Disconnected:', reason);
@@ -633,7 +642,8 @@ function joinRoom(roomId, rsvpData = null) {
                 updateLobbyUI(false);
             }
             renderTasks();
-            updateLeadershipUI(); // Ensure leadership UI is correct (host badge etc)
+            updateLeadershipUI();
+            startHeartbeat(currentRoomId);
         } else {
             alert('החדר לא נמצא.');
             window.location.href = '/';
@@ -707,13 +717,17 @@ function renderLobbyParticipants(participants) {
     participants.forEach(p => {
         const photoUrl = p.photo || generatePlaceholderPhoto();
         const card = document.createElement('div');
-        card.className = 'gazebo-avatar';
-        card.style.width = '100px';
-        card.style.height = '100px';
+        card.className = 'gazebo-avatar lobby-avatar-card';
+        card.style.cssText = 'width:100px;height:100px;position:relative;';
         
         const img = document.createElement('img');
         img.src = photoUrl;
         card.appendChild(img);
+
+        // 🟢 Online indicator dot
+        const dot = document.createElement('div');
+        dot.className = 'online-dot' + (p.active ? ' active' : ' offline');
+        card.appendChild(dot);
         
         grid.appendChild(card);
     });
