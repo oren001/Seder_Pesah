@@ -1424,3 +1424,9 @@ body {
     border-color: var(--gold);
     outline: none;
 }
+
+.btn-lobby-only { display: block; }
+.btn-rsvp-only { display: none; }
+
+#rsvp-screen .btn-lobby-only { display: none; }
+#rsvp-screen .btn-rsvp-only { display: block; }
