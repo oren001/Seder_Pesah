@@ -694,10 +694,15 @@ function renderLobbyParticipants(participants) {
 function updateLobbyUI(sederStarted) {
     if (sederStarted) return;
     
-    const isLeader = leaderId === socket.id;
+    // Oren always counts as leader for UI purposes if he is logged in
+    const isOren = me && me.email === 'oren001@gmail.com';
+    const isLeader = (leaderId === socket.id) || isOren;
+    
     const leaderActions = $$('lobby-leader-actions');
     const guestNote = $$('lobby-guest-note');
     
+    console.log(`[Lobby] Updating UI. isLeader: ${isLeader}, isOren: ${isOren}, leaderId: ${leaderId}`);
+
     if (leaderActions) {
         if (isLeader) {
             leaderActions.classList.remove('hidden');
@@ -706,18 +711,15 @@ function updateLobbyUI(sederStarted) {
             leaderActions.classList.add('hidden');
             if (guestNote) guestNote.classList.remove('hidden');
             
-            // Fallback: If let's say Oren is logged in but server didn't sync yet
-            if (me && me.email === 'oren001@gmail.com') {
+            // If not Oren, but logged in as someone else (not guest)
+            if (me && !me.isGuest && me.email !== 'oren001@gmail.com') {
+                guestNote.innerHTML = '👤 מחובר כאורח. המנחה יתחיל את הסדר בקרוב... ✨';
+            } 
+            // If Guest or not logged in at all
+            else if (!me || me.isGuest) {
                 guestNote.innerHTML = `
-                    <div style="background: rgba(139, 69, 19, 0.1); padding: 1rem; border-radius: 12px; border: 1px dashed #8b4513;">
-                        <p style="margin-bottom: 0.5rem; color: #8b4513; font-weight: 600;">👑 אורן, המערכת מזהה אותך!</p>
-                        <button onclick="socket.emit('take-lead', { roomId: currentRoomId })" class="btn primary small">קח פיקוד על הסדר 🚀</button>
-                    </div>
-                `;
-            } else if (!me || me.isGuest) {
-                guestNote.innerHTML = `
-                    <div id="g-login-lobby" style="margin-top: 1rem;">
-                        <p style="margin-bottom: 0.5rem;">מנהל הסדר? התחבר כדי לקבל שליטה:</p>
+                    <div id="g-login-lobby" style="margin-top: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid rgba(0,0,0,0.1);">
+                        <p style="margin-bottom: 0.8rem; font-weight: 600;">מנהל הסדר? התחבר כאן:</p>
                         <div id="g_id_onload"
                             data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
                             data-callback="handleGoogleResponse">
@@ -726,10 +728,12 @@ function updateLobbyUI(sederStarted) {
                     </div>
                 `;
                 // Re-init Google button if needed
-                if (window.google) window.google.accounts.id.renderButton(
-                    document.querySelector(".g_id_signin"),
-                    { theme: "outline", size: "large" }
-                );
+                setTimeout(() => {
+                    if (window.google) window.google.accounts.id.renderButton(
+                        document.querySelector(".g_id_signin"),
+                        { theme: "outline", size: "large", text: "continue_with" }
+                    );
+                }, 100);
             }
         }
     }
