@@ -6,15 +6,22 @@ const fs = require('fs');
 const { generateAllImages, generateNanoTest } = require('./leonardo');
 const { OAuth2Client } = require('google-auth-library');
 
-const CLIENT_ID = '1046467069134-placeholder.apps.googleusercontent.com';
+const CLIENT_ID = '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com';
 const client = new OAuth2Client(CLIENT_ID);
 
 const app = express();
+
+// Required by Google Identity Services to allow the popup to communicate with the main window
+app.use((req, res, next) => {
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    next();
+});
+
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 // Version state
-let serverVersion = '1.0.0';
+let serverVersion = '1.0.1740';
 try {
     const vPath = path.join(__dirname, 'public', 'version.json');
     if (fs.existsSync(vPath)) {
@@ -36,6 +43,7 @@ function generateId() {
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
+const ROOMS_FILE = path.join(DATA_DIR, 'rooms.json');
 
 // Load persisted tasks
 let persistedTasks = {};
@@ -44,6 +52,58 @@ try {
         persistedTasks = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
     }
 } catch (e) { console.error('Failed to load tasks:', e); }
+
+// Load persisted rooms
+try {
+    if (fs.existsSync(ROOMS_FILE)) {
+        const data = JSON.parse(fs.readFileSync(ROOMS_FILE, 'utf8'));
+        // Restore rooms, but reset socket-specific state like 'online'
+        for (const id in data) {
+            rooms[id] = data[id];
+            rooms[id].participants.forEach(p => p.online = false);
+            rooms[id].leaderId = null; // Clear stale socket IDs on restart
+            rooms[id].leaderName = null;
+        }
+        console.log(`[Persistence] Restored ${Object.keys(rooms).length} rooms.`);
+    }
+} catch (e) { console.error('Failed to load rooms:', e); }
+
+function saveRooms() {
+    try {
+        // Don't save photo data inside rooms (save separately)
+        const roomsToSave = {};
+        for (const id in rooms) {
+            roomsToSave[id] = {
+                ...rooms[id],
+                participants: rooms[id].participants.map(p => ({
+                    ...p,
+                    photo: undefined // Strip photos from room file; they're in selfies.json
+                }))
+            };
+        }
+        fs.writeFileSync(ROOMS_FILE, JSON.stringify(roomsToSave, null, 2));
+    } catch (e) { console.error('Failed to save rooms:', e); }
+}
+
+// --- Selfie persistence ---
+const SELFIES_FILE = path.join(DATA_DIR, 'selfies.json');
+let selfies = {}; // { fingerprint: photoDataUrl }
+try {
+    if (fs.existsSync(SELFIES_FILE)) selfies = JSON.parse(fs.readFileSync(SELFIES_FILE, 'utf8'));
+    console.log(`[Selfies] Loaded ${Object.keys(selfies).length} saved selfies.`);
+} catch(e) { console.error('Failed to load selfies:', e); }
+
+function saveSelfies() {
+    try { fs.writeFileSync(SELFIES_FILE, JSON.stringify(selfies)); } catch(e) {}
+}
+
+function getParticipantsWithStatus(room) {
+    const now = Date.now();
+    return room.participants.map(p => ({
+        ...p,
+        active: p.online && p.lastSeen && (now - p.lastSeen) < 8000
+    }));
+}
 
 function saveTasks(roomId, tasks) {
     try {
@@ -73,7 +133,27 @@ io.on('connection', (socket) => {
                 email: payload.email,
                 picture: payload.picture
             };
-            console.log(`[Auth] User logged in: \${userData.name}`);
+            socket.userEmail = payload.email; // Store for leadership checks
+            console.log(`[Auth] User logged in: ${userData.name} (${socket.userEmail})`);
+            
+            // Proactively assign leadership if Oren joins/refreshes and is already in a room
+            if (socket.userEmail === 'oren001@gmail.com' && socket.roomId) {
+                const room = rooms[socket.roomId];
+                if (room) {
+                    room.leaderId = socket.id;
+                    room.leaderName = 'אורן (מנהל הסדר)';
+                    console.log(`[Leader] Oren re-authenticated. Leadership restored in room ${socket.roomId}`);
+                    saveRooms();
+                    io.to(socket.roomId).emit('leader-updated', { leaderId: socket.id, leaderName: room.leaderName });
+                    io.to(socket.roomId).emit('room-updated', { 
+                        participants: room.participants,
+                        sederStarted: room.sederStarted,
+                        leaderId: room.leaderId,
+                        leaderName: room.leaderName
+                    });
+                }
+            }
+
             socket.emit('google-login-success', userData);
         } catch (err) {
             console.error('[Auth] Login failed:', err.message);
@@ -85,22 +165,40 @@ io.on('connection', (socket) => {
         const roomId = generateId();
         rooms[roomId] = {
             id: roomId,
-            currentPage: 0,
             participants: [],
-            images: {}, // Cache for AI images
+            currentPage: 0,
+            leaderId: null,
+            leaderName: null,
             tasks: persistedTasks[roomId] || [
-                "🍷 קדש", "💧 ורחץ", "🥬 כרפס", "🥪 יחץ",
-                "📖 מגיד", "🧼 רחצה", "🥖 מוציא מצה", "🌿 מרור",
-                "🌯 כורך", "🍽️ שולחן עורך", "🍦 צפון", "🙏 ברך",
-                "🎶 הלל", "✅ נרצה"
-            ]
+                { id: 'h1', text: '✅ תכנון MVP ראשוני', completed: true, author: 'אורן (מנהל פרויקט)' },
+                { id: 'h2', text: '✅ הקמת שרת (Express, Socket.io)', completed: true, author: 'אורן (מנהל פרויקט)' },
+                { id: 'h3', text: '✅ סנכרון קריאה בזמן אמת', completed: true, author: 'אורן (מנהל פרויקט)' },
+                { id: 'h4', text: '✅ פיצ\'ר סלפי/פולארויד', completed: true, author: 'אורן (מנהל פרויקט)' },
+                { id: 'h5', text: '✅ ניקוי ושיפור ממשק (Premium UI)', completed: true, author: 'אורן (מנהל פרויקט)' },
+                { id: 'h6', text: '✅ אינטגרציה מלאה: הגדה עברית-אנגלית', completed: true, author: 'אורן (מנהל פרויקט)' },
+                { id: 'h7', text: '✅ תשתית ייצור תמונות AI (Leonardo)', completed: true, author: 'אורן (מנהל פרויקט)' },
+                { id: 'h8', text: '✅ אפליקציה מותקנת (PWA)', completed: true, author: 'אורן (מנהל פרויקט)' },
+                { id: 'h9', text: '✅ התחברות גוגל (Google Login)', completed: true, author: 'אורן (מנהל פרויקט)' },
+                { id: 'h10', text: '✅ סנכרון גרסאות ורענון אוטומטי', completed: true, author: 'אורן (מנהל פרויקט)' },
+                { id: 'h11', text: '✅ תיקון באג ה-Undefined במשימות', completed: true, author: 'אורן (מנהל פרויקט)' },
+                { id: 'h12', text: '✅ התנתקות וניקוי סשן (Sign Out)', completed: true, author: 'אורן (מנהל פרויקט)' },
+                { id: 'dev-1', text: '👑 שליטת מנהל (Host Controls)', completed: false, author: 'אורן (מנהל פרויקט)' },
+                { id: 'dev-2', text: '🩸 אנימציות ואפקטים ויזואליים', completed: false, author: 'אורן (מנהל פרויקט)' },
+                { id: 'dev-3', text: '🤖 שדרוג יכולות ה-AI', completed: false, author: 'אורן (מנהל פרויקט)' },
+                { id: 'dev-4', text: '☁️ חיבור למסד נתונים', completed: false, author: 'אורן (מנהל פרויקט)' },
+                { id: 'dev-5', text: '🎥 שילוב אודיו / וידאו', completed: false, author: 'אורן (מנהל פרויקט)' }
+            ],
+            sederStarted: false,
+            createdAt: new Date().toISOString()
         };
         console.log(`Room created: ${roomId}`);
+        saveRooms();
 
         callback({ roomId });
     });
 
-    socket.on('join-room', ({ roomId, photo }, callback) => {
+    socket.on('join-room', ({ roomId, photo, userEmail }, callback) => {
+        if (userEmail) socket.userEmail = userEmail;
         if (!rooms[roomId]) {
             rooms[roomId] = {
                 id: roomId,
@@ -108,18 +206,67 @@ io.on('connection', (socket) => {
                 participants: [],
                 images: {},
                 tasks: persistedTasks[roomId] || [
-                    "🍷 קדש", "💧 ורחץ", "🥬 כרפס", "🥪 יחץ",
-                    "📖 מגיד", "🧼 רחצה", "🥖 מוציא מצה", "🌿 מרור",
-                    "🌯 כורך", "🍽️ שולחן עורך", "🍦 צפון", "🙏 ברך",
-                    "🎶 הלל", "✅ נרצה"
-                ]
+                    { id: 'h1', text: '✅ תכנון MVP ראשוני', completed: true, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'h2', text: '✅ הקמת שרת (Express, Socket.io)', completed: true, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'h3', text: '✅ סנכרון קריאה בזמן אמת', completed: true, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'h4', text: '✅ פיצ\'ר סלפי/פולארויד', completed: true, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'h5', text: '✅ ניקוי ושיפור ממשק (Premium UI)', completed: true, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'h6', text: '✅ אינטגרציה מלאה: הגדה עברית-אנגלית', completed: true, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'h7', text: '✅ תשתית ייצור תמונות AI (Leonardo)', completed: true, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'h8', text: '✅ אפליקציה מותקנת (PWA)', completed: true, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'h9', text: '✅ התחברות גוגל (Google Login)', completed: true, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'h10', text: '✅ סנכרון גרסאות ורענון אוטומטי', completed: true, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'h11', text: '✅ תיקון באג ה-Undefined במשימות', completed: true, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'h12', text: '✅ התנתקות וניקוי סשן (Sign Out)', completed: true, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'dev-1', text: '👑 שליטת מנהל (Host Controls)', completed: false, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'dev-2', text: '🩸 אנימציות ואפקטים ויזואליים', completed: false, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'dev-3', text: '🤖 שדרוג יכולות ה-AI', completed: false, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'dev-4', text: '☁️ חיבור למסד נתונים', completed: false, author: 'אורן (מנהל פרויקט)' },
+                    { id: 'dev-5', text: '🎥 שילוב אודיו / וידאו', completed: false, author: 'אורן (מנהל פרויקט)' }
+                ],
+                leaderId: null,
+                leaderName: null,
+                sederStarted: false,
+                createdAt: new Date().toISOString()
             };
         }
 
-        const participant = { id: socket.id, photo: photo || null };
-        rooms[roomId].participants.push(participant);
+        const room = rooms[roomId];
+        socket.roomId = roomId; // Set this early!
         socket.join(roomId);
-        socket.roomId = roomId; // Store roomId on socket for disconnect
+
+        // Only assign leader if it's Oren
+        if (socket.userEmail === 'oren001@gmail.com') {
+            room.leaderId = socket.id;
+            room.leaderName = 'אורן (מנהל הסדר)';
+            console.log(`[Leader] Oren identified and assigned/overrode as leader in room ${roomId}`);
+        }
+
+        // Save selfie if new, restore saved selfie if this socket has none
+        const photoKey = socket.userEmail || socket.id;
+        if (photo) {
+            selfies[photoKey] = photo;
+            saveSelfies();
+        }
+        const resolvedPhoto = photo || selfies[photoKey] || null;
+
+        const participant = { 
+            id: socket.id, 
+            photo: resolvedPhoto, 
+            guestCount: 1, 
+            online: true,
+            lastSeen: Date.now()
+        };
+
+        const existing = room.participants.find(p => p.photo && p.photo === resolvedPhoto);
+        if (existing) {
+            existing.id = socket.id;
+            existing.online = true;
+            existing.lastSeen = Date.now();
+        } else {
+            room.participants.push(participant);
+        }
+        saveRooms();
 
         console.log(`User ${socket.id} joined room ${roomId}`);
 
@@ -128,36 +275,87 @@ io.on('connection', (socket) => {
                 success: true,
                 roomId,
                 participant,
-                currentPage: rooms[roomId].currentPage,
-                images: rooms[roomId].images,
-                tasks: rooms[roomId].tasks
+                currentPage: room.currentPage,
+                sederStarted: room.sederStarted,
+                images: room.images,
+                tasks: room.tasks,
+                leaderId: room.leaderId,
+                leaderName: room.leaderName
             });
         }
 
-        io.to(roomId).emit('room-updated', {
-            participants: rooms[roomId].participants,
-            currentPage: rooms[roomId].currentPage,
-            images: rooms[roomId].images,
-            tasks: rooms[roomId].tasks
+        io.to(roomId).emit('room-updated', { 
+            participants: room.participants,
+            sederStarted: room.sederStarted,
+            leaderId: room.leaderId,
+            leaderName: room.leaderName
         });
+    });
+
+    socket.on('update-profile', ({ roomId, photo }) => {
+        const room = rooms[roomId];
+        if (!room) return;
+        const p = room.participants.find(p => p.id === socket.id);
+        if (p) {
+            if (photo) p.photo = photo;
+            p.guestCount = 1;
+            saveRooms();
+            io.to(roomId).emit('room-updated', { 
+                participants: room.participants,
+                sederStarted: room.sederStarted 
+            });
+        }
+    });
+
+    socket.on('take-lead', ({ roomId, name }) => {
+        if (!rooms[roomId]) return;
+        
+        // Restriction: Only Oren can take lead
+        if (socket.userEmail !== 'oren001@gmail.com') {
+            console.log(`[Leader] Leadership denied for ${socket.id} (not Oren)`);
+            return;
+        }
+
+        rooms[roomId].leaderId = socket.id;
+        rooms[roomId].leaderName = name || 'אורן (מנהל הסדר)';
+        console.log(`Leadership taken in room ${roomId} by ${rooms[roomId].leaderName}`);
+        saveRooms();
+        io.to(roomId).emit('leader-updated', { leaderId: socket.id, leaderName: rooms[roomId].leaderName });
+    });
+
+    socket.on('trigger-effect', ({ roomId, effectType }) => {
+        if (!rooms[roomId]) return;
+        io.to(roomId).emit('effect-triggered', { effectType, authorId: socket.id });
     });
 
     socket.on('generate-page', ({ roomId, pageIndex }) => {
         if (!rooms[roomId]) return;
-        console.log(`[AI] Manual generation triggered for room ${roomId}, page ${pageIndex}`);
+        if (rooms[roomId].leaderId !== socket.id) {
+            socket.emit('ai-error', { message: 'רק עורך הסדר יכול להתחיל יצירת תמונה!', pageIndex });
+            return;
+        }
         const { generatePersonalizedPage } = require('./leonardo');
         generatePersonalizedPage(roomId, pageIndex, io, rooms).catch(err => {
-            console.error('[AI] Generation failed:', err.message);
             io.to(roomId).emit('ai-error', { message: 'שגיאת מערכת: ' + err.message, pageIndex });
         });
+    });
+
+    socket.on('start-seder', ({ roomId }) => {
+        const room = rooms[roomId];
+        if (!room) return;
+        if (socket.id !== room.leaderId) return;
+        room.sederStarted = true;
+        room.currentPage = 0;
+        io.to(roomId).emit('seder-started', { currentPage: room.currentPage });
+        saveRooms();
     });
 
     socket.on('change-page', ({ roomId, pageIndex }) => {
         if (!rooms[roomId]) return;
         rooms[roomId].currentPage = pageIndex;
-        rooms[roomId].highlightedSegment = -1; // Reset highlight on page change
-        socket.to(roomId).emit('page-changed', { currentPage: pageIndex });
-        console.log(`Room ${roomId} -> page ${pageIndex}`);
+        rooms[roomId].highlightedSegment = -1;
+        saveRooms();
+        io.to(roomId).emit('page-updated', { pageIndex, authorId: socket.id });
     });
 
     socket.on('set-highlight', ({ roomId, pageIndex, segmentIndex }) => {
@@ -166,15 +364,9 @@ io.on('connection', (socket) => {
         socket.to(roomId).emit('highlight-updated', { pageIndex, segmentIndex });
     });
 
-    // --- Task Board Events ---
     socket.on('add-task', ({ roomId, text, author }) => {
         if (!rooms[roomId]) return;
-        const task = {
-            id: Date.now().toString(),
-            text,
-            author: author || 'אורן',
-            completed: false
-        };
+        const task = { id: Date.now().toString(), text, author: author || 'אורח', completed: false };
         rooms[roomId].tasks.push(task);
         saveTasks(roomId, rooms[roomId].tasks);
         io.to(roomId).emit('tasks-updated', { tasks: rooms[roomId].tasks });
@@ -186,10 +378,7 @@ io.on('connection', (socket) => {
         if (task) {
             task.completed = !task.completed;
             saveTasks(roomId, rooms[roomId].tasks);
-            io.to(roomId).emit('tasks-updated', {
-                tasks: rooms[roomId].tasks,
-                completedTask: task.completed ? task.text : null
-            });
+            io.to(roomId).emit('tasks-updated', { tasks: rooms[roomId].tasks, completedTask: task.completed ? task.text : null });
         }
     });
 
@@ -202,27 +391,42 @@ io.on('connection', (socket) => {
 
     socket.on('test-nano-banana', ({ roomId }) => {
         if (!rooms[roomId]) return;
-        console.log(`[AI] Nano Banana Test triggered for room ${roomId}`);
-        io.to(roomId).emit('ai-status', { message: 'מעלה תמונות משתתפים ל-Leonardo (PRO)...' });
+        if (rooms[roomId].leaderId !== socket.id) return;
         generateNanoTest(roomId, io, rooms).catch(err => {
             io.to(roomId).emit('ai-error', { message: 'שגיאת Leonardo: ' + err.message });
         });
     });
 
-    socket.on('disconnect', () => {
-        const roomId = socket.roomId;
-        if (!roomId || !rooms[roomId]) return;
-
-        rooms[roomId].participants = rooms[roomId].participants.filter(p => p.id !== socket.id);
-        if (rooms[roomId].participants.length === 0) {
-            delete rooms[roomId];
-            console.log(`Room ${roomId} closed`);
-        } else {
+    // Heartbeat: client pings to show they're still watching
+    socket.on('heartbeat', ({ roomId }) => {
+        if (!rooms[roomId]) return;
+        const p = rooms[roomId].participants.find(p => p.id === socket.id);
+        if (p) {
+            p.lastSeen = Date.now();
+            p.online = true;
+            // Broadcast updated statuses
             io.to(roomId).emit('room-updated', {
-                participants: rooms[roomId].participants,
+                participants: getParticipantsWithStatus(rooms[roomId]),
+                sederStarted: rooms[roomId].sederStarted,
+                leaderId: rooms[roomId].leaderId,
+                leaderName: rooms[roomId].leaderName,
                 currentPage: rooms[roomId].currentPage
             });
         }
+    });
+
+    socket.on('disconnect', () => {
+        const roomId = socket.roomId;
+        if (!roomId || !rooms[roomId]) return;
+        const p = rooms[roomId].participants.find(p => p.id === socket.id);
+        if (p) {
+            p.online = false;
+            if (!p.photo) {
+                rooms[roomId].participants = rooms[roomId].participants.filter(x => x.id !== socket.id);
+            }
+        }
+        saveRooms();
+        io.to(roomId).emit('room-updated', { participants: rooms[roomId].participants, currentPage: rooms[roomId].currentPage, leaderId: rooms[roomId].leaderId, leaderName: rooms[roomId].leaderName });
     });
 });
 

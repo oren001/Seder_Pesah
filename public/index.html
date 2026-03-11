@@ -10,51 +10,59 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800;900&family=Assistant:wght@300;400;600&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260310_premium_v2">
+    <link rel="stylesheet" href="styles.css?v=1.0.1740">
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
 
     <!-- ======== LOBBY SCREEN ======== -->
     <div id="lobby-screen" class="screen active">
-        <div class="lobby-header">
-            <img src="haggadah_app_icon.png" alt="Logo" class="lobby-logo">
-            <h1 class="logo-title">פסח יחד</h1>
-        </div>
-
-        <div class="lobby-card">
+        <div class="lobby-card glass">
+            <div class="lobby-header">
+                <img src="haggadah_app_icon.png" alt="Logo" class="lobby-logo">
+                <h1 class="logo-title">פסח יחד</h1>
+                <p class="subtitle">הגדה חכמה ומשותפת לכולם</p>
+                <div class="sefaria-badge">
+                    <span class="badge-icon">📖</span>
+                    נבדק ואומת ע"י Sefaria
+                </div>
+            </div>
 
             <div id="lobby-auth-section" class="auth-section">
-                <div class="auth-instruction" style="margin-bottom: 2rem; font-weight: 800; font-size: 1.2rem;">
+                <div class="auth-instruction" style="margin-bottom: 1rem; font-weight: 800; font-size: 1.1rem;">
                     התקבלת לסדר! 🧞‍♂️✨
                 </div>
 
-                <div class="guest-login-card"
-                    style="background: rgba(255,255,255,0.08); padding: 2rem; border-radius: 20px; border: 1px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-                    <p style="margin-bottom: 1rem; font-size: 1.1rem;">הכנס את שמך כדי להתחיל:</p>
-                    <input type="text" id="guest-name" placeholder="למשל: אורן..." class="input-field"
-                        style="margin-bottom: 1.5rem; width: 100%; text-align: center; font-size: 1.1rem; padding: 12px; border: 2px solid rgba(212,175,55,0.3);">
-                    <button id="btn-guest-login" class="btn primary large" style="width: 100%; font-weight: 900;">כניסה
-                        מהירה ← 🍷</button>
-                    <p class="tiny-text" style="margin-top: 1.5rem; opacity: 0.7;">אין צורך בחשבון גוגל כרגע.</p>
+                <!-- Google Login -->
+                <div id="g_id_onload"
+                    data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
+                    data-callback="handleGoogleResponse" data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue"
+                    data-text="signin_with" data-size="large" data-logo_alignment="left"
+                    style="margin-bottom: 1rem; display: flex; justify-content: center;"></div>
+
+                <!-- Moved Guest Login back for fallback -->
+                <div style="margin-top: 1rem;">
+                    <button id="btn-guest-login" class="btn outline" style="width: 100%; padding: 10px;">כניסת אורח (ללא גוגל) 👤</button>
                 </div>
 
-                <div style="margin-top: 2.5rem; opacity: 0.5;">
+                <div style="margin-top: 2rem; opacity: 0.4;">
                     <button id="btn-sign-out-global" class="btn tiny"
-                        style="background: none; border: 1px solid rgba(255,255,255,0.2); padding: 5px 15px;">התנתק /
-                        נקה הגדרות 🚪</button>
+                        style="background: none; border: 1px solid rgba(255,255,255,0.1); padding: 5px 15px;">איפוס
+                        יציאה 🚪</button>
                 </div>
-
             </div>
 
             <div id="lobby-actions-section" class="lobby-actions hidden">
                 <button id="btn-create-room" class="btn primary large">צור חדר חדש ← 🍷</button>
-                <div style="margin-top: 1.5rem;">
+                <div style="margin-top: 1rem;">
                     <button id="btn-sign-out" class="btn tiny"
                         style="opacity: 0.6; background: none; border: 1px solid rgba(255,255,255,0.2);">החלף משתמש /
                         התנתק 🚪</button>
@@ -63,56 +71,170 @@
         </div>
     </div>
 
-    <!-- ======== SELFIE SCREEN ======== -->
-    <div id="selfie-screen" class="screen hidden">
-        <div class="selfie-card">
-            <h2>תצלם את עצמך</h2>
-            <p class="subtitle">כך כולם בחדר ידעו שאתה כאן</p>
-            <div class="video-container">
-                <div class="video-wrapper">
-                    <video id="selfie-video" autoplay muted playsinline></video>
-                    <canvas id="selfie-canvas" class="hidden"></canvas>
-                    <div id="selfie-preview-wrap" class="hidden">
-                        <img id="selfie-preview-img" class="preview-img" alt="preview">
+    <!-- ======== RSVP / ONBOARDING SCREEN ======== -->
+    <div id="rsvp-screen" class="screen hidden">
+        <div class="rsvp-card glass">
+
+
+            <!-- Step 2: Look Choice -->
+            <div id="rsvp-step-look" class="rsvp-step hidden">
+                <div class="rsvp-icon">🎭</div>
+                <h2>איך תופיעו בהגדה?</h2>
+                <p>בחרו איך כולם יראו אתכם ברשימת המשתתפים:</p>
+                <div class="look-choice-grid">
+                    <div id="choice-selfie" class="look-option">
+                        <div class="look-icon">📸</div>
+                        <span>סלפי חי</span>
+                    </div>
+                    <div id="choice-avatar" class="look-option">
+                        <div class="look-icon">🍷</div>
+                        <span>אייקון מגניב</span>
                     </div>
                 </div>
+            </div>
 
-                <div class="selfie-controls">
-                    <button id="btn-take-selfie" class="btn primary">📸 צלם תמונה</button>
-
-                    <div id="post-selfie-actions" class="preview-actions hidden">
-                        <button id="btn-retake" class="btn outline">↩ שוב</button>
-                        <button id="btn-join-with-photo" class="btn primary">✓ הצטרף עכשיו</button>
+            <!-- Step 3a: Avatar Picker -->
+            <div id="rsvp-step-avatar" class="rsvp-step hidden">
+                <h2>בחרו אייקון</h2>
+                <div id="avatar-grid" class="avatar-grid">
+                    <!-- Icons filled by JS -->
+                </div>
+                <div class="rsvp-actions">
+                    <button id="btn-finish-avatar" class="btn primary">מוכן! בואו נתחיל 🍷</button>
+                </div>
+            </div>
+            
+            <!-- Step 3b: Selfie (Reusing existing camera logic) -->
+            <div id="rsvp-step-selfie" class="rsvp-step hidden">
+                <h2>חייכו למצלמה! 📸</h2>
+                <div class="video-container small">
+                    <div class="video-wrapper">
+                        <video id="rsvp-video" autoplay muted playsinline></video>
+                        <canvas id="rsvp-canvas" class="hidden"></canvas>
+                        <div id="rsvp-preview-wrap" class="hidden">
+                            <img id="rsvp-preview-img" class="preview-img" alt="preview">
+                        </div>
                     </div>
+                </div>
+                <div class="rsvp-actions">
+                    <button id="btn-rsvp-take" class="btn primary large">📸 צלם עכשיו</button>
+                    <div id="rsvp-post-selfie" class="hidden" style="width: 100%;">
+                        <button id="btn-finish-selfie" class="btn primary" style="width: 100%;">זהו, סיימנו! ←</button>
+                        <button id="btn-rsvp-retake" class="btn outline tiny" style="width: 100%; margin-top: 10px;">צילום מחדש 🔄</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Final Excitement -->
+            <div id="rsvp-step-finish" class="rsvp-step hidden">
+                <div class="rsvp-icon">🍷✨</div>
+                <h2>איזה כיף! הכל מוכן.</h2>
+                <p>הפרופיל שלכם בפנים. <br> <b>עכשיו רק נשאר לשבת סביב השולחן ולהתחיל את ההגדה יחד!</b></p>
+                <div class="rsvp-actions">
+                    <button id="btn-go-to-haggadah" class="btn primary">אני בשולחן, בואו נתחיל! 📖🚀</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ======== ROOM SCREEN ======== -->
+
+    <!-- ======== ROOM LOBBY (WAITING ROOM) ======== -->
+    <div id="room-lobby-screen" class="screen hidden">
+        <div class="lobby-card glass" style="max-width: 600px; width: 95%;">
+            <div class="lobby-header">
+                <h1 class="logo-title">הסדר מתחיל עוד מעט... 🍇</h1>
+                <p class="subtitle" id="lobby-status-text">מחכים שכולם יתיישבו סביב השולחן</p>
+                
+                <div class="waiting-participants">
+                    <p style="font-weight: 800; margin-bottom: 1.5rem; color: #5d4037; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        👥 מי כבר כאן?
+                    </p>
+                    <div class="gazebo-grid-container">
+                        <div id="room-lobby-participants" class="gazebo-grid">
+                            <!-- Participants will appear here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leader controls: only visible to the leader -->
+                <div id="lobby-leader-actions" class="hidden" style="margin-top: 2rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 2rem;">
+                    <p style="margin-bottom: 1rem; font-weight: 600;">מנהל הסדר, כשיש מניין - אפשר להתחיל!</p>
+                    <button id="btn-start-seder" class="btn primary large" style="width: 100%;">התחל את ההגדה 📖🚀</button>
+                </div>
+
+                <!-- Guest note / Google login for the host -->
+                <div id="lobby-guest-note" style="margin-top: 2rem; font-size: 0.9rem;">
+                    המנחה יתחיל את הסדר בקרוב, הישארו איתנו... ✨
+                </div>
+
+                <!-- Always-visible host login section -->
+                <div id="lobby-host-login" style="margin-top: 1.5rem; padding: 1rem; background: rgba(139,69,19,0.06); border-radius: 12px; border: 1px dashed rgba(139,69,19,0.3);">
+                    <p style="margin-bottom: 0.8rem; font-size: 0.85rem; color: #8b4513; font-weight: 600;">👑 מנהל הסדר? התחבר כדי להתחיל:</p>
+                    <div id="g_id_onload_lobby"
+                        data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
+                        data-callback="handleGoogleResponse">
+                    </div>
+                    <div class="g_id_signin_lobby" data-type="standard"></div>
+                    <button onclick="(function(){ const d=document.createElement('div'); d.id='g_id_onload_lobby'; d.setAttribute('data-client_id','256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com'); d.setAttribute('data-callback','handleGoogleResponse'); document.body.appendChild(d); if(window.google){ google.accounts.id.initialize({client_id:'256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com',callback:handleGoogleResponse}); google.accounts.id.prompt(); } })()" 
+                        class="btn outline small" style="margin-top: 0.5rem; width: 100%; font-size: 0.85rem;">
+                        🔑 התחבר עם Google
+                    </button>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <button id="btn-lobby-copy-link" class="btn outline small">הזמן עוד אורחים ✉️</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <div id="room-screen" class="screen hidden">
+        <div id="effects-container" class="effects-container hidden"></div>
 
         <!-- Header -->
-        <header class="room-header">
-            <div class="brand">
+        <header class="room-header glass">
+            <div class="header-left">
+                <button id="btn-menu" class="btn-icon hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+
+            <div class="brand-center">
                 <div class="beta-badge">BETA</div>
                 🍷 פסח יחד
             </div>
 
-            <div class="participants-strip">
-                <div id="participants-list" class="avatars-list"></div>
-                <span class="viewers-count"><span id="count-number">1</span> כאן</span>
-            </div>
-
-            <div class="header-actions">
-                <div class="lead-mode-toggle">
-                    <input type="checkbox" id="check-lead-mode">
-                    <label for="check-lead-mode">📢 הובלה</label>
+            <div class="header-right">
+                <div class="participants-strip">
+                    <div id="participants-list" class="avatars-list"></div>
+                    <span class="viewers-count"><span id="count-number">1</span></span>
                 </div>
-                <button id="btn-toggle-tasks" class="btn outline small">🛖 הַגָּזִיבּוֹ</button>
-                <button id="btn-copy-link" class="btn outline small">הזמן חברים</button>
             </div>
         </header>
+
+        <!-- Room Menu Dropdown -->
+        <div id="room-menu" class="room-menu-dropdown hidden">
+            <div class="menu-section">
+                <div class="menu-label">שליטה וניהול</div>
+                <div id="leadership-status" class="leadership-badge">🛡️ מחפש מנהל...</div>
+                <div class="lead-mode-toggle">
+                    <input type="checkbox" id="check-lead-mode">
+                    <label for="check-lead-mode">👑 הובלה</label>
+                </div>
+                <button id="btn-sync" class="btn small glass hidden" style="width: 100%;">לחזור לסנכרון</button>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-label">כלים ואורחים</div>
+                <button id="btn-toggle-tasks" class="btn outline small" style="width: 100%; text-align: right;">🛖
+                    הַגָּזִיבּוֹ</button>
+                <button id="btn-copy-link" class="btn outline small" style="width: 100%; text-align: right;">הזמן
+                    חברים</button>
+            </div>
+        </div>
 
         <!-- The Gazebo (Premium Side Panel) -->
         <div id="task-sidebar" class="sidebar hidden">
@@ -124,9 +246,18 @@
 
             <!-- Gazebo Section: Participants Grid -->
             <div class="gazebo-section">
-                <div class="gazebo-section-title">👥 מְסֻבִּין</div>
+                <div class="gazebo-section-title">👥 מְסֻבִּין (<span id="total-souls">1</span> נפשות)</div>
                 <div id="gazebo-participants" class="gazebo-grid">
                     <!-- Participant photos go here -->
+                </div>
+                <button id="btn-edit-profile" class="btn tiny outline" style="width:100%; margin-top:10px; font-size: 0.8rem;">עדכון פרופיל / תמונה 🎭</button>
+            </div>
+
+            <!-- Gazebo Section: Exodus Map -->
+            <div class="gazebo-section">
+                <div class="gazebo-section-title">🗺️ מַפַּת יְצִיאַת מִצְרַיִם</div>
+                <div id="exodus-map-root" class="exodus-map-container">
+                    <!-- Exodus Map will be rendered here -->
                 </div>
             </div>
 
@@ -151,6 +282,14 @@
                 </div>
             </div>
 
+            <!-- Sign Out / Switch User -->
+            <div class="sidebar-footer"
+                style="padding: 1.5rem; border-top: 1px solid rgba(0,0,0,0.05); text-align: center;">
+                <button id="btn-sign-out-room" class="btn outline small" style="width: 100%; opacity: 0.7;">
+                    החלף משתמש / התנתק 🚪
+                </button>
+            </div>
+
             <div class="sidebar-footer">
                 <p class="tiny-text" id="version-display" style="opacity: 0.5;"></p>
                 <p class="tiny-text">התמונות נוצרות אוטומטית לפי המשתתפים</p>
@@ -159,7 +298,7 @@
 
         <!-- Haggadah text area -->
         <main class="haggadah-container">
-            <div class="page-content" id="page-content">
+            <div class="page-content" id="haggadah-pages">
                 <h2>טוען...</h2>
             </div>
         </main>
@@ -168,22 +307,14 @@
         <footer class="room-footer">
             <button id="btn-prev" class="btn nav-btn" disabled>הקודם →</button>
 
-            <div class="progress-center">
-                <div class="progress-pill" dir="ltr">
-                    <span id="current-page-num">1</span> / <span id="total-pages">1</span>
-                    <button id="btn-sync" class="btn-sync hidden" title="חזור לסנכרון עם המנחה">🔄</button>
-                </div>
-                <div id="meal-progress"
-                    style="display:none; font-size: 0.78rem; font-weight: 800; color: var(--primary); margin-top: 2px; background: rgba(212,175,55,0.15); padding: 2px 10px; border-radius: 10px; border: 1px solid rgba(212,175,55,0.4); white-space: nowrap;"
-                    dir="rtl">
-                    עברת: <span id="meal-pages-passed">0</span> | עד 🍽️: <span id="meal-pages-left"></span>
-                </div>
+            <div class="progress-pill">
+                <span id="current-page-num">1</span> / <span id="total-pages">1</span>
+                <button id="btn-sync" class="btn-sync hidden" title="חזור לסנכרון עם המנחה">🔄</button>
             </div>
 
             <button id="btn-next" class="btn nav-btn primary">← הבא</button>
         </footer>
     </div>
-
 
     <div id="photo-viewer" class="photo-viewer hidden" onclick="closePhotoZoom()">
         <img id="zoomed-photo" src="" alt="Zooma">
@@ -193,8 +324,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
-    <script src="haggadah_data.js?v=20260311_split"></script>
-    <script src="app.js?v=20260311_split"></script>
+    <script src="haggadah_data.js?v=1.0.1740"></script>
+    <script src="ExodusMap.js?v=1.0.1740"></script>
+    <script src="RSVPFlow.js?v=1.0.1740"></script>
+    <script src="app.js?v=1.0.1740"></script>
 </body>
 
 </html>

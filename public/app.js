@@ -7,11 +7,15 @@ let currentRoomId = null;
 let currentPage = 0;
 const pageImages = {};  // { [pageIndex]: imageUrl } — grows as AI generates images
 let roomState = null;
-let currentVersion = null;
+let currentVersion = '1.0.1740';
 let wakeLock = null;
+let exodusMap = null;
+let rsvpFlow = null;
 
 // --- Staging State ---
-let isSyncingWithLeader = true;
+let isFollowingLeader = true;
+let leaderId = null;
+let leaderName = null;
 let leaderPage = 0;
 let currentLanguage = 'he'; // 'he' or 'en'
 let highlightedSegmentIndex = -1;
@@ -21,11 +25,17 @@ const $$ = id => document.getElementById(id);
 
 const screens = {
     lobby: $$('lobby-screen'),
-    selfie: $$('selfie-screen'),
+    rsvp: $$('rsvp-screen'),
+    roomLobby: $$('room-lobby-screen'),
     room: $$('room-screen')
 };
 
 let roomTasks = [];
+
+function safeAddListener(id, event, fn) {
+    const el = $$(id);
+    if (el) el.addEventListener(event, fn);
+}
 
 // --- Init ---
 function init() {
@@ -35,6 +45,36 @@ function init() {
     setupSocket();
     setupTasks();
     requestWakeLock();
+
+    // Initialize Exodus Map
+    exodusMap = new ExodusMap('exodus-map-root');
+
+    // Initialize RSVP Flow
+    rsvpFlow = new RSVPFlow({
+        onComplete: (data) => {
+            console.log('[RSVP] Flow complete:', data);
+            
+            // If we're a guest (not logged in with Google), create a dummy user
+            if (!window.me) {
+                const guestName = data.name || 'אורח ' + Math.floor(Math.random() * 900 + 100);
+                window.me = {
+                    id: 'guest_' + Math.random().toString(36).substr(2, 9),
+                    name: guestName,
+                    isGuest: true
+                };
+                localStorage.setItem('haggadah-user', JSON.stringify(window.me));
+            }
+
+            if (currentRoomId) {
+                // Updating existing profile
+                socket.emit('update-profile', { roomId: currentRoomId, photo: data.photo });
+                showScreen('roomLobby');
+            } else if (pendingRoomId) {
+                // Joining for the first time
+                joinRoom(pendingRoomId, data);
+            }
+        }
+    });
 
     // Register PWA Service Worker
     if ('serviceWorker' in navigator) {
@@ -49,50 +89,99 @@ function init() {
     checkVersion();
     setInterval(checkVersion, 60000); // Check every minute
 
-    // Add event listeners
-    $$('btn-create-room').addEventListener('click', onCreateRoom);
-    $$('btn-take-selfie').addEventListener('click', onTakeSelfie);
-    $$('btn-retake').addEventListener('click', onRetake);
-    $$('btn-join-with-photo').addEventListener('click', onJoinWithPhoto);
-    $$('btn-copy-link').addEventListener('click', onCopyLink);
-    $$('btn-prev').addEventListener('click', () => changePage(-1));
-    $$('btn-next').addEventListener('click', () => changePage(1));
-    $$('btn-sync').addEventListener('click', onSyncWithLeader);
+    // Add event listeners (Safely)
+    safeAddListener('btn-create-room', 'click', onCreateRoom);
+    safeAddListener('btn-take-selfie', 'click', onTakeSelfie);
+    safeAddListener('btn-retake', 'click', onRetake);
+    safeAddListener('btn-guest-login', 'click', () => {
+        // Guest login triggers the RSVP flow directly
+        rsvpFlow.show();
+    });
+    safeAddListener('btn-join-with-photo', 'click', onJoinWithPhoto);
+    safeAddListener('btn-copy-link', 'click', onCopyLink);
+    safeAddListener('btn-prev', 'click', () => changePage(-1));
+    safeAddListener('btn-next', 'click', () => changePage(1));
+    safeAddListener('btn-sync', 'click', onSyncWithLeader);
+    safeAddListener('btn-edit-profile', 'click', () => rsvpFlow.show(true));
+    safeAddListener('btn-sign-out-room', 'click', onSignOut);
+    safeAddListener('btn-menu', 'click', toggleMenu);
+    safeAddListener('btn-sign-out', 'click', onSignOut);
+    safeAddListener('btn-sign-out-global', 'click', onSignOut);
+    safeAddListener('btn-toggle-tasks', 'click', () => {
+        toggleTasks();
+        if (!$$('room-menu').classList.contains('hidden')) toggleMenu();
+    });
+    safeAddListener('btn-close-tasks', 'click', toggleTasks);
+    safeAddListener('btn-add-task', 'click', addTask);
+    safeAddListener('btn-start-seder', 'click', onStartSeder);
+    safeAddListener('btn-lobby-copy-link', 'click', onCopyLink);
+    
+    const inputNewTask = $$('input-new-task');
+    if (inputNewTask) {
+        inputNewTask.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask();
+        });
+    }
 
-    const btnGuest = $$('btn-guest-login');
-    if (btnGuest) btnGuest.addEventListener('click', onGuestLogin);
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        const menu = $$('room-menu');
+        const btn = $$('btn-menu');
+        if (menu && !menu.classList.contains('hidden') && !menu.contains(e.target) && !btn.contains(e.target)) {
+            toggleMenu();
+        }
+    });
 
-    // Auto-login from storage
+
+    // --- Global Reset / Version Control ---
+    const lastSeenVersion = localStorage.getItem('haggadah_app_version');
+    if (lastSeenVersion && lastSeenVersion !== currentVersion && lastSeenVersion < '1.0.1740') {
+        console.warn(`[Reset] Version mismatch (${lastSeenVersion} -> ${currentVersion}). Forcing logout...`);
+        localStorage.clear();
+        location.reload();
+        return;
+    }
+    localStorage.setItem('haggadah_app_version', currentVersion);
+
+    // Auto-login from storage — prioritize Google credential over guest session
+    const savedGoogleCred = localStorage.getItem('haggadah-google-cred');
     const storedUser = localStorage.getItem('haggadah-user');
+    
     if (storedUser) {
         me = JSON.parse(storedUser);
         console.log('[Auth] Restored user:', me.name);
+    }
+    
+    // If we have a saved Google credential, decode it to ensure email is available
+    if (savedGoogleCred) {
+        try {
+            // Decode the JWT payload (middle part)
+            const payload = JSON.parse(atob(savedGoogleCred.split('.')[1]));
+            if (payload.email) {
+                // Override the stored user with the Google account info
+                // This ensures me.email is always set if Oren previously logged in
+                me = {
+                    id: payload.sub,
+                    name: payload.name || me?.name || 'אורן',
+                    email: payload.email,
+                    picture: payload.picture,
+                    isGuest: false
+                };
+                localStorage.setItem('haggadah-user', JSON.stringify(me));
+                console.log('[Auth] Restored Google user from credential:', me.email);
+            }
+        } catch(e) {
+            console.warn('[Auth] Failed to decode saved credential:', e);
+        }
+    }
+    
+    if (me) {
         const authSection = document.getElementById('lobby-auth-section');
         const actionsSection = document.getElementById('lobby-actions-section');
         if (authSection) authSection.classList.add('hidden');
         if (actionsSection) actionsSection.classList.remove('hidden');
     }
 
-    const btnSignOut = $$('btn-sign-out');
-    if (btnSignOut) btnSignOut.addEventListener('click', onSignOut);
-
-    const btnSignOutGlobal = $$('btn-sign-out-global');
-    if (btnSignOutGlobal) btnSignOutGlobal.addEventListener('click', onSignOut);
-
-    $$('check-lead-mode').addEventListener('change', () => {
-        if ($$('check-lead-mode').checked) {
-            isSyncingWithLeader = true; // If you become leader, you are by definition 'synced' with yourself
-        }
-        renderPage();
-    });
-
-    // Task Sidebar
-    $$('btn-toggle-tasks').addEventListener('click', toggleTasks);
-    $$('btn-close-tasks').addEventListener('click', toggleTasks);
-    $$('btn-add-task').addEventListener('click', addTask);
-    $$('input-new-task').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') addTask();
-    });
 
     // Initial check for room in URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -106,15 +195,50 @@ function init() {
 
     if (roomFromUrl) {
         pendingRoomId = roomFromUrl;
-        if (selfieDataUrl) {
-            // If we have both, just join
-            joinRoom(roomFromUrl);
+        if (me) {
+            // If we have a saved selfie and are logged in, join automatically
+            const savedSelfie = localStorage.getItem('haggadah_selfie');
+            if (savedSelfie) {
+                console.log('[Init] Auto-joining with saved selfie...');
+                joinRoom(pendingRoomId);
+            } else {
+                rsvpFlow.show();
+            }
         } else {
-            showScreen('selfie');
-            startCamera();
+            // Show auth, but hide actions to avoid empty space
+            showScreen('lobby');
+            $$('lobby-auth-section').classList.remove('hidden');
+            $$('lobby-actions-section').classList.add('hidden');
+            showToast('הוזמנת לסדר! התחבר כדי להצטרף 🍷');
         }
     } else {
         showScreen('lobby');
+        if (me) {
+            $$('lobby-auth-section').classList.add('hidden');
+            $$('lobby-actions-section').classList.remove('hidden');
+        } else {
+            $$('lobby-auth-section').classList.remove('hidden');
+            $$('lobby-actions-section').classList.add('hidden');
+        }
+    }
+
+    // Auto-hiding header logic
+    let lastScrollY = 0;
+    const roomHeader = document.querySelector('.room-header');
+    const scrollContainer = document.querySelector('.haggadah-container');
+
+    if (scrollContainer) {
+        scrollContainer.addEventListener('scroll', () => {
+            const currentScrollY = scrollContainer.scrollTop;
+            if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                // Scrolling down - hide header
+                roomHeader.classList.add('header-hidden');
+            } else if (currentScrollY < lastScrollY) {
+                // Scrolling up - show header
+                roomHeader.classList.remove('header-hidden');
+            }
+            lastScrollY = currentScrollY;
+        });
     }
 }
 
@@ -124,12 +248,20 @@ async function setupSocket() {
     socket.on('connect', () => {
         console.log('[Socket] Connected to server. Socket ID:', socket.id);
 
+        // Auto-re-auth if we have a saved credential
+        const savedCred = localStorage.getItem('haggadah-google-cred');
+        if (savedCred) {
+            console.log('[Auth] Found saved credential, syncing personality...');
+            socket.emit('google-login', { credential: savedCred });
+        }
+
         // If we were already in a room, re-join automatically to restore sync
         if (currentRoomId) {
             console.log('[Socket] Re-connecting... re-joining room:', currentRoomId);
             joinRoom(currentRoomId);
         }
     });
+
 
     socket.on('disconnect', (reason) => {
         console.warn('[Socket] Disconnected:', reason);
@@ -141,16 +273,60 @@ async function setupSocket() {
 
     socket.on('room-updated', (data) => {
         renderParticipants(data.participants);
+        renderLobbyParticipants(data.participants);
+        leaderId = data.leaderId;
+        leaderName = data.leaderName;
         leaderPage = data.currentPage;
-        if (isSyncingWithLeader && data.currentPage !== currentPage) {
+
+        updateLeadershipUI();
+        updateLobbyUI(data.sederStarted);
+
+        if (isFollowingLeader && data.currentPage !== currentPage) {
             currentPage = data.currentPage;
             renderPage();
         }
     });
 
+    socket.on('seder-started', (data) => {
+        showScreen('room');
+        currentPage = data.currentPage || 0;
+        renderPage();
+        showToast('🍷 הסדר מתחיל! חג שמח!');
+        confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+    });
+
+    socket.on('leader-updated', (data) => {
+        leaderId = data.leaderId;
+        leaderName = data.leaderName;
+        updateLeadershipUI();
+        if (leaderId === socket.id) {
+            showToast('אתה עכשיו עורך הסדר 👑');
+        } else {
+            showToast(`${leaderName} הוא עורך הסדר החדש`);
+        }
+    });
+
+    socket.on('page-updated', ({ pageIndex, authorId }) => {
+        leaderPage = pageIndex;
+        if (authorId === leaderId || isFollowingLeader) {
+            if (currentPage !== pageIndex) {
+                currentPage = pageIndex;
+                renderPage();
+            }
+        }
+    });
+
+    socket.on('effect-triggered', ({ effectType, authorId }) => {
+        triggerLocalEffect(effectType);
+    });
+
     socket.on('page-changed', (data) => {
         leaderPage = data.currentPage;
-        if (isSyncingWithLeader) {
+        if (isFollowingLeader) {
             currentPage = data.currentPage;
             renderPage();
             showToast(`המנחה עבר לעמוד ${currentPage + 1}`);
@@ -184,8 +360,8 @@ async function setupSocket() {
         }
     });
 
-    socket.on('image-ready', ({ pageIndex, imageUrl }) => {
-        pageImages[pageIndex] = imageUrl;
+    socket.on('image-ready', ({ pageIndex, imageUrl, featuredPhotos }) => {
+        pageImages[pageIndex] = { url: imageUrl, featuredPhotos };
         if (pageIndex === currentPage) renderPage();
     });
 
@@ -224,17 +400,41 @@ async function setupSocket() {
 
     socket.on('google-login-success', (userData) => {
         me = userData;
+        localStorage.setItem('haggadah-user', JSON.stringify(me));
         showToast(`ברוך הבא, ${userData.name}!`);
-        // After login, you can create or join
-        const authSection = document.getElementById('lobby-auth-section');
-        const actionsSection = document.getElementById('lobby-actions-section');
-        if (authSection) authSection.classList.add('hidden');
-        if (actionsSection) actionsSection.classList.remove('hidden');
+        
+        // Check if we were trying to join a room
+        if (pendingRoomId) {
+            rsvpFlow.show();
+        } else {
+            // Switch to actions (Create Room)
+            const authSection = document.getElementById('lobby-auth-section');
+            const actionsSection = document.getElementById('lobby-actions-section');
+            if (authSection) authSection.classList.add('hidden');
+            if (actionsSection) actionsSection.classList.remove('hidden');
+        }
+
+        // RE-SYNC: If we are already in a room, re-join now that we are authenticated
+        // This ensures the server recognizes us as Oren (leader)
+        if (currentRoomId) {
+            console.log('[Auth] Re-joining room after login to sync leadership...');
+            joinRoom(currentRoomId);
+        }
+
+        updateLeadershipUI();
     });
 }
 
 function triggerPageGeneration(pageIndex) {
     if (!currentRoomId) return;
+
+    // --- Leader Check (Client Side) ---
+    const isOren = me && me.email === 'oren001@gmail.com';
+    if (leaderId !== socket.id && !isOren) {
+        showToast('רק עורך הסדר (המנחה) יכול להתחיל יצירת תמונה 👑');
+        return;
+    }
+
     const overlay = document.getElementById(`status-overlay-${pageIndex}`);
     if (overlay) {
         overlay.classList.remove('hidden');
@@ -316,21 +516,14 @@ function notifyNewVersion() {
     }
 }
 
-function onGuestLogin() {
-    const nameInput = document.getElementById('guest-name');
-    const name = nameInput.value.trim() || 'אורח';
 
-    me = {
-        id: 'guest-' + Math.random().toString(36).substring(2, 9),
-        name: name,
-        picture: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`
-    };
-
-    localStorage.setItem('haggadah-user', JSON.stringify(me));
-    showToast(`שלום ${name}! 😄`);
-
-    document.getElementById('lobby-auth-section').classList.add('hidden');
-    document.getElementById('lobby-actions-section').classList.remove('hidden');
+function onRSVP() {
+    const roomId = prompt('הכנס קוד חדר להרשמה (RSVP):');
+    if (roomId) {
+        pendingRoomId = roomId;
+        showScreen('selfie');
+        startCamera();
+    }
 }
 
 function onSignOut() {
@@ -413,8 +606,7 @@ function onRetake() {
 function onCreateRoom() {
     socket.emit('create-room', (response) => {
         pendingRoomId = response.roomId;
-        showScreen('selfie');
-        startCamera();
+        rsvpFlow.show();
     });
 }
 
@@ -424,12 +616,33 @@ function onJoinWithPhoto() {
     joinRoom(pendingRoomId);
 }
 
-function joinRoom(roomId) {
-    const photo = selfieDataUrl || generatePlaceholderPhoto();
-    socket.emit('join-room', { roomId, photo }, (response) => {
+// --- Heartbeat: send to server every 5s to show we're actively watching ---
+let heartbeatInterval = null;
+function startHeartbeat(roomId) {
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
+    // Send immediately so the dot turns green right away
+    if (socket && roomId) socket.emit('heartbeat', { roomId });
+    heartbeatInterval = setInterval(() => {
+        if (!document.hidden && socket && roomId) {
+            socket.emit('heartbeat', { roomId });
+        }
+    }, 5000);
+}
+
+function joinRoom(roomId, rsvpData = null) {
+    const photo = rsvpData ? rsvpData.photo : (localStorage.getItem('haggadah_selfie') || selfieDataUrl || generatePlaceholderPhoto());
+    const userEmail = me ? me.email : null;
+    
+    socket.emit('join-room', { roomId, photo, userEmail }, (response) => {
         if (response.success) {
             currentRoomId = response.roomId;
-            me = response.participant;
+            // MERGE identity to preserve email
+            me = { ...me, ...response.participant };
+            
+            // Sync leader from response
+            leaderId = response.leaderId;
+            leaderName = response.leaderName;
+            
             leaderPage = response.currentPage;
             currentPage = response.currentPage;
             if (response.images) Object.assign(pageImages, response.images);
@@ -437,9 +650,18 @@ function joinRoom(roomId) {
 
             $$('total-pages').textContent = HAGGADAH.length;
             updateUrlParam('room', currentRoomId);
-            showScreen('room');
-            renderPage();
+            
+            if (response.sederStarted) {
+                showScreen('room');
+                renderPage();
+            } else {
+                showScreen('roomLobby');
+                renderLobbyParticipants(response.participants || [response.participant]);
+                updateLobbyUI(false);
+            }
             renderTasks();
+            updateLeadershipUI();
+            startHeartbeat(currentRoomId);
         } else {
             alert('החדר לא נמצא.');
             window.location.href = '/';
@@ -458,7 +680,7 @@ function onRoomUpdated({ participants, currentPage: pg }) {
 
 function onPageChanged({ currentPage: newPage }) {
     leaderPage = newPage;
-    if (isSyncingWithLeader) {
+    if (isFollowingLeader) {
         currentPage = newPage;
         renderPage();
         showToast(`המנחה עבר לעמוד ${currentPage + 1}`);
@@ -469,7 +691,10 @@ function onPageChanged({ currentPage: newPage }) {
 
 // --- Render ---
 function renderParticipants(participants) {
-    $$('count-number').textContent = participants.length;
+    const totalSouls = participants.length;
+    $$('count-number').textContent = totalSouls;
+    if ($$('total-souls')) $$('total-souls').textContent = totalSouls;
+
     const list = $$('participants-list');
     const gazeboList = $$('gazebo-participants');
 
@@ -478,10 +703,11 @@ function renderParticipants(participants) {
 
     participants.forEach(p => {
         const photoUrl = p.photo || generatePlaceholderPhoto();
-
+        const isOnline = p.online !== false;
+        
         // Header Strip
         const div = document.createElement('div');
-        div.className = 'avatar' + (me && p.id === me.id ? ' me' : '');
+        div.className = 'avatar' + (me && p.id === me.id ? ' me' : '') + (!isOnline ? ' offline' : '');
         const img = document.createElement('img');
         img.src = photoUrl;
         img.alt = 'משתתף';
@@ -491,7 +717,7 @@ function renderParticipants(participants) {
         // Gazebo Grid
         if (gazeboList) {
             const gazDiv = document.createElement('div');
-            gazDiv.className = 'gazebo-avatar';
+            gazDiv.className = 'gazebo-avatar' + (!isOnline ? ' offline' : '');
             gazDiv.onclick = () => openPhotoZoom(photoUrl);
             const gazImg = document.createElement('img');
             gazImg.src = photoUrl;
@@ -501,12 +727,140 @@ function renderParticipants(participants) {
     });
 }
 
+function renderLobbyParticipants(participants) {
+    const grid = $$('room-lobby-participants');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    participants.forEach(p => {
+        const photoUrl = p.photo || generatePlaceholderPhoto();
+        const card = document.createElement('div');
+        card.className = 'gazebo-avatar lobby-avatar-card';
+        card.style.cssText = 'width:85px;height:85px;position:relative;'; // Smaller for grid density
+        
+        const img = document.createElement('img');
+        img.src = photoUrl;
+        card.appendChild(img);
+
+        // 🟢 Online indicator dot
+        const dot = document.createElement('div');
+        dot.className = 'online-dot' + (p.active ? ' active' : ' offline');
+        card.appendChild(dot);
+
+        // 📸 Is it ME? Add badge & retake ability
+        const isMe = (p.id === socket.id);
+        if (isMe) {
+            const meBadge = document.createElement('div');
+            meBadge.className = 'me-badge';
+            meBadge.textContent = 'אני';
+            card.appendChild(meBadge);
+
+            const retake = document.createElement('div');
+            retake.className = 'retake-badge';
+            retake.innerHTML = '🔄';
+            card.appendChild(retake);
+
+            card.title = 'לחץ לעדכון תמונה';
+            card.onclick = () => {
+                if (rsvpFlow) {
+                    // Force retake
+                    rsvpFlow.show();
+                }
+            };
+        }
+        
+        grid.appendChild(card);
+    });
+}
+
+function updateLobbyUI(sederStarted) {
+    if (sederStarted) return;
+    
+    // Oren always counts as leader for UI purposes if he is logged in
+    const isOren = me && me.email === 'oren001@gmail.com';
+    const isLeader = (leaderId === socket.id) || isOren;
+    
+    const leaderActions = $$('lobby-leader-actions');
+    const guestNote = $$('lobby-guest-note');
+    
+    console.log(`[Lobby] Updating UI. isLeader: ${isLeader}, isOren: ${isOren}, leaderId: ${leaderId}`);
+
+    if (leaderActions) {
+        if (isLeader) {
+            leaderActions.classList.remove('hidden');
+            if (guestNote) guestNote.classList.add('hidden');
+        } else {
+            leaderActions.classList.add('hidden');
+            if (guestNote) guestNote.classList.remove('hidden');
+            
+            // If not Oren, but logged in as someone else (not guest)
+            if (me && !me.isGuest && me.email !== 'oren001@gmail.com') {
+                guestNote.innerHTML = '👤 מחובר כאורח. המנחה יתחיל את הסדר בקרוב... ✨';
+            } 
+            // If Guest or not logged in at all
+            else if (!me || me.isGuest) {
+                guestNote.innerHTML = `
+                    <div id="g-login-lobby" style="margin-top: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid rgba(0,0,0,0.1);">
+                        <p style="margin-bottom: 0.8rem; font-weight: 600;">מנהל הסדר? התחבר כאן:</p>
+                        <div id="g_id_onload"
+                            data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
+                            data-callback="handleGoogleResponse">
+                        </div>
+                        <div class="g_id_signin" data-type="standard"></div>
+                    </div>
+                `;
+                // Re-init Google button if needed
+                setTimeout(() => {
+                    if (window.google) window.google.accounts.id.renderButton(
+                        document.querySelector(".g_id_signin"),
+                        { theme: "outline", size: "large", text: "continue_with" }
+                    );
+                }, 100);
+            }
+        }
+    }
+
+    // Hide the host login section if we are the leader; show and init it otherwise
+    const hostLoginBox = $$('lobby-host-login');
+    if (hostLoginBox) {
+        if (isLeader) {
+            hostLoginBox.style.display = 'none';
+        } else {
+            hostLoginBox.style.display = '';
+            setTimeout(() => {
+                const signinDiv = document.querySelector('.g_id_signin_lobby');
+                if (signinDiv && window.google && !signinDiv.hasChildNodes()) {
+                    google.accounts.id.initialize({
+                        client_id: '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com',
+                        callback: handleGoogleResponse
+                    });
+                    google.accounts.id.renderButton(signinDiv, { 
+                        theme: 'outline', size: 'medium', text: 'continue_with'
+                    });
+                }
+            }, 200);
+        }
+    }
+}
+
+function onStartSeder() {
+    if (!currentRoomId) return;
+    socket.emit('start-seder', { roomId: currentRoomId });
+}
+
+
 function renderPage() {
     const page = HAGGADAH[currentPage];
     if (!page) return;
 
-    const el = $$('page-content');
-    const imageUrl = pageImages[currentPage];
+    // Update Gazebo Extras
+    updateMealProgress();
+    if (exodusMap) exodusMap.updateProgress(currentPage, HAGGADAH.length);
+
+    const el = $$('haggadah-pages');
+    if (!el) return;
+
+    const imageData = pageImages[currentPage];
     const index = currentPage;
 
     el.style.opacity = '0';
@@ -521,7 +875,8 @@ function renderPage() {
         const imgWrap = document.createElement('div');
         imgWrap.className = 'page-image-wrap';
         imgWrap.id = `img-wrap-${index}`;
-        imgWrap.onclick = () => triggerPageGeneration(index);
+        imgWrap.className = 'page-image-wrap';
+        imgWrap.id = `img-wrap-${index}`;
 
         const overlay = document.createElement('div');
         overlay.className = 'status-overlay hidden';
@@ -532,16 +887,48 @@ function renderPage() {
         `;
         imgWrap.appendChild(overlay);
 
-        if (imageUrl) {
+        if (imageData) {
+            const currentImgUrl = typeof imageData === 'string' ? imageData : imageData.url;
             const img = document.createElement('img');
-            img.src = imageUrl;
-            img.className = 'page-image';
+            img.src = currentImgUrl;
+            img.className = 'page-image has-image';
             img.alt = page.title;
+
+            // --- Click to Download (Instead of generate) ---
+            imgWrap.onclick = (e) => {
+                e.stopPropagation();
+                downloadImage(currentImgUrl, `Haggadah_Page_${index + 1}.png`);
+            };
+
+            // Add download hint
+            const hint = document.createElement('div');
+            hint.className = 'download-hint';
+            hint.innerHTML = 'לחץ להורדה 📥';
+            imgWrap.appendChild(hint);
+
             imgWrap.appendChild(img);
+
+            // Add featured participants bubbles if present
+            if (imageData.featuredPhotos && imageData.featuredPhotos.length > 0) {
+                const bubblesContainer = document.createElement('div');
+                bubblesContainer.className = 'featured-bubbles';
+                imageData.featuredPhotos.forEach(photo => {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'featured-participant';
+                    const bImg = document.createElement('img');
+                    bImg.src = photo;
+                    bubble.appendChild(bImg);
+                    bubblesContainer.appendChild(bubble);
+                });
+                imgWrap.appendChild(bubblesContainer);
+            }
         } else {
             const shimmer = document.createElement('div');
             shimmer.className = 'image-shimmer';
             imgWrap.appendChild(shimmer);
+
+            // Click to Generate ONLY if NO image exists
+            imgWrap.onclick = () => triggerPageGeneration(index);
 
             // Show overlay with manual prompt
             overlay.classList.remove('hidden');
@@ -559,7 +946,7 @@ function renderPage() {
                 const span = document.createElement('span');
                 span.className = 'text-segment';
                 span.id = `seg-${index}-${sIdx}`;
-                span.innerHTML = currentLanguage === 'he' ? seg.he : (seg.en || seg.he);
+                span.innerText = currentLanguage === 'he' ? seg.he : (seg.en || seg.he);
                 if (currentLanguage === 'en') span.classList.add('ltr');
                 span.onclick = () => onSegmentClick(sIdx);
                 if (highlightedSegmentIndex === sIdx) span.classList.add('highlighted');
@@ -584,7 +971,7 @@ function renderPage() {
 
         if (isLeading) {
             syncBtn.classList.add('hidden');
-        } else if (!isSyncingWithLeader || currentPage !== leaderPage) {
+        } else if (!isFollowingLeader || currentPage !== leaderPage) {
             syncBtn.classList.remove('hidden');
         } else {
             syncBtn.classList.add('hidden');
@@ -592,22 +979,6 @@ function renderPage() {
 
         el.style.opacity = '1';
     }, 180);
-}
-
-function updateMealProgress() {
-    const progressEl = $$('meal-progress');
-    const pagesLeftEl = $$('meal-pages-left');
-    const pagesPassedEl = $$('meal-pages-passed');
-
-    if (!progressEl || !pagesLeftEl || !pagesPassedEl || typeof SHULCHAN_ORECH_PAGE === 'undefined') return;
-
-    if (currentPage < SHULCHAN_ORECH_PAGE) {
-        progressEl.style.display = 'inline-block';
-        pagesPassedEl.textContent = currentPage;
-        pagesLeftEl.textContent = (SHULCHAN_ORECH_PAGE - currentPage);
-    } else {
-        progressEl.style.display = 'none';
-    }
 }
 
 function changePage(delta) {
@@ -620,21 +991,124 @@ function changePage(delta) {
             currentPage = next;
             socket.emit('change-page', { roomId: currentRoomId, pageIndex: next });
         } else {
-            // Local move (Free Browsing)
-            isSyncingWithLeader = false;
+            // Local move (Free Browsing / Freedom)
+            isFollowingLeader = false;
             currentPage = next;
+            updateLeadershipUI();
         }
 
         renderPage();
+
+        // Auto-trigger effects based on page
+        handlePageEffects(next);
     }
 }
 
 function onSyncWithLeader() {
-    isSyncingWithLeader = true;
+    isFollowingLeader = true;
     if ($$('check-lead-mode')) $$('check-lead-mode').checked = false; // Stop leading if following
     currentPage = leaderPage;
     renderPage();
-    showToast('חזרת לסנכרון עם המנחה');
+    updateLeadershipUI();
+    showToast('חזרת לסנכרון עם עורך הסדר');
+}
+
+function updateLeadershipUI() {
+    const syncBtn = $$('btn-sync');
+    const statusText = $$('leadership-status');
+
+    if (!syncBtn || !statusText) return;
+
+    const isOren = me && me.email === 'oren001@gmail.com';
+    const amILeader = (leaderId === socket.id) || isOren;
+
+    if (isFollowingLeader || amILeader) {
+        syncBtn.classList.add('hidden');
+    } else {
+        syncBtn.classList.remove('hidden');
+    }
+
+    if (amILeader) {
+        statusText.innerHTML = isOren ? '👑 שלום אורן! (מנהל פרויקט)' : '👑 אתה עורך הסדר';
+        statusText.classList.add('is-leading');
+    } else if (leaderId) {
+        statusText.innerHTML = `👤 מנחה: ${leaderName}`;
+        statusText.classList.remove('is-leading');
+    } else {
+        statusText.innerHTML = '🛡️ מחפש מנהל...';
+        statusText.classList.remove('is-leading');
+    }
+
+    // Crucial: Also update Lobby if we are in it
+    updateLobbyUI(false);
+}
+
+function handlePageEffects(pageIndex) {
+    const pageText = HAGGADAH[pageIndex]?.he || "";
+
+    if (pageText.includes("דָּם")) {
+        triggerEffect('blood');
+    } else if (pageText.includes("צְפַרְדֵּעַ")) {
+        triggerEffect('frogs');
+    } else if (pageText.includes("קריעת ים סוף") || pageText.includes("הַיָּם")) {
+        triggerEffect('sea');
+    }
+}
+
+function triggerEffect(effectType) {
+    if (socket && $$('check-lead-mode').checked) {
+        socket.emit('trigger-effect', { roomId: currentRoomId, effectType });
+    } else {
+        triggerLocalEffect(effectType);
+    }
+}
+
+function triggerLocalEffect(type) {
+    const container = $$('effects-container');
+    if (!container) return;
+
+    console.log(`[Effect] Triggering local effect: ${type}`);
+    container.innerHTML = '';
+    container.classList.remove('hidden');
+    container.className = 'effects-container ' + type;
+
+    if (type === 'blood') {
+        for (let i = 0; i < 20; i++) {
+            const drop = document.createElement('div');
+            drop.className = 'blood-drop';
+            drop.style.left = Math.random() * 100 + 'vw';
+            drop.style.animationDelay = Math.random() * 3 + 's';
+            container.appendChild(drop);
+        }
+    } else if (type === 'frogs') {
+        for (let i = 0; i < 25; i++) {
+            const frog = document.createElement('div');
+            frog.className = 'frog-anim';
+            frog.innerText = '🐸';
+            frog.style.left = Math.random() * 100 + 'vw';
+            frog.style.bottom = '-50px';
+            frog.style.animationDelay = Math.random() * 2 + 's';
+            container.appendChild(frog);
+        }
+    } else if (type === 'sea') {
+        const leftWave = document.createElement('div');
+        leftWave.className = 'sea-wave-left';
+        const rightWave = document.createElement('div');
+        rightWave.className = 'sea-wave-right';
+        container.appendChild(leftWave);
+        container.appendChild(rightWave);
+
+        // Let them stay for a bit then hide
+        setTimeout(() => {
+            container.classList.add('hidden');
+        }, 5000);
+        return;
+    }
+
+    setTimeout(() => {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+    }, 6000);
 }
 
 // --- Task Board ---
@@ -752,6 +1226,7 @@ window.onSegmentClick = onSegmentClick;
 // --- Utils ---
 function showScreen(name) {
     Object.entries(screens).forEach(([k, el]) => {
+        if (!el) return;
         if (k === name) {
             el.classList.remove('hidden');
             el.classList.add('active');
@@ -769,9 +1244,19 @@ function updateUrlParam(key, value) {
 }
 
 function onCopyLink() {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-        showToast('🔗 הקישור הועתק!');
+    const url = window.location.origin + '?room=' + currentRoomId;
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('הקישור הועתק! שלח אותו בווטסאפ ✉️');
+        if (!$$('room-menu').classList.contains('hidden')) toggleMenu();
     });
+}
+
+function toggleMenu() {
+    const menu = $$('room-menu');
+    const btn = $$('btn-menu');
+    if (!menu || !btn) return;
+    menu.classList.toggle('hidden');
+    btn.classList.toggle('active');
 }
 
 function showToast(msg) {
@@ -788,6 +1273,16 @@ function showToast(msg) {
         t.classList.remove('show');
         setTimeout(() => t.classList.add('hidden'), 300);
     }, 3000);
+}
+
+function downloadImage(url, filename) {
+    showToast('מוריד תמונה... 📥');
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 function generatePlaceholderPhoto() {
@@ -833,6 +1328,10 @@ function toggleLanguage() {
 function handleGoogleResponse(response) {
     const credential = response.credential;
     console.log('Google credential received');
+    
+    // Save credential for session persistence
+    localStorage.setItem('haggadah-google-cred', credential);
+    
     if (socket) {
         socket.emit('google-login', { credential });
     } else {
