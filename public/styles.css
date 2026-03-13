@@ -66,6 +66,7 @@ body {
 
 /* --- Lobby --- */
 #lobby-screen {
+    display: flex;
     position: relative;
     display: flex;
     justify-content: center;

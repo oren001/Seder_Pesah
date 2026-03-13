@@ -649,6 +649,17 @@ function joinRoom(roomId, rsvpData = null) {
             if (response.tasks) roomTasks = response.tasks;
 
             $$('total-pages').textContent = HAGGADAH.length;
+            
+            // Host Admin check for bobomomo
+            const isHost = me.name === 'bobomomo234@gmail.com' || me.email === 'bobomomo234@gmail.com';
+            const leadToggle = document.querySelector('.lead-mode-toggle');
+            if (leadToggle) {
+                leadToggle.style.display = isHost ? 'flex' : 'none';
+                if (!isHost) {
+                    $$('check-lead-mode').checked = false;
+                }
+            }
+
             updateUrlParam('room', currentRoomId);
             
             if (response.sederStarted) {
