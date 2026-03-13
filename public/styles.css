@@ -128,16 +128,19 @@ body {
     z-index: 5;
 }
 
-#room-lobby-screen .lobby-header {
-    position: static;
-    flex-direction: column;
+.waiting-room-header {
     margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 0.5rem;
+    text-align: center;
 }
 
 #room-lobby-screen .logo-title {
-    font-size: clamp(1.5rem, 6vw, 2.2rem);
-    text-align: center;
+    font-size: clamp(1.4rem, 6vw, 2.2rem);
+    width: 100%;
+    word-wrap: break-word;
 }
 
 .auth-section {
