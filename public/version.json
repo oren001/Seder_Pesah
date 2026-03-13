@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1740",
-    "notes": "Global Reset (Fresh Start) + Leadership Fix + Merged with Split-Page Content."
+    "version": "1.0.1745",
+    "notes": "Fixed Lobby UI: Responsive headings, centered layout for waiting room, and fixed absolute positioning conflicts."
 }
