@@ -7,7 +7,7 @@ let currentRoomId = null;
 let currentPage = 0;
 const pageImages = {};  // { [pageIndex]: imageUrl } — grows as AI generates images
 let roomState = null;
-let currentVersion = '1.0.1760';
+let currentVersion = '1.0.1770';
 let wakeLock = null;
 let exodusMap = null;
 let rsvpFlow = null;
@@ -736,7 +736,7 @@ function renderLobbyParticipants(participants) {
         const photoUrl = p.photo || generatePlaceholderPhoto();
         const card = document.createElement('div');
         card.className = 'gazebo-avatar lobby-avatar-card';
-        card.style.cssText = 'width:85px;height:85px;position:relative;'; // Smaller for grid density
+        card.style.cssText = 'width:70px;height:70px;position:relative;'; // Consitent with CSS
         
         const img = document.createElement('img');
         img.src = photoUrl;

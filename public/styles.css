@@ -128,33 +128,38 @@ body {
     z-index: 5;
 }
 
+#room-lobby-screen .lobby-card {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    gap: 2rem;
+    text-align: center;
+}
+
 .waiting-room-header {
-    margin-bottom: 2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.8rem;
-    text-align: center;
     width: 100%;
 }
 
 #room-lobby-screen .logo-title {
-    font-size: clamp(1.4rem, 7vw, 2rem);
-    width: 100%;
-    margin-bottom: 0.5rem;
-    line-height: 1.25;
+    font-size: clamp(1.8rem, 8vw, 2.5rem);
+    font-weight: 900;
+    color: var(--primary);
+    line-height: 1.1;
+    margin: 0;
 }
 
 #room-lobby-screen .subtitle {
-    font-size: 1rem;
-    opacity: 0.8;
-}
-
-#room-lobby-screen .lobby-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 2rem 1.2rem;
+    font-size: 1.1rem;
+    color: var(--light-text);
+    opacity: 0.9;
+    max-width: 280px;
+    margin: 0 auto;
 }
 
 .auth-section {
@@ -395,23 +400,29 @@ body {
 }
 
 .waiting-participants {
-    background: rgba(255, 255, 255, 0.4);
-    padding: 1.5rem 1rem;
-    border-radius: 20px;
-    margin: 1.5rem 0;
+    background: rgba(139, 69, 19, 0.04);
+    padding: 2rem 1rem;
+    border-radius: 24px;
     width: 100%;
+    border: 1px solid rgba(139, 69, 19, 0.08);
 }
 
 .waiting-participants .gazebo-grid {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 0.8rem;
+    gap: 1.2rem;
+    margin-top: 1.5rem;
 }
 
-.waiting-participants .gazebo-grid .gazebo-avatar {
-    width: 70px;
-    height: 70px;
+.waiting-participants .gazebo-avatar {
+    width: 70px !important;
+    height: 70px !important;
+    transition: transform 0.3s ease;
+}
+
+.waiting-participants .gazebo-avatar:hover {
+    transform: scale(1.1);
 }
 
 .avatars-list {
