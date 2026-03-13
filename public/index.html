@@ -39,29 +39,28 @@
                     התקבלת לסדר! 🧞‍♂️✨
                 </div>
 
-<<<<<<< HEAD
-                <!-- Google Login -->
-                <div id="g_id_onload"
-                    data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
-                    data-callback="handleGoogleResponse" data-auto_prompt="false">
-                </div>
-                <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue"
-                    data-text="signin_with" data-size="large" data-logo_alignment="left"
-                    style="margin-bottom: 1rem; display: flex; justify-content: center;"></div>
-
-                <!-- Moved Guest Login back for fallback -->
-                <div style="margin-top: 1rem;">
-                    <button id="btn-guest-login" class="btn outline" style="width: 100%; padding: 10px;">כניסת אורח (ללא גוגל) 👤</button>
-=======
                 <div class="guest-login-card"
-                    style="background: rgba(255,255,255,0.08); padding: 2rem; border-radius: 20px; border: 1px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-                    <p style="margin-bottom: 1rem; font-size: 1.1rem;">הכנס את שמך (או אימייל מנחה):</p>
+                    style="background: rgba(255,255,255,0.08); padding: 2rem; border-radius: 20px; border: 1px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 100%; max-width: 400px; margin: 0 auto;">
+                    
+                    <!-- Google Login -->
+                    <div id="g_id_onload"
+                        data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
+                        data-callback="handleGoogleResponse" data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue"
+                        data-text="signin_with" data-size="large" data-logo_alignment="left"
+                        style="margin-bottom: 1.5rem; display: flex; justify-content: center; width: 100%;"></div>
+
+                    <div class="or-separator" style="margin: 1.5rem 0; display: flex; align-items: center; color: var(--light-text); font-size: 0.9rem; opacity: 0.7;">
+                        <span style="flex: 1; height: 1px; background: rgba(139,69,19,0.1); margin: 0 10px;"></span>
+                        או כנס כאורח
+                        <span style="flex: 1; height: 1px; background: rgba(139,69,19,0.1); margin: 0 10px;"></span>
+                    </div>
+
+                    <p style="margin-bottom: 1rem; font-size: 1.1rem; color: var(--primary); font-weight: 600;">הכנס את שמך (או אימייל מנחה):</p>
                     <input type="text" id="guest-name" placeholder="שם משתתף או אימייל..." class="input-field"
-                        style="margin-bottom: 1.5rem; width: 100%; text-align: center; font-size: 1.1rem; padding: 12px; border: 2px solid rgba(212,175,55,0.3);">
-                    <button id="btn-guest-login" class="btn primary large" style="width: 100%; font-weight: 900;">כניסה
-                        מהירה ← 🍷</button>
-                    <p class="tiny-text" style="margin-top: 1.5rem; opacity: 0.7;">אין צורך בחשבון גוגל כרגע.</p>
->>>>>>> 1eb7e69 (Fix lobby CSS flex display and add bobomomo admin logic)
+                        style="margin-bottom: 1.5rem; width: 100%; text-align: center; font-size: 1.1rem; padding: 12px; border: 2px solid rgba(212,175,55,0.3); border-radius: 12px; background: rgba(255,255,255,0.8);">
+                    <button id="btn-guest-login" class="btn primary large" style="width: 100%; font-weight: 900; padding: 12px; font-size: 1.1rem; border-radius: 12px;">כניסה מהירה ← 🍷</button>
                 </div>
 
                 <div style="margin-top: 2rem; opacity: 0.4;">
