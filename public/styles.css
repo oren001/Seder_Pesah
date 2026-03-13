@@ -133,14 +133,28 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.8rem;
     text-align: center;
+    width: 100%;
 }
 
 #room-lobby-screen .logo-title {
-    font-size: clamp(1.4rem, 6vw, 2.2rem);
+    font-size: clamp(1.4rem, 7vw, 2rem);
     width: 100%;
-    word-wrap: break-word;
+    margin-bottom: 0.5rem;
+    line-height: 1.25;
+}
+
+#room-lobby-screen .subtitle {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+#room-lobby-screen .lobby-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1.2rem;
 }
 
 .auth-section {
@@ -382,13 +396,22 @@ body {
 
 .waiting-participants {
     background: rgba(255, 255, 255, 0.4);
-    padding: 1.5rem;
+    padding: 1.5rem 1rem;
     border-radius: 20px;
     margin: 1.5rem 0;
+    width: 100%;
 }
 
 .waiting-participants .gazebo-grid {
+    display: flex;
+    flex-wrap: wrap;
     justify-content: center;
+    gap: 0.8rem;
+}
+
+.waiting-participants .gazebo-grid .gazebo-avatar {
+    width: 70px;
+    height: 70px;
 }
 
 .avatars-list {
