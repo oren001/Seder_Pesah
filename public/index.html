@@ -23,61 +23,55 @@
 
     <!-- ======== LOBBY SCREEN ======== -->
     <div id="lobby-screen" class="screen active">
-        <div class="lobby-card glass">
+        <div class="lobby-card">
+
+            <!-- Header: Logo + Title -->
             <div class="lobby-header">
                 <img src="haggadah_app_icon.png" alt="Logo" class="lobby-logo">
                 <h1 class="logo-title-large">פסח יחד</h1>
                 <p class="subtitle">הגדה חכמה ומשותפת לכולם</p>
-                <div class="sefaria-badge">
-                    <span class="badge-icon">📖</span>
-                    נבדק ואומת ע"י Sefaria
-                </div>
             </div>
 
+            <!-- Auth Section -->
             <div id="lobby-auth-section" class="auth-section">
-                <div class="auth-instruction" style="margin-bottom: 1rem; font-weight: 800; font-size: 1.1rem;">
-                    התקבלת לסדר! 🧞‍♂️✨
+
+                <!-- Google Login -->
+                <div id="g_id_onload"
+                    data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
+                    data-callback="handleGoogleResponse" data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue"
+                    data-text="signin_with" data-size="large" data-logo_alignment="left"
+                    style="display: flex; justify-content: center; margin-bottom: 1.5rem;"></div>
+
+                <!-- Divider -->
+                <div class="or-divider-row">
+                    <span class="or-line"></span>
+                    <span class="or-label">או כנס כאורח</span>
+                    <span class="or-line"></span>
                 </div>
 
-                <div class="guest-login-card"
-                    style="background: rgba(255,255,255,0.08); padding: 2rem; border-radius: 20px; border: 1px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 100%; max-width: 400px; margin: 0 auto;">
-                    
-                    <!-- Google Login -->
-                    <div id="g_id_onload"
-                        data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
-                        data-callback="handleGoogleResponse" data-auto_prompt="false">
-                    </div>
-                    <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue"
-                        data-text="signin_with" data-size="large" data-logo_alignment="left"
-                        style="margin-bottom: 1.5rem; display: flex; justify-content: center; width: 100%;"></div>
-
-                    <div class="or-separator" style="margin: 1.5rem 0; display: flex; align-items: center; color: var(--light-text); font-size: 0.9rem; opacity: 0.7;">
-                        <span style="flex: 1; height: 1px; background: rgba(139,69,19,0.1); margin: 0 10px;"></span>
-                        או כנס כאורח
-                        <span style="flex: 1; height: 1px; background: rgba(139,69,19,0.1); margin: 0 10px;"></span>
-                    </div>
-
-                    <p style="margin-bottom: 1rem; font-size: 1.1rem; color: var(--primary); font-weight: 600;">הכנס את שמך (או אימייל מנחה):</p>
-                    <input type="text" id="guest-name" placeholder="שם משתתף או אימייל..." class="input-field"
-                        style="margin-bottom: 1.5rem; width: 100%; text-align: center; font-size: 1.1rem; padding: 12px; border: 2px solid rgba(212,175,55,0.3); border-radius: 12px; background: rgba(255,255,255,0.8);">
-                    <button id="btn-guest-login" class="btn primary large" style="width: 100%; font-weight: 900; padding: 12px; font-size: 1.1rem; border-radius: 12px;">כניסה מהירה ← 🍷</button>
+                <!-- Guest Name Input -->
+                <div class="guest-input-block">
+                    <p class="guest-input-label">הכנס שם (או אימייל מנחה):</p>
+                    <input type="text" id="guest-name" placeholder="שמך..." class="input-field guest-input">
+                    <button id="btn-guest-login" class="btn primary btn-full">כניסה מהירה ← 🍷</button>
                 </div>
 
-                <div style="margin-top: 2rem; opacity: 0.4;">
-                    <button id="btn-sign-out-global" class="btn tiny"
-                        style="background: none; border: 1px solid rgba(255,255,255,0.1); padding: 5px 15px;">איפוס
-                        יציאה 🚪</button>
+                <!-- Sign Out link -->
+                <div class="lobby-signout-row">
+                    <button id="btn-sign-out-global" class="btn-link-muted">איפוס / יציאה 🚪</button>
                 </div>
             </div>
 
+            <!-- After Login: Create Room -->
             <div id="lobby-actions-section" class="lobby-actions hidden">
-                <button id="btn-create-room" class="btn primary large">צור חדר חדש ← 🍷</button>
-                <div style="margin-top: 1rem;">
-                    <button id="btn-sign-out" class="btn tiny"
-                        style="opacity: 0.6; background: none; border: 1px solid rgba(255,255,255,0.2);">החלף משתמש /
-                        התנתק 🚪</button>
+                <button id="btn-create-room" class="btn primary btn-full">צור חדר חדש ← 🍷</button>
+                <div class="lobby-signout-row">
+                    <button id="btn-sign-out" class="btn-link-muted">החלף משתמש / התנתק 🚪</button>
                 </div>
             </div>
+
         </div>
     </div>
 

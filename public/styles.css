@@ -67,38 +67,37 @@ body {
 /* --- Lobby --- */
 #lobby-screen {
     display: flex;
-    position: relative;
     justify-content: center;
     align-items: center;
     background: radial-gradient(ellipse at 60% 20%, #f9ede0 0%, #f0dcc8 60%, #e8cdb4 100%);
     min-height: 100vh;
+    padding: 2rem 1rem;
 }
-#room-lobby-screen {
+
+.lobby-card {
+    text-align: center;
+    max-width: 440px;
+    width: 100%;
+    padding: 2.5rem 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 28px;
+    box-shadow: 0 20px 60px rgba(114, 47, 55, 0.18), 0 4px 16px rgba(0, 0, 0, 0.06);
+    border: 1.5px solid rgba(212, 175, 55, 0.4);
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    background: var(--bg);
-    min-height: 100vh;
-    padding: 1rem;
+    gap: 0;
 }
 
 .lobby-header {
     display: flex;
-    align-items: center;
-    gap: 1rem;
     flex-direction: column;
-    z-index: 10;
+    align-items: center;
+    gap: 0.5rem;
     margin-bottom: 2rem;
-}
-
-.logo-title {
-    font-size: clamp(1.8rem, 5vw, 3rem);
-    font-weight: 900;
-    color: var(--primary);
-    text-shadow: 1px 1px 3px rgba(114, 47, 55, 0.15);
-    margin: 0;
-    letter-spacing: -0.5px;
-    line-height: 1.1;
+    width: 100%;
 }
 
 .lobby-logo {
@@ -107,27 +106,98 @@ body {
     border-radius: 20px;
     box-shadow: 0 8px 24px rgba(114, 47, 55, 0.25);
     border: 3px solid white;
-    margin: 0;
+    margin-bottom: 0.5rem;
 }
 
-.lobby-card {
-    text-align: center;
-    max-width: 480px;
-    width: 90%;
-    padding: 2.5rem 1.5rem;
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 28px;
-    box-shadow: 0 20px 60px rgba(114, 47, 55, 0.18), 0 4px 16px rgba(0, 0, 0, 0.06);
-    border: 1.5px solid rgba(212, 175, 55, 0.4);
-    margin: auto;
-    position: relative;
-    z-index: 5;
+.logo-title-large {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--primary);
+    margin: 0;
+    line-height: 1.1;
+}
+
+.auth-section {
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 1rem;
 }
+
+/* Divider "or" row */
+.or-divider-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 0.75rem;
+    margin: 0.5rem 0;
+}
+.or-line {
+    flex: 1;
+    height: 1px;
+    background: rgba(139, 69, 19, 0.15);
+}
+.or-label {
+    font-size: 0.875rem;
+    color: var(--light-text);
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
+/* Guest input block */
+.guest-input-block {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.guest-input-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin: 0;
+}
+.guest-input {
+    text-align: center;
+    font-size: 1.05rem;
+    padding: 12px;
+    border: 2px solid rgba(212, 175, 55, 0.35);
+    border-radius: 12px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.9);
+}
+.btn-full {
+    width: 100% !important;
+    padding: 13px !important;
+    font-size: 1.05rem !important;
+    font-weight: 900 !important;
+    border-radius: 12px !important;
+}
+.btn-link-muted {
+    background: none;
+    border: none;
+    color: var(--light-text);
+    opacity: 0.45;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    text-decoration: underline;
+}
+.lobby-signout-row {
+    margin-top: 0.5rem;
+    text-align: center;
+}
+
+.lobby-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+
 
 #room-lobby-screen .lobby-card {
     display: flex !important;
