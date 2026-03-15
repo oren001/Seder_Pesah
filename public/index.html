@@ -10,13 +10,53 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800;900&family=Assistant:wght@300;400;600&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.0.1770">
+    <link rel="stylesheet" href="styles.css?v=1.0.1771">
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Lobby layout override -->
+    <style>
+        #lobby-screen {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            min-height: 100vh !important;
+            padding: 2rem 1rem !important;
+        }
+        .lobby-card {
+            margin-top: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            width: 90% !important;
+            max-width: 440px !important;
+        }
+        .lobby-header {
+            position: static !important;
+            top: auto !important;
+            right: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            margin-bottom: 1.5rem !important;
+            width: 100% !important;
+        }
+        .auth-section {
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+        }
+        .lobby-logo {
+            width: 80px !important;
+            height: 80px !important;
+            margin: 0 0 0.5rem 0 !important;
+        }
+    </style>
 </head>
 
 <body>
