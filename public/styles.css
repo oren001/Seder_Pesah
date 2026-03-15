@@ -227,37 +227,43 @@ body {
 #room-lobby-screen {
     background: linear-gradient(145deg, #1a0510 0%, #3d0c1f 25%, #5a1a2e 45%, #722f37 60%, #8b4a30 80%, #a06828 100%);
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     justify-content: center;
-    align-items: center;
-    padding: 2rem 1rem;
+    align-items: flex-start;
+    padding: 0;
+    overflow-y: auto;
 }
 
 #room-lobby-screen .lobby-card {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: center;
-    padding: 3rem 1.5rem;
-    gap: 2rem;
+    justify-content: flex-start;
+    padding: 1.5rem 1rem;
+    gap: 1rem;
     text-align: center;
-    background: rgba(30, 12, 18, 0.65);
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
-    border: 1.5px solid rgba(212, 175, 55, 0.3);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), var(--glow-gold);
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 0;
 }
 
 .waiting-room-header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.8rem;
+    gap: 0.4rem;
     width: 100%;
+    padding-top: 1rem;
 }
 
 #room-lobby-screen .logo-title {
-    font-size: clamp(1.8rem, 8vw, 2.5rem);
+    font-size: clamp(1.5rem, 7vw, 2rem);
     font-weight: 900;
     line-height: 1.1;
     margin: 0;
@@ -268,9 +274,9 @@ body {
 }
 
 #room-lobby-screen .subtitle {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     color: var(--text-on-dark);
-    opacity: 0.8;
+    opacity: 0.7;
     max-width: 280px;
     margin: 0 auto;
 }
@@ -415,15 +421,16 @@ body {
 
 .video-wrapper {
     position: relative;
-    width: 300px;
-    height: 300px;
-    margin: 2rem auto;
+    width: clamp(160px, 45vw, 240px);
+    height: clamp(160px, 45vw, 240px);
+    margin: 0.25rem auto;
     border-radius: 50%;
     overflow: hidden;
-    border: 4px solid var(--gold);
-    box-shadow: 0 0 0 10px rgba(212, 175, 55, 0.1), var(--glow-gold);
+    border: 3px solid var(--gold);
+    box-shadow: 0 0 0 6px rgba(212, 175, 55, 0.1), var(--glow-gold);
     background: #000;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
 }
 
 #selfie-video {
@@ -524,27 +531,29 @@ body {
 
 .waiting-participants {
     background: rgba(212, 175, 55, 0.06);
-    padding: 2rem 1rem;
-    border-radius: 24px;
+    padding: 1rem 0.75rem;
+    border-radius: 16px;
     width: 100%;
     border: 1px solid rgba(212, 175, 55, 0.15);
 }
 
 .waiting-participants p {
     color: var(--text-on-dark) !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 0.5rem !important;
 }
 
 .waiting-participants .gazebo-grid {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 1.2rem;
-    margin-top: 1.5rem;
+    gap: 0.8rem;
+    margin-top: 0.5rem;
 }
 
 .waiting-participants .gazebo-avatar {
-    width: 70px !important;
-    height: 70px !important;
+    width: 56px !important;
+    height: 56px !important;
     transition: transform 0.3s ease;
     border: 2px solid rgba(212, 175, 55, 0.4);
     box-shadow: var(--glow-gold);
@@ -1244,17 +1253,19 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 2rem 1rem;
+    padding: 1rem 0.75rem;
     min-height: 100vh;
+    min-height: 100dvh;
     background: linear-gradient(145deg, #1a0510 0%, #3d0c1f 25%, #5a1a2e 45%, #722f37 60%, #8b4a30 80%, #a06828 100%);
+    overflow: hidden;
 }
 
 .rsvp-card {
-    width: 95%;
-    max-width: 480px;
-    padding: 3rem 1.5rem;
+    width: 100%;
+    max-width: 400px;
+    padding: 1.5rem 1rem;
     text-align: center;
-    border-radius: 32px;
+    border-radius: 24px;
     background: rgba(30, 12, 18, 0.65);
     backdrop-filter: blur(30px);
     -webkit-backdrop-filter: blur(30px);
@@ -1267,7 +1278,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
+    gap: 0.6rem;
     animation: fadeIn 0.4s ease;
 }
 
@@ -1277,91 +1288,111 @@ body {
 }
 
 .rsvp-icon {
-    font-size: 3.5rem;
-    margin-bottom: 0.5rem;
+    font-size: 2.2rem;
+    margin-bottom: 0;
+    line-height: 1;
 }
 
 .rsvp-step h2 {
     color: var(--text-on-dark);
+    font-size: 1.3rem;
+    margin: 0;
 }
 
 .rsvp-step p {
     color: var(--text-on-dark);
     opacity: 0.8;
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.rsvp-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
 }
 
 .look-choice-grid {
     display: flex;
-    gap: 1.5rem;
+    gap: 0.75rem;
     width: 100%;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
 }
 
 .look-option {
     flex: 1;
-    padding: 2rem 1rem;
-    border-radius: 20px;
+    padding: 1.2rem 0.8rem;
+    border-radius: 16px;
     border: 2px solid transparent;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.8rem;
+    gap: 0.5rem;
 }
 
 #choice-selfie {
     background: linear-gradient(145deg, #0f9b8e, #1a6b8a);
-    box-shadow: 0 8px 25px rgba(15, 155, 142, 0.3);
+    box-shadow: 0 6px 20px rgba(15, 155, 142, 0.3);
 }
 
 #choice-selfie:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 35px rgba(15, 155, 142, 0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(15, 155, 142, 0.4);
 }
 
 #choice-avatar {
     background: linear-gradient(145deg, var(--primary), #a06828);
-    box-shadow: 0 8px 25px rgba(114, 47, 55, 0.3);
+    box-shadow: 0 6px 20px rgba(114, 47, 55, 0.3);
 }
 
 #choice-avatar:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 35px rgba(114, 47, 55, 0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(114, 47, 55, 0.4);
 }
 
 .look-option .look-icon {
-    font-size: 2.5rem;
+    font-size: 2rem;
 }
 
 .look-option span {
     font-weight: 700;
     color: white;
+    font-size: 0.9rem;
 }
 
 .avatar-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin: 1rem 0;
-    max-height: 250px;
+    gap: 0.6rem;
+    margin: 0.5rem 0;
+    max-height: 200px;
     overflow-y: auto;
-    padding: 0.5rem;
+    padding: 0.25rem;
+    width: 100%;
 }
 
 .avatar-item {
-    font-size: 2rem;
-    padding: 0.8rem;
+    font-size: 1.8rem;
+    padding: 0.6rem;
     background: rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border: 2px solid transparent;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .avatar-item:hover {
     background: rgba(212, 175, 55, 0.15);
-    transform: scale(1.15) rotate(5deg);
+    transform: scale(1.1) rotate(3deg);
 }
 
 .avatar-item.selected {
@@ -1382,7 +1413,7 @@ body {
 .video-container.small {
     display: flex;
     justify-content: center;
-    margin: 0.5rem 0;
+    margin: 0;
 }
 
 /* --- Back button in RSVP steps --- */
@@ -1390,12 +1421,13 @@ body {
     background: none;
     border: none;
     color: var(--text-on-dark);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     cursor: pointer;
-    padding: 6px 12px;
-    opacity: 0.5;
+    padding: 4px 10px;
+    opacity: 0.4;
     font-family: var(--font-main);
     font-weight: 600;
+    margin-top: 0.25rem;
 }
 .btn-rsvp-back:hover { opacity: 1; }
 
@@ -1493,17 +1525,109 @@ body {
 #room-lobby-screen #lobby-host-login {
     background: rgba(212, 175, 55, 0.06);
     border-color: rgba(212, 175, 55, 0.2);
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    border-radius: 12px;
+    border: 1px dashed rgba(212, 175, 55, 0.2);
 }
 #room-lobby-screen #lobby-host-login p {
     color: var(--text-on-dark) !important;
+    font-size: 0.8rem !important;
 }
 #room-lobby-screen #lobby-guest-note {
     color: var(--text-on-dark);
     opacity: 0.7;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+#room-lobby-screen #lobby-leader-actions {
+    margin-top: 0.75rem;
+    border-top: 1px solid rgba(212, 175, 55, 0.1);
+    padding-top: 0.75rem;
 }
 #room-lobby-screen #lobby-leader-actions p {
     color: var(--text-on-dark) !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 0.5rem !important;
 }
-#room-lobby-screen #lobby-leader-actions {
-    border-top-color: rgba(212, 175, 55, 0.1) !important;
+
+/* --- RSVP finish step compact --- */
+#rsvp-step-finish .rsvp-icon {
+    font-size: 2.5rem;
+}
+#rsvp-step-finish h2 {
+    font-size: 1.2rem;
+}
+#rsvp-step-finish p {
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+/* --- Mobile overrides for RSVP and Room Lobby --- */
+@media (max-width: 500px) {
+    #rsvp-screen {
+        padding: 0.5rem;
+        align-items: center;
+    }
+    .rsvp-card {
+        padding: 1.25rem 0.75rem;
+        border-radius: 20px;
+    }
+    .rsvp-step {
+        gap: 0.4rem;
+    }
+    .rsvp-icon {
+        font-size: 1.8rem;
+    }
+    .rsvp-step h2 {
+        font-size: 1.15rem;
+    }
+    .rsvp-step p {
+        font-size: 0.82rem;
+    }
+    .video-wrapper {
+        width: clamp(140px, 42vw, 200px);
+        height: clamp(140px, 42vw, 200px);
+        border-width: 2px;
+    }
+    .look-choice-grid {
+        gap: 0.5rem;
+    }
+    .look-option {
+        padding: 1rem 0.5rem;
+        border-radius: 14px;
+        gap: 0.4rem;
+    }
+    .look-option .look-icon {
+        font-size: 1.6rem;
+    }
+    .look-option span {
+        font-size: 0.82rem;
+    }
+    .avatar-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+        max-height: 180px;
+    }
+    .avatar-item {
+        font-size: 1.5rem;
+        padding: 0.4rem;
+    }
+    .btn-rsvp-back {
+        font-size: 0.8rem;
+    }
+    #room-lobby-screen .lobby-card {
+        padding: 1rem 0.75rem;
+        gap: 0.75rem;
+    }
+    .waiting-room-header {
+        padding-top: 0.5rem;
+    }
+    #room-lobby-screen .logo-title {
+        font-size: clamp(1.3rem, 6vw, 1.8rem);
+    }
+    .waiting-participants .gazebo-avatar {
+        width: 48px !important;
+        height: 48px !important;
+    }
 }

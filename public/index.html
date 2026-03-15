@@ -18,12 +18,15 @@
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        /* Dark theme adjustments for inline-styled elements */
+        /* Dark theme adjustments for room lobby elements */
         #room-lobby-screen .lobby-card * {
             color: var(--text-on-dark);
         }
         #room-lobby-screen .lobby-card .btn.primary {
             color: white;
+        }
+        #room-lobby-screen .lobby-card .btn.outline {
+            color: var(--gold);
         }
     </style>
 </head>
@@ -123,11 +126,11 @@
                     </div>
                 </div>
                 <div class="rsvp-actions">
-                    <button id="btn-rsvp-take" class="btn primary large">📸 צלם עכשיו</button>
+                    <button id="btn-rsvp-take" class="btn primary">📸 צלם עכשיו</button>
                     <button id="btn-rsvp-back-selfie" class="btn-rsvp-back">→ חזרה לבחירה</button>
-                    <div id="rsvp-post-selfie" class="hidden" style="width: 100%;">
+                    <div id="rsvp-post-selfie" class="rsvp-actions hidden">
                         <button id="btn-finish-selfie" class="btn primary" style="width: 100%;">זהו, סיימנו! ←</button>
-                        <button id="btn-rsvp-retake" class="btn outline tiny" style="width: 100%; margin-top: 10px;">צילום מחדש 🔄</button>
+                        <button id="btn-rsvp-retake" class="btn outline small" style="width: 100%;">צילום מחדש 🔄</button>
                     </div>
                 </div>
             </div>
@@ -147,50 +150,47 @@
 
     <!-- ======== ROOM LOBBY (WAITING ROOM) ======== -->
     <div id="room-lobby-screen" class="screen hidden">
-        <div class="lobby-card glass" style="max-width: 600px; width: 95%;">
+        <div class="lobby-card" style="max-width: 400px; width: 100%;">
             <div class="waiting-room-header">
                 <h1 class="logo-title">הסדר מתחיל עוד מעט... 🍇</h1>
                 <p class="subtitle" id="lobby-status-text">מחכים שכולם יתיישבו סביב השולחן</p>
             </div>
-                
-                <div class="waiting-participants">
-                    <p style="font-weight: 800; margin-bottom: 1.5rem; color: var(--text-on-dark); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                        👥 מי כבר כאן?
-                    </p>
-                    <div class="gazebo-grid-container">
-                        <div id="room-lobby-participants" class="gazebo-grid">
-                            <!-- Participants will appear here -->
-                        </div>
+
+            <div class="waiting-participants">
+                <p style="font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    👥 מי כבר כאן?
+                </p>
+                <div class="gazebo-grid-container">
+                    <div id="room-lobby-participants" class="gazebo-grid">
+                        <!-- Participants will appear here -->
                     </div>
                 </div>
+            </div>
 
-                <!-- Leader controls: only visible to the leader -->
-                <div id="lobby-leader-actions" class="hidden" style="margin-top: 2rem; border-top: 1px solid rgba(212,175,55,0.1); padding-top: 2rem;">
-                    <p style="margin-bottom: 1rem; font-weight: 600;">מנהל הסדר, כשיש מניין - אפשר להתחיל!</p>
-                    <button id="btn-start-seder" class="btn primary large" style="width: 100%;">התחל את ההגדה 📖🚀</button>
-                </div>
+            <!-- Leader controls: only visible to the leader -->
+            <div id="lobby-leader-actions" class="hidden">
+                <p style="font-weight: 600;">מנהל הסדר, כשיש מניין - אפשר להתחיל!</p>
+                <button id="btn-start-seder" class="btn primary" style="width: 100%;">התחל את ההגדה 📖🚀</button>
+            </div>
 
-                <!-- Guest note / Google login for the host -->
-                <div id="lobby-guest-note" style="margin-top: 2rem; font-size: 0.9rem;">
-                    המנחה יתחיל את הסדר בקרוב, הישארו איתנו... ✨
-                </div>
+            <!-- Guest note -->
+            <div id="lobby-guest-note">
+                המנחה יתחיל את הסדר בקרוב, הישארו איתנו... ✨
+            </div>
 
-                <!-- Always-visible host login section -->
-                <div id="lobby-host-login" style="margin-top: 1.5rem; padding: 1rem; background: rgba(212,175,55,0.06); border-radius: 12px; border: 1px dashed rgba(212,175,55,0.2);">
-                    <div style="margin-top: 1.5rem; opacity: 0.3; font-size: 0.75rem; text-align: center; color: var(--text-on-dark);">v1.0.1772</div>
-                    <p style="margin-bottom: 0.8rem; font-size: 0.85rem; color: var(--gold); font-weight: 600;">👑 מנהל הסדר? התחבר כדי להתחיל:</p>
-                    <div id="g_id_onload_lobby"
-                        data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
-                        data-callback="handleGoogleResponse">
-                    </div>
-                    <div class="g_id_signin_lobby" data-type="standard"></div>
-                    <button onclick="(function(){ const d=document.createElement('div'); d.id='g_id_onload_lobby'; d.setAttribute('data-client_id','256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com'); d.setAttribute('data-callback','handleGoogleResponse'); document.body.appendChild(d); if(window.google){ google.accounts.id.initialize({client_id:'256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com',callback:handleGoogleResponse}); google.accounts.id.prompt(); } })()" 
-                        class="btn outline small" style="margin-top: 0.5rem; width: 100%; font-size: 0.85rem;">
-                        🔑 התחבר עם Google
-                    </button>
+            <!-- Host login section -->
+            <div id="lobby-host-login">
+                <p style="color: var(--gold); font-weight: 600;">👑 מנהל הסדר? התחבר כדי להתחיל:</p>
+                <div id="g_id_onload_lobby"
+                    data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
+                    data-callback="handleGoogleResponse">
                 </div>
-
-                </div>
+                <div class="g_id_signin_lobby" data-type="standard"></div>
+                <button onclick="(function(){ const d=document.createElement('div'); d.id='g_id_onload_lobby'; d.setAttribute('data-client_id','256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com'); d.setAttribute('data-callback','handleGoogleResponse'); document.body.appendChild(d); if(window.google){ google.accounts.id.initialize({client_id:'256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com',callback:handleGoogleResponse}); google.accounts.id.prompt(); } })()"
+                    class="btn outline small" style="width: 100%;">
+                    🔑 התחבר עם Google
+                </button>
+                <div style="opacity: 0.3; font-size: 0.7rem; text-align: center; color: var(--text-on-dark); margin-top: 0.5rem;">v1.0.1772</div>
             </div>
         </div>
     </div>
