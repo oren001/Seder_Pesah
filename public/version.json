@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1771",
-    "notes": "Lobby UI Redesign (Itai) + Inline CSS Overrides + Version indicator fixed."
+    "version": "1.0.1772",
+    "notes": "Restored RSVP screen styles (alignment fix)."
 }
