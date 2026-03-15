@@ -58,11 +58,17 @@ class RSVPFlow {
 
         // Step Avatar
         this.safeClick('btn-finish-avatar', () => this.complete());
+        this.safeClick('btn-rsvp-back-avatar', () => this.goToStep('look'));
 
         // Step Selfie
         this.safeClick('btn-rsvp-take', () => this.takeRSVPSelfie());
         this.safeClick('btn-rsvp-retake', () => this.retakeRSVPSelfie());
         this.safeClick('btn-finish-selfie', () => this.complete());
+        this.safeClick('btn-rsvp-back-selfie', () => {
+            this.stopRSVPCamera();
+            this.data.photo = null;
+            this.goToStep('look');
+        });
     }
 
     renderAvatars() {

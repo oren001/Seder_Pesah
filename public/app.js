@@ -72,6 +72,10 @@ function init() {
             } else if (pendingRoomId) {
                 // Joining for the first time
                 joinRoom(pendingRoomId, data);
+            } else {
+                // No room context — go back to lobby
+                showScreen('lobby');
+                showToast('הפרופיל נשמר! כדי להצטרף לסדר, פתחו קישור מהמארח 🔗');
             }
         }
     });
@@ -94,7 +98,11 @@ function init() {
     safeAddListener('btn-take-selfie', 'click', onTakeSelfie);
     safeAddListener('btn-retake', 'click', onRetake);
     safeAddListener('btn-guest-login', 'click', () => {
-        // Guest login triggers the RSVP flow directly
+        // Guest login only makes sense if there's a room link to join
+        if (!pendingRoomId) {
+            showToast('כדי להצטרף, פתחו קישור שקיבלתם מהמארח 🔗');
+            return;
+        }
         rsvpFlow.show();
     });
     safeAddListener('btn-join-with-photo', 'click', onJoinWithPhoto);
@@ -102,6 +110,7 @@ function init() {
     safeAddListener('btn-prev', 'click', () => changePage(-1));
     safeAddListener('btn-next', 'click', () => changePage(1));
     safeAddListener('btn-sync', 'click', onSyncWithLeader);
+    safeAddListener('btn-sync-menu', 'click', onSyncWithLeader);
     safeAddListener('btn-edit-profile', 'click', () => rsvpFlow.show(true));
     safeAddListener('btn-sign-out-room', 'click', onSignOut);
     safeAddListener('btn-menu', 'click', toggleMenu);
@@ -245,8 +254,18 @@ function init() {
 async function setupSocket() {
     socket = io();
 
+    // Show cold-start note after 8 seconds if still loading
+    const coldNoteTimer = setTimeout(() => {
+        const note = $$('loading-cold-note');
+        if (note) note.style.display = 'block';
+    }, 8000);
+
     socket.on('connect', () => {
         console.log('[Socket] Connected to server. Socket ID:', socket.id);
+        clearTimeout(coldNoteTimer);
+        // Hide loading screen
+        const loadingScreen = $$('loading-screen');
+        if (loadingScreen) loadingScreen.classList.add('hidden');
 
         // Auto-re-auth if we have a saved credential
         const savedCred = localStorage.getItem('haggadah-google-cred');

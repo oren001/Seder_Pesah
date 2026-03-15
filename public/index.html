@@ -61,6 +61,16 @@
 
 <body>
 
+    <!-- ======== COLD START / LOADING SCREEN ======== -->
+    <div id="loading-screen">
+        <div class="loading-wine">🍷</div>
+        <p class="loading-title">פסח יחד</p>
+        <p class="loading-subtitle">מתחבר לשרת...</p>
+        <p class="loading-cold-note" id="loading-cold-note" style="display:none;">
+            השרת מתעורר משינה — נצלם תוך כ-45 שניות.
+        </p>
+    </div>
+
     <!-- ======== LOBBY SCREEN ======== -->
     <div id="lobby-screen" class="screen active">
         <div class="lobby-card">
@@ -93,7 +103,7 @@
 
                 <!-- Guest Name Input -->
                 <div class="guest-input-block">
-                    <p class="guest-input-label">הכנס שם (או אימייל מנחה):</p>
+                    <p class="guest-input-label">הכנס את שמך</p>
                     <input type="text" id="guest-name" placeholder="שמך..." class="input-field guest-input">
                     <button id="btn-guest-login" class="btn primary btn-full">כניסה מהירה ← 🍷</button>
                 </div>
@@ -145,6 +155,7 @@
                 </div>
                 <div class="rsvp-actions">
                     <button id="btn-finish-avatar" class="btn primary">מוכן! בואו נתחיל 🍷</button>
+                    <button id="btn-rsvp-back-avatar" class="btn-rsvp-back">→ חזרה לבחירה</button>
                 </div>
             </div>
             
@@ -162,6 +173,7 @@
                 </div>
                 <div class="rsvp-actions">
                     <button id="btn-rsvp-take" class="btn primary large">📸 צלם עכשיו</button>
+                    <button id="btn-rsvp-back-selfie" class="btn-rsvp-back">→ חזרה לבחירה</button>
                     <div id="rsvp-post-selfie" class="hidden" style="width: 100%;">
                         <button id="btn-finish-selfie" class="btn primary" style="width: 100%;">זהו, סיימנו! ←</button>
                         <button id="btn-rsvp-retake" class="btn outline tiny" style="width: 100%; margin-top: 10px;">צילום מחדש 🔄</button>
@@ -268,7 +280,7 @@
                     <input type="checkbox" id="check-lead-mode">
                     <label for="check-lead-mode">👑 הובלה</label>
                 </div>
-                <button id="btn-sync" class="btn small glass hidden" style="width: 100%;">לחזור לסנכרון</button>
+                <button id="btn-sync-menu" class="btn small glass hidden" style="width: 100%;">לחזור לסנכרון</button>
             </div>
 
             <div class="menu-section">

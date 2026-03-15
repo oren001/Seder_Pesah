@@ -352,6 +352,7 @@ io.on('connection', (socket) => {
 
     socket.on('change-page', ({ roomId, pageIndex }) => {
         if (!rooms[roomId]) return;
+        if (socket.id !== rooms[roomId].leaderId) return; // Only leader can change pages
         rooms[roomId].currentPage = pageIndex;
         rooms[roomId].highlightedSegment = -1;
         saveRooms();
