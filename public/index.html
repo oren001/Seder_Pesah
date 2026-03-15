@@ -56,6 +56,13 @@
             height: 80px !important;
             margin: 0 0 0.5rem 0 !important;
         }
+        /* Dark theme adjustments for inline-styled elements */
+        #room-lobby-screen .lobby-card * {
+            color: var(--text-on-dark);
+        }
+        #room-lobby-screen .lobby-card .btn.primary {
+            color: white;
+        }
     </style>
 </head>
 
@@ -203,7 +210,7 @@
             </div>
                 
                 <div class="waiting-participants">
-                    <p style="font-weight: 800; margin-bottom: 1.5rem; color: #5d4037; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <p style="font-weight: 800; margin-bottom: 1.5rem; color: var(--text-on-dark); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                         👥 מי כבר כאן?
                     </p>
                     <div class="gazebo-grid-container">
@@ -214,7 +221,7 @@
                 </div>
 
                 <!-- Leader controls: only visible to the leader -->
-                <div id="lobby-leader-actions" class="hidden" style="margin-top: 2rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 2rem;">
+                <div id="lobby-leader-actions" class="hidden" style="margin-top: 2rem; border-top: 1px solid rgba(212,175,55,0.1); padding-top: 2rem;">
                     <p style="margin-bottom: 1rem; font-weight: 600;">מנהל הסדר, כשיש מניין - אפשר להתחיל!</p>
                     <button id="btn-start-seder" class="btn primary large" style="width: 100%;">התחל את ההגדה 📖🚀</button>
                 </div>
@@ -225,9 +232,9 @@
                 </div>
 
                 <!-- Always-visible host login section -->
-                <div id="lobby-host-login" style="margin-top: 1.5rem; padding: 1rem; background: rgba(139,69,19,0.06); border-radius: 12px; border: 1px dashed rgba(139,69,19,0.3);">
-                    <div style="margin-top: 1.5rem; opacity: 0.3; font-size: 0.75rem; text-align: center;">v1.0.1772</div>
-                    <p style="margin-bottom: 0.8rem; font-size: 0.85rem; color: #8b4513; font-weight: 600;">👑 מנהל הסדר? התחבר כדי להתחיל:</p>
+                <div id="lobby-host-login" style="margin-top: 1.5rem; padding: 1rem; background: rgba(212,175,55,0.06); border-radius: 12px; border: 1px dashed rgba(212,175,55,0.2);">
+                    <div style="margin-top: 1.5rem; opacity: 0.3; font-size: 0.75rem; text-align: center; color: var(--text-on-dark);">v1.0.1772</div>
+                    <p style="margin-bottom: 0.8rem; font-size: 0.85rem; color: var(--gold); font-weight: 600;">👑 מנהל הסדר? התחבר כדי להתחיל:</p>
                     <div id="g_id_onload_lobby"
                         data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
                         data-callback="handleGoogleResponse">
