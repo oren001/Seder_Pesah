@@ -1,4 +1,4 @@
 {
-    "version": "1.0.1745",
-    "notes": "Fixed Lobby UI: Responsive headings, centered layout for waiting room, and fixed absolute positioning conflicts."
+    "version": "1.0.1771",
+    "notes": "Lobby UI Redesign (Itai) + Inline CSS Overrides + Version indicator fixed."
 }
