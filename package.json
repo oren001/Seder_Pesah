@@ -4,6 +4,7 @@
   "description": "A modern, interactive digital Seder experience with a Pearl White theme. Participants join via a shared link, take a selfie, and are automatically featured in AI-generated Exodus scenes using Leonardo AI.",
   "main": "compiler.js",
   "scripts": {
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
