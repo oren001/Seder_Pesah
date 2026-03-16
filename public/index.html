@@ -10,7 +10,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800;900&family=Assistant:wght@300;400;600&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.1.0">
+    <link rel="stylesheet" href="styles.css?v=1.1.1">
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -115,7 +115,8 @@
             
             <!-- Step 3b: Selfie (Reusing existing camera logic) -->
             <div id="rsvp-step-selfie" class="rsvp-step hidden">
-                <h2>חייכו למצלמה! 📸</h2>
+                <h2>📸 סלפי של הפנים שלך!</h2>
+                <p style="font-size:0.82rem; opacity:0.7;">מקמו את הפנים במרכז הביצה — כך כולם יזהו אתכם בהגדה 😊</p>
                 <div class="video-container small">
                     <div class="video-wrapper">
                         <video id="rsvp-video" autoplay muted playsinline></video>
@@ -137,9 +138,9 @@
 
             <!-- Step 4: Final Excitement -->
             <div id="rsvp-step-finish" class="rsvp-step hidden">
-                <div class="rsvp-icon">🍷✨</div>
+                <div id="rsvp-finish-photo" class="rsvp-finish-photo-wrap"></div>
                 <h2>איזה כיף! הכל מוכן.</h2>
-                <p>הפרופיל שלכם בפנים. <br> <b>עכשיו רק נשאר לשבת סביב השולחן ולהתחיל את ההגדה יחד!</b></p>
+                <p>ככה כולם יראו אתכם בהגדה. <br> <b>עכשיו רק נשאר לשבת סביב השולחן!</b></p>
                 <div class="rsvp-actions">
                     <button id="btn-go-to-haggadah" class="btn primary">אני בשולחן, בואו נתחיל! 📖🚀</button>
                 </div>
@@ -190,7 +191,7 @@
                     class="btn outline small" style="width: 100%;">
                     🔑 התחבר עם Google
                 </button>
-                <div style="opacity: 0.3; font-size: 0.7rem; text-align: center; color: var(--text-on-dark); margin-top: 0.5rem;">v1.1.0</div>
+                <div style="opacity: 0.3; font-size: 0.7rem; text-align: center; color: var(--text-on-dark); margin-top: 0.5rem;">v1.1.1</div>
             </div>
         </div>
     </div>
@@ -331,10 +332,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
-    <script src="haggadah_data.js?v=1.1.0"></script>
-    <script src="ExodusMap.js?v=1.1.0"></script>
-    <script src="RSVPFlow.js?v=1.1.0"></script>
-    <script src="app.js?v=1.1.0"></script>
+    <script src="haggadah_data.js?v=1.1.1"></script>
+    <script src="ExodusMap.js?v=1.1.1"></script>
+    <script src="RSVPFlow.js?v=1.1.1"></script>
+    <script src="app.js?v=1.1.1"></script>
 </body>
 
 </html>

@@ -37,6 +37,27 @@ function safeAddListener(id, event, fn) {
     if (el) el.addEventListener(event, fn);
 }
 
+// --- Photo Helpers ---
+// Returns true if 'photo' is an emoji/text icon rather than an image URL/dataURL
+function isEmojiPhoto(photo) {
+    if (!photo) return false;
+    return !photo.startsWith('data:') && !photo.startsWith('http') && !photo.startsWith('/') && !photo.startsWith('blob:');
+}
+
+// Creates the right DOM element for an avatar — <img> for real photos, <div> for emojis
+function createAvatarEl(photoUrl) {
+    if (isEmojiPhoto(photoUrl)) {
+        const div = document.createElement('div');
+        div.className = 'emoji-avatar';
+        div.textContent = photoUrl;
+        return div;
+    }
+    const img = document.createElement('img');
+    img.src = photoUrl;
+    img.alt = '';
+    return img;
+}
+
 // --- Init ---
 function init() {
     const navType = performance.getEntriesByType('navigation')[0]?.type;
@@ -738,10 +759,7 @@ function renderParticipants(participants) {
         // Header Strip
         const div = document.createElement('div');
         div.className = 'avatar' + (me && p.id === me.id ? ' me' : '') + (!isOnline ? ' offline' : '');
-        const img = document.createElement('img');
-        img.src = photoUrl;
-        img.alt = 'משתתף';
-        div.appendChild(img);
+        div.appendChild(createAvatarEl(photoUrl));
         list.appendChild(div);
 
         // Gazebo Grid
@@ -749,9 +767,7 @@ function renderParticipants(participants) {
             const gazDiv = document.createElement('div');
             gazDiv.className = 'gazebo-avatar' + (!isOnline ? ' offline' : '');
             gazDiv.onclick = () => openPhotoZoom(photoUrl);
-            const gazImg = document.createElement('img');
-            gazImg.src = photoUrl;
-            gazDiv.appendChild(gazImg);
+            gazDiv.appendChild(createAvatarEl(photoUrl));
             gazeboList.appendChild(gazDiv);
         }
     });
@@ -772,9 +788,7 @@ function renderLobbyParticipants(participants) {
         const card = document.createElement('div');
         card.className = 'gazebo-avatar lobby-avatar-card';
 
-        const img = document.createElement('img');
-        img.src = photoUrl;
-        card.appendChild(img);
+        card.appendChild(createAvatarEl(photoUrl));
 
         // 🟢 Online indicator dot
         const dot = document.createElement('div');

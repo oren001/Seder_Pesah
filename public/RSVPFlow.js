@@ -162,6 +162,27 @@ class RSVPFlow {
             localStorage.setItem('haggadah_selfie', this.data.photo);
         }
         this.goToStep('finish');
+
+        // Show the user's photo/avatar in the finish step
+        const finishPhotoWrap = $$('rsvp-finish-photo');
+        if (finishPhotoWrap) {
+            finishPhotoWrap.innerHTML = '';
+            if (this.data.photo) {
+                const isEmoji = !this.data.photo.startsWith('data:') && !this.data.photo.startsWith('http');
+                if (isEmoji) {
+                    const div = document.createElement('div');
+                    div.className = 'emoji-avatar';
+                    div.textContent = this.data.photo;
+                    finishPhotoWrap.appendChild(div);
+                } else {
+                    const img = document.createElement('img');
+                    img.src = this.data.photo;
+                    img.alt = 'הפרופיל שלך';
+                    finishPhotoWrap.appendChild(img);
+                }
+            }
+        }
+
         $$('btn-go-to-haggadah').onclick = () => {
             if (this.callbacks.onComplete) {
                 this.callbacks.onComplete(this.data);
