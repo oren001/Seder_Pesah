@@ -17,8 +17,106 @@ let isFollowingLeader = true;
 let leaderId = null;
 let leaderName = null;
 let leaderPage = 0;
-let currentLanguage = 'he'; // 'he' or 'en'
+let currentLanguage = 'he'; // 'he' or 'translit'
 let highlightedSegmentIndex = -1;
+let amReading = false;
+let activeReaders = [];
+
+// --- Hebrew to Latin Transliteration ---
+function transliterate(hebrewHtml) {
+    const text = hebrewHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    // Replace God's name before processing
+    let src = text.replace(/יְיָ/g, 'Adonai').replace(/יהוה/g, 'Adonai');
+    let out = '';
+    let i = 0;
+
+    while (i < src.length) {
+        const c = src.charCodeAt(i);
+
+        // Hebrew consonant (U+05D0–U+05EA)
+        if (c >= 0x05D0 && c <= 0x05EA) {
+            let v = '', dag = false, shinD = false, sinD = false, j = i + 1;
+
+            // Collect nikkud marks following this consonant
+            while (j < src.length) {
+                const n = src.charCodeAt(j);
+                if      (n === 0x05B0) { if (!v) v = 'e'; j++; } // shva
+                else if (n === 0x05B1) { v = 'e'; j++; }  // hataf segol
+                else if (n === 0x05B2) { v = 'a'; j++; }  // hataf patach
+                else if (n === 0x05B3) { v = 'o'; j++; }  // hataf kamatz
+                else if (n === 0x05B4) { v = 'i'; j++; }  // hiriq
+                else if (n === 0x05B5) { v = 'e'; j++; }  // tsere
+                else if (n === 0x05B6) { v = 'e'; j++; }  // segol
+                else if (n === 0x05B7) { v = 'a'; j++; }  // patach
+                else if (n === 0x05B8) { v = 'a'; j++; }  // kamatz
+                else if (n === 0x05B9) { v = 'o'; j++; }  // holam
+                else if (n === 0x05BA) { v = 'o'; j++; }  // holam haser
+                else if (n === 0x05BB) { v = 'u'; j++; }  // kubutz
+                else if (n === 0x05BC) { dag = true; j++; } // dagesh
+                else if (n === 0x05BD || n === 0x05BF) { j++; } // meteg/rafe
+                else if (n === 0x05C1) { shinD = true; j++; } // shin dot
+                else if (n === 0x05C2) { sinD = true; j++; } // sin dot
+                else break;
+            }
+
+            // Silence shva at end of word
+            if (v === 'e') {
+                let endOfWord = true;
+                for (let look = j; look < src.length; look++) {
+                    const lc = src.charCodeAt(look);
+                    if (lc >= 0x05D0 && lc <= 0x05EA) { endOfWord = false; break; }
+                    if ((lc >= 0x05B0 && lc <= 0x05C2) || lc === 0x05BF) continue;
+                    break;
+                }
+                if (endOfWord) v = '';
+            }
+
+            let k = '';
+            switch (c) {
+                case 0x05D0: k = ''; break;                     // alef (silent)
+                case 0x05D1: k = dag ? 'b' : 'v'; break;       // bet/vet
+                case 0x05D2: k = 'g'; break;                    // gimel
+                case 0x05D3: k = 'd'; break;                    // dalet
+                case 0x05D4: k = 'h'; break;                    // he
+                case 0x05D5:                                      // vav
+                    if (dag && !v) { k = ''; v = 'u'; }         // shuruq
+                    else if (v === 'o') k = '';                  // holam male
+                    else k = 'v';
+                    break;
+                case 0x05D6: k = 'z'; break;                    // zayin
+                case 0x05D7: k = 'ch'; break;                   // chet
+                case 0x05D8: k = 't'; break;                    // tet
+                case 0x05D9: k = 'y'; break;                    // yod
+                case 0x05DA: case 0x05DB: k = dag ? 'k' : 'kh'; break; // kaf
+                case 0x05DC: k = 'l'; break;                    // lamed
+                case 0x05DD: case 0x05DE: k = 'm'; break;       // mem
+                case 0x05DF: case 0x05E0: k = 'n'; break;       // nun
+                case 0x05E1: k = 's'; break;                    // samekh
+                case 0x05E2: k = ''; break;                     // ayin (silent)
+                case 0x05E3: k = 'f'; break;                    // final pe
+                case 0x05E4: k = dag ? 'p' : 'f'; break;       // pe/fe
+                case 0x05E5: case 0x05E6: k = 'tz'; break;     // tsadi
+                case 0x05E7: k = 'k'; break;                    // qof
+                case 0x05E8: k = 'r'; break;                    // resh
+                case 0x05E9: k = sinD ? 's' : 'sh'; break;     // shin/sin
+                case 0x05EA: k = 't'; break;                    // tav
+            }
+
+            out += k + v;
+            i = j;
+        } else if (c === 0x05BE) { // maqaf (Hebrew hyphen)
+            out += '-';
+            i++;
+        } else if ((c >= 0x05B0 && c <= 0x05BD) || c === 0x05BF || c === 0x05C1 || c === 0x05C2 || c === 0x05F3 || c === 0x05F4) {
+            i++; // skip standalone nikkud / geresh
+        } else {
+            out += src[i];
+            i++;
+        }
+    }
+
+    return out;
+}
 
 // --- DOM refs ---
 const $$ = id => document.getElementById(id);
@@ -130,6 +228,8 @@ function init() {
     safeAddListener('btn-copy-link', 'click', onCopyLink);
     safeAddListener('btn-prev', 'click', () => changePage(-1));
     safeAddListener('btn-next', 'click', () => changePage(1));
+    safeAddListener('btn-read-along', 'click', toggleReading);
+    safeAddListener('btn-lang-toggle', 'click', toggleLanguage);
     safeAddListener('btn-sync', 'click', onSyncWithLeader);
     safeAddListener('btn-sync-menu', 'click', onSyncWithLeader);
     safeAddListener('btn-edit-profile', 'click', () => rsvpFlow.show(true));
@@ -398,6 +498,20 @@ async function setupSocket() {
         } else {
             highlightedSegmentIndex = -1;
         }
+    });
+
+    socket.on('readers-updated', ({ readers }) => {
+        activeReaders = readers || [];
+        // Update reading button appearance
+        const readBtn = $$('btn-read-along');
+        if (readBtn) {
+            const iAmReading = activeReaders.some(r => r.id === socket.id);
+            amReading = iAmReading;
+            readBtn.classList.toggle('active', iAmReading);
+            readBtn.title = iAmReading ? 'אתה קורא/ת — לחץ לביטול' : 'סמן שאני קורא/ת';
+        }
+        // Re-render to show/hide readers strip
+        renderPage();
     });
 
     socket.on('image-ready', ({ pageIndex, imageUrl, featuredPhotos }) => {
@@ -995,19 +1109,41 @@ function renderPage() {
     setTimeout(() => {
         el.innerHTML = '';
 
+        const isTranslit = currentLanguage === 'translit';
+
         // --- Title ---
         const titleDiv = document.createElement('div');
         titleDiv.className = 'page-title';
-        titleDiv.textContent = page.title;
+        titleDiv.textContent = isTranslit ? transliterate(page.title) : page.title;
+        if (isTranslit) titleDiv.classList.add('translit-text');
         el.appendChild(titleDiv);
+
+        // --- Readers strip (who is reading along) ---
+        if (activeReaders.length > 0) {
+            const readersDiv = document.createElement('div');
+            readersDiv.className = 'readers-strip';
+            readersDiv.id = 'readers-strip';
+            const label = document.createElement('span');
+            label.className = 'readers-label';
+            label.textContent = `📖 ${activeReaders.length} קוראים יחד`;
+            readersDiv.appendChild(label);
+            activeReaders.forEach(r => {
+                if (r.photo) {
+                    const av = createAvatarEl(r.photo);
+                    av.className = (isEmojiPhoto(r.photo) ? 'emoji-avatar' : '') + ' reader-avatar';
+                    readersDiv.appendChild(av);
+                }
+            });
+            el.appendChild(readersDiv);
+        }
 
         // --- Text (before image) ---
         const textBefore = document.createElement('div');
-        textBefore.className = 'page-text' + (currentLanguage === 'en' ? ' ltr-mode' : '');
+        textBefore.className = 'page-text' + (isTranslit ? ' ltr-mode' : '');
 
         // --- Text (after image, only for long pages) ---
         const textAfter = document.createElement('div');
-        textAfter.className = 'page-text page-text-after' + (currentLanguage === 'en' ? ' ltr-mode' : '');
+        textAfter.className = 'page-text page-text-after' + (isTranslit ? ' ltr-mode' : '');
         let hasAfterText = false;
 
         if (segments.length > 0) {
@@ -1015,9 +1151,12 @@ function renderPage() {
                 const p = document.createElement('p');
                 p.className = 'text-segment';
                 p.id = `seg-${index}-${sIdx}`;
-                // Use innerHTML to properly render HTML tags (<br/>, <b>, <span>, etc.)
-                p.innerHTML = currentLanguage === 'he' ? seg.he : (seg.en || seg.he);
-                if (currentLanguage === 'en') p.classList.add('ltr');
+                if (isTranslit) {
+                    p.textContent = transliterate(seg.he);
+                    p.classList.add('ltr', 'translit-text');
+                } else {
+                    p.innerHTML = seg.he;
+                }
                 p.onclick = () => onSegmentClick(sIdx);
                 if (highlightedSegmentIndex === sIdx) p.classList.add('highlighted');
                 if (sIdx < splitIdx) {
@@ -1030,7 +1169,12 @@ function renderPage() {
         } else if (page.text) {
             const p = document.createElement('p');
             p.className = 'text-segment';
-            p.innerHTML = page.text;
+            if (isTranslit) {
+                p.textContent = transliterate(page.text);
+                p.classList.add('ltr', 'translit-text');
+            } else {
+                p.innerHTML = page.text;
+            }
             textBefore.appendChild(p);
         }
 
@@ -1043,6 +1187,7 @@ function renderPage() {
         if (hasAfterText) el.appendChild(textAfter);
 
         $$('current-page-num').textContent = currentPage + 1;
+        $$('total-pages').textContent = HAGGADAH.length;
         $$('btn-prev').disabled = currentPage === 0;
         $$('btn-next').disabled = currentPage === HAGGADAH.length - 1;
 
@@ -1401,10 +1546,49 @@ function applyHighlight(sIdx) {
 }
 
 function toggleLanguage() {
-    currentLanguage = currentLanguage === 'he' ? 'en' : 'he';
-    const btn = $$('btn-toggle-lang');
-    if (btn) btn.innerText = currentLanguage === 'he' ? 'English' : 'עברית';
+    currentLanguage = currentLanguage === 'he' ? 'translit' : 'he';
+    // Update all language buttons
+    const sidebarBtn = $$('btn-toggle-lang');
+    if (sidebarBtn) sidebarBtn.innerText = currentLanguage === 'he' ? 'English' : 'עברית';
+    const footerBtn = $$('btn-lang-toggle');
+    if (footerBtn) {
+        footerBtn.textContent = currentLanguage === 'he' ? 'EN' : 'עב';
+        footerBtn.classList.toggle('active', currentLanguage === 'translit');
+    }
     renderPage();
+}
+
+function toggleReading() {
+    amReading = !amReading;
+    socket.emit('toggle-reading', { roomId: currentRoomId });
+    const btn = $$('btn-read-along');
+    if (btn) {
+        btn.classList.toggle('active', amReading);
+        btn.title = amReading ? 'אתה קורא/ת — לחץ לביטול' : 'סמן שאני קורא/ת';
+    }
+    showToast(amReading ? '📖 סומנת כקורא/ת — התמונה הבאה תכלול אותך!' : '📖 הפסקת קריאה');
+}
+
+function updateReadersStrip() {
+    const strip = document.getElementById('readers-strip');
+    if (!strip) return;
+    strip.innerHTML = '';
+    if (activeReaders.length === 0) {
+        strip.classList.add('hidden');
+        return;
+    }
+    strip.classList.remove('hidden');
+    const label = document.createElement('span');
+    label.className = 'readers-label';
+    label.textContent = `📖 ${activeReaders.length} קוראים יחד`;
+    strip.appendChild(label);
+    activeReaders.forEach(r => {
+        if (r.photo) {
+            const av = createAvatarEl(r.photo);
+            av.className = (isEmojiPhoto(r.photo) ? 'emoji-avatar' : '') + ' reader-avatar';
+            strip.appendChild(av);
+        }
+    });
 }
 
 // --- Google Auth ---

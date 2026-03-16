@@ -1,4 +1,4 @@
 {
-    "version": "1.1.2",
-    "notes": "Rebuilt Haggadah reading experience: HTML rendering fix, image at natural reading break, sticky footer, auto-sync for leader, AI image error fix, random participant selection."
+    "version": "1.2.0",
+    "notes": "Transliteration mode (EN button), reader participation indicator (📖), readers featured in AI images, enhanced reading sync, corrupted Unicode fixes."
 }

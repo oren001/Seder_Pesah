@@ -363,7 +363,26 @@ io.on('connection', (socket) => {
     socket.on('set-highlight', ({ roomId, pageIndex, segmentIndex }) => {
         if (!rooms[roomId]) return;
         rooms[roomId].highlightedSegment = segmentIndex;
-        socket.to(roomId).emit('highlight-updated', { pageIndex, segmentIndex });
+        // Include highlighter info so others can see who is reading
+        const highlighter = rooms[roomId].participants.find(p => p.id === socket.id);
+        socket.to(roomId).emit('highlight-updated', {
+            pageIndex, segmentIndex,
+            highlighterName: highlighter ? (highlighter.name || 'משתתף') : null,
+            highlighterPhoto: highlighter ? highlighter.photo : null
+        });
+    });
+
+    socket.on('toggle-reading', ({ roomId }) => {
+        if (!rooms[roomId]) return;
+        const p = rooms[roomId].participants.find(p => p.id === socket.id);
+        if (p) {
+            p.isReading = !p.isReading;
+            // Broadcast updated readers list to everyone
+            const readers = rooms[roomId].participants
+                .filter(p => p.isReading && p.online)
+                .map(p => ({ id: p.id, photo: p.photo }));
+            io.to(roomId).emit('readers-updated', { readers });
+        }
     });
 
     socket.on('add-task', ({ roomId, text, author }) => {

@@ -53,6 +53,11 @@ body {
     padding-bottom: 0;
 }
 
+/* Room screen: remove transform so position:fixed footer works correctly */
+#room-screen.screen {
+    transform: none !important;
+}
+
 .hidden {
     opacity: 0;
     pointer-events: none;
@@ -1011,7 +1016,103 @@ body {
 }
 
 .nav-btn {
-    min-width: 120px;
+    min-width: 100px;
+}
+
+/* Footer tool buttons (reading, language) */
+.footer-tool-btn {
+    min-width: 36px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    color: var(--text-on-dark);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.footer-tool-btn:hover {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: var(--gold);
+}
+
+.footer-tool-btn.active {
+    background: rgba(212, 175, 55, 0.3);
+    border-color: var(--gold);
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.4);
+    animation: readerGlow 2s infinite ease-in-out;
+}
+
+@keyframes readerGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(212, 175, 55, 0.3); }
+    50% { box-shadow: 0 0 16px rgba(212, 175, 55, 0.6); }
+}
+
+#btn-lang-toggle {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+/* --- Readers Strip --- */
+.readers-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    background: rgba(212, 175, 55, 0.08);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-radius: 12px;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.readers-strip.hidden { display: none; }
+
+.readers-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--gold);
+    white-space: nowrap;
+}
+
+.reader-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 6px rgba(212, 175, 55, 0.3);
+}
+
+.reader-avatar.emoji-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(212, 175, 55, 0.15);
+}
+
+/* --- Transliteration Mode --- */
+.translit-text {
+    font-family: 'Assistant', 'Segoe UI', sans-serif;
+    letter-spacing: 0.3px;
+    font-size: 1.15rem;
+    line-height: 2;
+}
+
+.page-title.translit-text {
+    text-align: left;
+    direction: ltr;
 }
 
 /* Nav buttons in footer — need light text for dark footer */
@@ -1111,14 +1212,25 @@ body {
     }
 
     .nav-btn {
-        min-width: 60px;
-        padding: 0.6rem 0.7rem;
-        font-size: 0.88rem;
+        min-width: 50px;
+        padding: 0.5rem 0.5rem;
+        font-size: 0.82rem;
+    }
+
+    .footer-tool-btn {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        font-size: 0.85rem;
+    }
+
+    #btn-lang-toggle {
+        font-size: 0.6rem;
     }
 
     .progress-pill {
-        font-size: 0.88rem;
-        padding: 0.4rem 0.8rem;
+        font-size: 0.82rem;
+        padding: 0.35rem 0.6rem;
     }
 
     .sidebar {

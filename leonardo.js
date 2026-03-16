@@ -6,31 +6,42 @@ const LEONARDO_V2_URL = 'https://cloud.leonardo.ai/api/rest/v2';
 const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY || '03028d8e-afc4-46f6-b967-069fc4fc01a1';
 const NB_PRO_MODEL = 'gemini-image-2';
 
-// Rich prompts for ALL 23 Chabad Haggadah sections
+// Fun, colorful, modern & hilarious prompts for Haggadah sections
+// Style: vibrant pop-art, Pixar-style 3D, witty & playful — NOT dry/religious
 const HAGGADAH_PROMPTS = [
-    { id: 0, title: 'Kadesh', prompt: 'A golden Kiddush cup with red wine on an ancient Passover table, candles flickering, detailed oil painting' },
-    { id: 1, title: 'Urchatz', prompt: 'Ritual hand washing with a silver pitcher and stone basin, soft warm lighting, ancient biblical style' },
-    { id: 2, title: 'Karpas', prompt: 'Green parsley being dipped in a bowl of salt water on a seder plate, ancient wooden table' },
-    { id: 3, title: 'Yachatz', prompt: 'Breaking a round handmade matzah into two pieces, white linen background, symbolic ceremony' },
-    { id: 4, title: 'Ha Lachma Anya', prompt: 'An ancient tent door open to the starry desert night, welcoming light from inside, freedom theme' },
-    { id: 5, title: 'Ma Nishtana', prompt: 'A young child asking the four questions at a festive candlelit table, family gathered' },
-    { id: 6, title: 'Avadim Hayinu', prompt: 'Israelite slaves building pyramids in Egypt, dramatic sunset, epic biblical illustration' },
-    { id: 7, title: 'Story of Rabbis', prompt: 'Five ancient rabbis sitting together in Bnei Brak, studying by candlelight all night, deep discussion' },
-    { id: 8, title: 'Four Sons', prompt: 'Four distinct characters representing the wise, wicked, simple, and silent sons, traditional symbolic style' },
-    { id: 9, title: 'Vehi Sheamda', prompt: 'A glowing protective light over a Jewish family throughout history, survival and hope, spiritual theme' },
-    { id: 10, title: 'Ten Plagues', prompt: 'Symbolic icons of the ten plagues: blood, frogs, locusts, darkness, dramatic split composition' },
-    { id: 11, title: 'Dayenu', prompt: 'Israelites crossing the split Red Sea, joy and gratitude, dramatic miracle scene, sunrise' },
-    { id: 12, title: 'Rabban Gamliel', prompt: 'The three symbols: the Pesach lamb, Matzah, and Maror on a beautiful seder plate' },
-    { id: 13, title: 'In Every Generation', prompt: 'A person today looking in a mirror and seeing themselves as an ancient Israelite leaving Egypt' },
-    { id: 14, title: 'Hallel Part 1', prompt: 'Singing songs of praise, hands raised in joy, ancient temple atmosphere, spiritual light' },
-    { id: 15, title: 'Rachtzah', prompt: 'Second ritual hand washing before the meal, focus on the blessing and water' },
-    { id: 16, title: 'Motzi Matzah', prompt: 'Holding three stacked matzahs, blessing the bread from the earth, tradition' },
-    { id: 17, title: 'Maror', prompt: 'Bitter herbs being eaten, a moment of reflection on the bitterness of slavery' },
-    { id: 18, title: 'Korech', prompt: 'A Hillel sandwich being made: matzah, maror, and charoset together' },
-    { id: 19, title: 'Shulchan Orech', prompt: 'A beautiful festive meal spread out, family eating together in joy' },
-    { id: 20, title: 'Tzafun', prompt: 'Children searching for the hidden Afikoman matzah in a warm home setting' },
-    { id: 21, title: 'Barech', prompt: 'Grace after meals, a small golden cup of wine, gratitude and prayer' },
-    { id: 22, title: 'Hallel & Nirtzah', prompt: 'The prophet Elijah entering through an open door, golden Jerusalem in the distance, hope' }
+    { id: 0, title: 'Kadesh', prompt: 'A giant overflowing wine glass at a wild festive dinner party, neon purple and gold splashes, confetti everywhere, Pixar 3D style, vibrant colors, funny cheerful mood, cartoon characters toasting' },
+    { id: 1, title: 'Urchatz', prompt: 'Hilarious scene of people enthusiastically washing hands with a comically oversized golden faucet, soap bubbles flying everywhere like a foam party, bright pop-art colors, playful cartoon style' },
+    { id: 2, title: 'Karpas', prompt: 'A tiny piece of parsley doing a cannonball dive into a giant bowl of salt water, huge splash, onlookers cheering, vibrant neon colors, funny Pixar 3D cartoon style' },
+    { id: 3, title: 'Yachatz', prompt: 'A giant matzah cracker being karate-chopped in half by a funny character, crumbs flying everywhere in slow motion, dramatic action movie lighting, bright colorful pop-art style, humorous' },
+    { id: 4, title: 'Ha Lachma Anya', prompt: 'A wide-open colorful door to a wild party, neon signs saying WELCOME in multiple languages, a red carpet leading to a funky disco-lit dinner table, Pixar 3D style, warm and inviting, funny characters waving' },
+    { id: 5, title: 'Ma Nishtana', prompt: 'An adorable wide-eyed kid standing on a chair at a dinner table pointing at everything confused, giant question marks floating around in neon colors, family laughing, Pixar 3D style, bright and hilarious' },
+    { id: 6, title: 'Avadim Hayinu', prompt: 'Cartoon characters breaking free from colorful chains and dancing, confetti explosion, pyramids in the background with disco lights, epic freedom celebration, vibrant pop-art, Pixar style, funny and triumphant' },
+    { id: 7, title: 'Story of Rabbis', prompt: 'Five nerdy professors having an all-night study marathon with mountains of coffee cups and books, one fell asleep in a pizza box, sunrise through window, vibrant colorful cartoon style, hilarious academic chaos' },
+    { id: 8, title: 'Four Sons', prompt: 'Four hilarious cartoon characters: a bookworm genius with huge glasses, a rebellious punk rocker, a sweet confused teddy bear, and a silent cool character with sunglasses, bright pop-art style, funny personality portraits' },
+    { id: 9, title: 'Vehi Sheamda', prompt: 'A family group photo but through the ages — from ancient to modern — all making the same silly pose, colorful timeline mashup, vibrant neon accents, warm and funny, Pixar 3D style' },
+    { id: 10, title: 'Ten Plagues', prompt: 'A hilarious comic-book grid of ten silly plagues: rubber frogs raining, ketchup river, cartoon locusts wearing sunglasses, total darkness with glowing eyes, bright pop-art colors, funny and over-the-top' },
+    { id: 11, title: 'Dayenu', prompt: 'An epic victory dance party on a split ocean floor with disco balls, confetti, and fireworks, cartoon characters high-fiving, neon colors reflecting off water walls, Pixar 3D, pure joy and celebration' },
+    { id: 12, title: 'Rabban Gamliel', prompt: 'A giant colorful seder plate like a carnival wheel with oversized matzah, a cute cartoon lamb, and hilarious bitter herbs making funny faces, bright pop-art, Pixar style, food with personality' },
+    { id: 13, title: 'In Every Generation', prompt: 'A person taking a selfie and in the phone screen they appear as an ancient Egyptian escapee running through a colorful portal, split reality, vibrant neon, Pixar 3D style, funny time-travel vibe' },
+    { id: 14, title: 'Hallel Part 1', prompt: 'A massive colorful karaoke night with cartoon characters singing passionately into microphones, musical notes and stars flying everywhere, neon stage lights, Pixar 3D style, pure fun energy' },
+    { id: 15, title: 'Rachtzah', prompt: 'A comedic hand-washing competition with judges holding up score cards, dramatic water splashes in slow motion, rainbow colored soap, bright cartoon style, hilarious and over-dramatic' },
+    { id: 16, title: 'Motzi Matzah', prompt: 'A tower of giant matzah crackers being balanced by a funny character, crumbs falling like snow, bright golden lighting, other characters watching in amazement, vibrant Pixar 3D cartoon style' },
+    { id: 17, title: 'Maror', prompt: 'A hilarious face-reaction compilation of cartoon characters tasting super spicy horseradish, eyes watering comically, steam coming out of ears, bright pop-art colors, funny and exaggerated expressions' },
+    { id: 18, title: 'Korech', prompt: 'A giant ridiculous sandwich being assembled like a cooking show challenge, matzah, herbs and charoset flying through the air, a chef character juggling ingredients, bright colorful Pixar 3D style' },
+    { id: 19, title: 'Shulchan Orech', prompt: 'The most epic colorful feast ever with a ridiculously long table stretching to the horizon, mountains of delicious food, happy cartoon characters eating and laughing, warm festive lighting, Pixar 3D style' },
+    { id: 20, title: 'Tzafun', prompt: 'Kids on a hilarious treasure hunt for hidden matzah, one kid looking under a couch cushion finding it glowing like gold, others searching everywhere comically, bright neon colors, Pixar 3D adventure style' },
+    { id: 21, title: 'Barech', prompt: 'A magical golden wine cup floating and glowing, happy cartoon characters around a table raising tiny cups in a cheerful toast, sparkles and stars everywhere, warm vibrant colors, Pixar 3D celebration' },
+    { id: 22, title: 'Hallel & Nirtzah', prompt: 'An epic grand finale party scene — fireworks, confetti, golden Jerusalem skyline in the background, cartoon characters dancing and celebrating, a mysterious cool figure arriving through a glowing door, vibrant neon Pixar 3D style' },
+    { id: 23, title: 'Hallel A', prompt: 'A massive outdoor rock concert with cartoon characters playing instruments on a rainbow stage, colorful sound waves visible in the air, crowd cheering, neon lights, Pixar 3D festival vibe' },
+    { id: 24, title: 'Hallel B', prompt: 'A hilarious choir of mismatched cartoon characters singing with exaggerated expressions, some off-key with musical notes flying crooked, colorful spotlights, confetti, Pixar 3D karaoke party style' },
+    { id: 25, title: 'Hallel C', prompt: 'An epic dance battle between cartoon characters in a disco arena, breakdancing moves, spinning disco balls reflecting rainbow colors, crowd going wild, vibrant neon Pixar 3D style' },
+    { id: 26, title: 'Nirtzah A', prompt: 'A magical portal opening to a futuristic colorful Jerusalem, cartoon characters stepping through excitedly, holographic buildings, flying cars, utopian celebration, vibrant Pixar 3D sci-fi meets tradition' },
+    { id: 27, title: 'Nirtzah B', prompt: 'An adorable cartoon goat being chased through a hilarious Rube Goldberg machine, colorful chain reactions, objects flying, pure cartoon chaos and fun, bright pop-art Pixar 3D style' },
+    { id: 28, title: 'Nirtzah C', prompt: 'A hilarious counting game scene: cartoon characters counting from one to thirteen with increasingly ridiculous items, visual number chaos, bright colors, funny mathematical madness, Pixar 3D style' },
+    { id: 29, title: 'Nirtzah D', prompt: 'A colorful cosmic scene with cartoon characters floating among stars and galaxies, building a playful universe, planets made of matzah and wine, whimsical space adventure, vibrant Pixar 3D style' },
+    { id: 30, title: 'Nirtzah E', prompt: 'An epic cartoon race scene with characters riding comically oversized animals through a colorful obstacle course, finish line made of matzah, crowd cheering with confetti, Pixar 3D style' },
+    { id: 31, title: 'Nirtzah F', prompt: 'A magical treehouse party at night, cartoon characters celebrating on every level, fairy lights everywhere, stars twinkling, a golden cup glowing at the top, warm and magical, vibrant Pixar 3D style' },
+    { id: 32, title: 'Nirtzah G', prompt: 'The ultimate season finale — cartoon characters on a rooftop watching a spectacular fireworks show spelling out NEXT YEAR, golden Jerusalem skyline, champagne toasts, vibrant celebration, Pixar 3D grand finale' }
 ];
 
 
@@ -190,16 +201,20 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
         console.log(`[AI] Personalized Page Generation for room ${roomId}, page ${pageIndex}`);
         io.to(roomId).emit('ai-status', { message: 'מתחיל תהליך עיבוד (NB PRO)...', pageIndex });
 
-        // 1. Upload a random subset of participant selfies (max 3)
+        // 1. Upload participant selfies — prioritize active readers
         const initImageIds = [];
+        const readers = rooms[roomId].participants.filter(p => p.isReading && p.online && isRealPhoto(p.photo));
         const allWithPhotos = rooms[roomId].participants.filter(p => isRealPhoto(p.photo));
-        const selected = pickRandom(allWithPhotos, 3); // pick up to 3 randomly
+        // Use readers if any, otherwise fallback to all participants
+        const pool = readers.length > 0 ? readers : allWithPhotos;
+        const selected = pickRandom(pool, 3); // API limit: max 3 reference images
 
         if (selected.length === 0) {
             io.to(roomId).emit('ai-status', { message: 'אין סלפי משתתפים, מייצר תמונה כללית...', pageIndex });
         } else {
+            const src = readers.length > 0 ? 'קוראים פעילים' : 'משתתפים';
             io.to(roomId).emit('ai-status', {
-                message: `מעלה ${selected.length} מ-${allWithPhotos.length} תמונות ל-Leonardo...`,
+                message: `מעלה ${selected.length} תמונות של ${src} ל-Leonardo...`,
                 pageIndex
             });
             for (const p of selected) {
@@ -218,8 +233,10 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
 
         let finalPrompt = section.prompt;
         if (initImageIds.length > 0) {
-            finalPrompt += `, featuring the characters and faces of the people in the reference images, integrated naturally into the scene`;
+            finalPrompt += `. The people in the reference images should appear as fun cartoon characters in the scene, with exaggerated happy expressions and silly poses. Make it hilarious, warm and memorable`;
         }
+        // Global style suffix — ensure every image is fun and modern
+        finalPrompt += '. Ultra vibrant saturated colors, high energy, witty visual humor, modern pop-art meets Pixar 3D rendering, NOT religious or serious';
 
         io.to(roomId).emit('ai-status', { message: 'אוסף נתונים ושולח פקודת ייצור...', pageIndex });
 
@@ -230,9 +247,10 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
 
         if (imageUrl && rooms[roomId]) {
             if (!rooms[roomId].images) rooms[roomId].images = {}; // ensure images map exists
-            rooms[roomId].images[pageIndex] = imageUrl;
-            io.to(roomId).emit('image-ready', { pageIndex, imageUrl });
-            console.log(`[AI] Page ${pageIndex} ready for room ${roomId}`);
+            const featuredPhotos = selected.map(p => p.photo).filter(Boolean);
+            rooms[roomId].images[pageIndex] = { url: imageUrl, featuredPhotos };
+            io.to(roomId).emit('image-ready', { pageIndex, imageUrl, featuredPhotos });
+            console.log(`[AI] Page ${pageIndex} ready for room ${roomId} (featuring ${featuredPhotos.length} participants)`);
             // Status overlay will be cleared by app.js on image-ready
         } else {
             throw new Error('לא התקבלה תמונה מ-Leonardo');
