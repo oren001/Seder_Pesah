@@ -1,4 +1,4 @@
 {
-    "version": "1.2.3",
-    "notes": "Grant Leader: any leader can promote any participant to co-leader. Fixes Itai login issue. Meal progress indicator (by Itai)."
+    "version": "1.2.4",
+    "notes": "Security: admin emails moved to env vars, removed from client JS. TEST_MODE blocked in production."
 }

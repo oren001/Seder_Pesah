@@ -25,10 +25,9 @@ let activeReaders = [];
 // Test mode flag — set by /api/config when server runs with TEST_MODE=1
 let TEST_MODE = false;
 
-// Co-leader emails — mirrors server.js LEADERS
-const ALLOWED_LEADERS = ['oren001@gmail.com', 'bobomomo234@gmail.com'];
+// isLeader is set by the server on login — no email list in client JS
 function amIAllowedLeader() {
-    return !!(me && me.email && ALLOWED_LEADERS.includes(me.email.toLowerCase()));
+    return !!(me && me.isLeader === true);
 }
 
 // --- Giggle Easter Egg (שָׁדַיִם) ---
@@ -872,8 +871,8 @@ function joinRoom(roomId, rsvpData = null) {
     socket.emit('join-room', { roomId, photo, userEmail, name }, (response) => {
         if (response.success) {
             currentRoomId = response.roomId;
-            // MERGE identity to preserve email
-            me = { ...me, ...response.participant };
+            // MERGE identity — preserve isLeader flag set by server on login
+            me = { ...me, ...response.participant, isLeader: me?.isLeader || false };
             
             // Sync leader from response
             leaderId = response.leaderId;

@@ -10,3 +10,7 @@ services:
         value: production
       - key: LEONARDO_API_KEY
         sync: false
+      - key: LEADER_EMAILS
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false

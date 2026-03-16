@@ -6,14 +6,26 @@ const fs = require('fs');
 const { generateAllImages, generateNanoTest } = require('./leonardo');
 const { OAuth2Client } = require('google-auth-library');
 
-const CLIENT_ID = '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com';
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com';
 const client = new OAuth2Client(CLIENT_ID);
 
-// Co-leader registry — add emails here to grant full host privileges
-const LEADERS = {
-    'oren001@gmail.com':          'אורן (מנהל הסדר)',
-    'bobomomo234@gmail.com':       'איתי (מנחה)'
-};
+// Co-leader registry — loaded from LEADER_EMAILS env var (set in Render dashboard)
+// Format: "email1:DisplayName1,email2:DisplayName2"
+// Fallback keeps the app working locally without env vars set
+function buildLeaders() {
+    const raw = process.env.LEADER_EMAILS || '';
+    const obj = {};
+    if (raw.trim()) {
+        raw.split(',').forEach(entry => {
+            const [email, ...nameParts] = entry.trim().split(':');
+            if (email) obj[email.toLowerCase()] = nameParts.join(':') || 'מנחה';
+        });
+    }
+    return obj;
+}
+const LEADERS = buildLeaders();
+console.log(`[Leaders] Loaded ${Object.keys(LEADERS).length} leader(s) from env`);
+
 function isAllowedLeader(email) {
     return !!(email && LEADERS[email.toLowerCase()]);
 }
@@ -21,8 +33,10 @@ function leaderDisplayName(email) {
     return (email && LEADERS[email.toLowerCase()]) || 'מנחה';
 }
 
-const TEST_MODE = process.env.TEST_MODE === '1' || process.env.TEST_MODE === 'true';
-if (TEST_MODE) console.log('[TEST_MODE] ⚠️  Running in test mode — authentication disabled');
+// TEST_MODE: only active outside production — never on Render
+const TEST_MODE = (process.env.TEST_MODE === '1' || process.env.TEST_MODE === 'true')
+    && process.env.NODE_ENV !== 'production';
+if (TEST_MODE) console.log('[TEST_MODE] ⚠️  Local dev only — auth disabled');
 
 const app = express();
 
@@ -32,9 +46,9 @@ app.use((req, res, next) => {
     next();
 });
 
-// Expose server config to client (includes test mode flag)
+// Server config endpoint — intentionally empty to avoid leaking internals
 app.get('/api/config', (req, res) => {
-    res.json({ testMode: TEST_MODE });
+    res.json({});
 });
 
 const server = http.createServer(app);
@@ -151,7 +165,8 @@ io.on('connection', (socket) => {
                 id: payload.sub,
                 name: payload.name,
                 email: payload.email,
-                picture: payload.picture
+                picture: payload.picture,
+                isLeader: isAllowedLeader(payload.email)
             };
             socket.userEmail = payload.email; // Store for leadership checks
             console.log(`[Auth] User logged in: ${userData.name} (${socket.userEmail})`);
@@ -190,15 +205,20 @@ io.on('connection', (socket) => {
         const userData = {
             id: isHost ? 'test_host_001' : 'test_guest_' + Math.random().toString(36).slice(2, 8),
             name: isHost ? 'מנחה (מצב בדיקה)' : 'אורח (מצב בדיקה)',
-            email: isHost ? 'oren001@gmail.com' : null,   // Host gets a real leader email
+            email: isHost ? 'test-host@pesach-local.dev' : null,  // Fake email — not in LEADERS
             picture: null,
             isGuest: !isHost
         };
         if (isHost) {
             socket.userEmail = userData.email;
+            // In test mode, manually grant leader for the test host socket
+            if (socket.roomId && rooms[socket.roomId]) {
+                rooms[socket.roomId].leaderId = socket.id;
+                rooms[socket.roomId].leaderName = userData.name;
+            }
         }
         console.log(`[TEST] ${isHost ? 'Host' : 'Guest'} logged in: ${userData.name} (socket ${socket.id})`);
-        socket.emit('google-login-success', userData);
+        socket.emit('google-login-success', { ...userData, isLeader: isHost });
         callback?.({ success: true, userData });
     });
 
