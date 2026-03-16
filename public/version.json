@@ -1,4 +1,4 @@
 {
-    "version": "1.2.0",
-    "notes": "Transliteration mode (EN button), reader participation indicator (📖), readers featured in AI images, enhanced reading sync, corrupted Unicode fixes."
+    "version": "1.2.1",
+    "notes": "Co-leader support: Itai can now also control the seder (navigate pages, generate AI images, start seder)."
 }

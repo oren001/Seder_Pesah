@@ -22,6 +22,12 @@ let highlightedSegmentIndex = -1;
 let amReading = false;
 let activeReaders = [];
 
+// Co-leader emails — mirrors server.js LEADERS
+const ALLOWED_LEADERS = ['oren001@gmail.com', 'itai.shultz@hotmail.com'];
+function amIAllowedLeader() {
+    return !!(me && me.email && ALLOWED_LEADERS.includes(me.email.toLowerCase()));
+}
+
 // --- Hebrew to Latin Transliteration ---
 function transliterate(hebrewHtml) {
     const text = hebrewHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -583,8 +589,7 @@ function triggerPageGeneration(pageIndex) {
     if (!currentRoomId) return;
 
     // --- Leader Check (Client Side) ---
-    const isOren = me && me.email === 'oren001@gmail.com';
-    if (leaderId !== socket.id && !isOren) {
+    if (leaderId !== socket.id && !amIAllowedLeader()) {
         showToast('רק עורך הסדר (המנחה) יכול להתחיל יצירת תמונה 👑');
         return;
     }
@@ -832,8 +837,8 @@ function joinRoom(roomId, rsvpData = null) {
             updateLeadershipUI();
             startHeartbeat(currentRoomId);
 
-            // Auto-enable lead mode for the leader (Oren / whoever was assigned leader)
-            const amILeader = (response.leaderId === socket.id) || (me && me.email === 'oren001@gmail.com');
+            // Auto-enable lead mode for the leader
+            const amILeader = (response.leaderId === socket.id) || amIAllowedLeader();
             if (amILeader) {
                 const leadCheckbox = $$('check-lead-mode');
                 if (leadCheckbox) leadCheckbox.checked = true;
@@ -962,14 +967,13 @@ function renderLobbyParticipants(participants) {
 function updateLobbyUI(sederStarted) {
     if (sederStarted) return;
     
-    // Oren always counts as leader for UI purposes if he is logged in
-    const isOren = me && me.email === 'oren001@gmail.com';
-    const isLeader = (leaderId === socket.id) || isOren;
-    
+    // Co-leaders always count as leader for UI purposes
+    const isLeader = (leaderId === socket.id) || amIAllowedLeader();
+
     const leaderActions = $$('lobby-leader-actions');
     const guestNote = $$('lobby-guest-note');
-    
-    console.log(`[Lobby] Updating UI. isLeader: ${isLeader}, isOren: ${isOren}, leaderId: ${leaderId}`);
+
+    console.log(`[Lobby] Updating UI. isLeader: ${isLeader}, email: ${me?.email}, leaderId: ${leaderId}`);
 
     if (leaderActions) {
         if (isLeader) {
@@ -979,8 +983,8 @@ function updateLobbyUI(sederStarted) {
             leaderActions.classList.add('hidden');
             if (guestNote) guestNote.classList.remove('hidden');
             
-            // If not Oren, but logged in as someone else (not guest)
-            if (me && !me.isGuest && me.email !== 'oren001@gmail.com') {
+            // If not a co-leader, but logged in as someone else (not guest)
+            if (me && !me.isGuest && !amIAllowedLeader()) {
                 guestNote.innerHTML = '👤 מחובר כאורח. המנחה יתחיל את הסדר בקרוב... ✨';
             } 
             // If Guest or not logged in at all
@@ -1214,7 +1218,7 @@ function changePage(delta) {
     const next = currentPage + delta;
     if (next >= 0 && next < HAGGADAH.length) {
         const isLeading = $$('check-lead-mode').checked;
-        const amILeader = (leaderId === socket.id) || (me && me.email === 'oren001@gmail.com');
+        const amILeader = (leaderId === socket.id) || amIAllowedLeader();
 
         if (isLeading || amILeader) {
             // Global move — all followers update too
@@ -1247,8 +1251,7 @@ function updateLeadershipUI() {
 
     if (!syncBtn || !statusText) return;
 
-    const isOren = me && me.email === 'oren001@gmail.com';
-    const amILeader = (leaderId === socket.id) || isOren;
+    const amILeader = (leaderId === socket.id) || amIAllowedLeader();
 
     if (isFollowingLeader || amILeader) {
         syncBtn.classList.add('hidden');
@@ -1257,7 +1260,8 @@ function updateLeadershipUI() {
     }
 
     if (amILeader) {
-        statusText.innerHTML = isOren ? '👑 שלום אורן! (מנהל פרויקט)' : '👑 אתה עורך הסדר';
+        const myName = me?.name ? `👑 שלום ${me.name.split(' ')[0]}! (מנחה)` : '👑 אתה עורך הסדר';
+        statusText.innerHTML = myName;
         statusText.classList.add('is-leading');
     } else if (leaderId) {
         statusText.innerHTML = `👤 מנחה: ${leaderName}`;

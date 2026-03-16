@@ -9,6 +9,18 @@ const { OAuth2Client } = require('google-auth-library');
 const CLIENT_ID = '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com';
 const client = new OAuth2Client(CLIENT_ID);
 
+// Co-leader registry — add emails here to grant full host privileges
+const LEADERS = {
+    'oren001@gmail.com':          'אורן (מנהל הסדר)',
+    'itai.shultz@hotmail.com':    'איתי (מנחה)'
+};
+function isAllowedLeader(email) {
+    return !!(email && LEADERS[email.toLowerCase()]);
+}
+function leaderDisplayName(email) {
+    return (email && LEADERS[email.toLowerCase()]) || 'מנחה';
+}
+
 const app = express();
 
 // Required by Google Identity Services to allow the popup to communicate with the main window
@@ -136,13 +148,13 @@ io.on('connection', (socket) => {
             socket.userEmail = payload.email; // Store for leadership checks
             console.log(`[Auth] User logged in: ${userData.name} (${socket.userEmail})`);
             
-            // Proactively assign leadership if Oren joins/refreshes and is already in a room
-            if (socket.userEmail === 'oren001@gmail.com' && socket.roomId) {
+            // Proactively assign leadership if an allowed leader joins/refreshes and is already in a room
+            if (isAllowedLeader(socket.userEmail) && socket.roomId) {
                 const room = rooms[socket.roomId];
                 if (room) {
                     room.leaderId = socket.id;
-                    room.leaderName = 'אורן (מנהל הסדר)';
-                    console.log(`[Leader] Oren re-authenticated. Leadership restored in room ${socket.roomId}`);
+                    room.leaderName = leaderDisplayName(socket.userEmail);
+                    console.log(`[Leader] ${socket.userEmail} re-authenticated. Leadership restored in room ${socket.roomId}`);
                     saveRooms();
                     io.to(socket.roomId).emit('leader-updated', { leaderId: socket.id, leaderName: room.leaderName });
                     io.to(socket.roomId).emit('room-updated', { 
@@ -235,11 +247,11 @@ io.on('connection', (socket) => {
         socket.roomId = roomId; // Set this early!
         socket.join(roomId);
 
-        // Only assign leader if it's Oren
-        if (socket.userEmail === 'oren001@gmail.com') {
+        // Assign leader for any allowed co-leader
+        if (isAllowedLeader(socket.userEmail)) {
             room.leaderId = socket.id;
-            room.leaderName = 'אורן (מנהל הסדר)';
-            console.log(`[Leader] Oren identified and assigned/overrode as leader in room ${roomId}`);
+            room.leaderName = leaderDisplayName(socket.userEmail);
+            console.log(`[Leader] ${socket.userEmail} identified as leader in room ${roomId}`);
         }
 
         // Save selfie if new, restore saved selfie if this socket has none
@@ -310,14 +322,14 @@ io.on('connection', (socket) => {
     socket.on('take-lead', ({ roomId, name }) => {
         if (!rooms[roomId]) return;
         
-        // Restriction: Only Oren can take lead
-        if (socket.userEmail !== 'oren001@gmail.com') {
-            console.log(`[Leader] Leadership denied for ${socket.id} (not Oren)`);
+        // Only allowed co-leaders can take lead
+        if (!isAllowedLeader(socket.userEmail)) {
+            console.log(`[Leader] Leadership denied for ${socket.id} (${socket.userEmail})`);
             return;
         }
 
         rooms[roomId].leaderId = socket.id;
-        rooms[roomId].leaderName = name || 'אורן (מנהל הסדר)';
+        rooms[roomId].leaderName = name || leaderDisplayName(socket.userEmail);
         console.log(`Leadership taken in room ${roomId} by ${rooms[roomId].leaderName}`);
         saveRooms();
         io.to(roomId).emit('leader-updated', { leaderId: socket.id, leaderName: rooms[roomId].leaderName });
@@ -330,7 +342,7 @@ io.on('connection', (socket) => {
 
     socket.on('generate-page', ({ roomId, pageIndex }) => {
         if (!rooms[roomId]) return;
-        if (rooms[roomId].leaderId !== socket.id) {
+        if (rooms[roomId].leaderId !== socket.id && !isAllowedLeader(socket.userEmail)) {
             socket.emit('ai-error', { message: 'רק עורך הסדר יכול להתחיל יצירת תמונה!', pageIndex });
             return;
         }
@@ -343,7 +355,7 @@ io.on('connection', (socket) => {
     socket.on('start-seder', ({ roomId }) => {
         const room = rooms[roomId];
         if (!room) return;
-        if (socket.id !== room.leaderId) return;
+        if (socket.id !== room.leaderId && !isAllowedLeader(socket.userEmail)) return;
         room.sederStarted = true;
         room.currentPage = 0;
         io.to(roomId).emit('seder-started', { currentPage: room.currentPage });
@@ -352,8 +364,14 @@ io.on('connection', (socket) => {
 
     socket.on('change-page', ({ roomId, pageIndex }) => {
         if (!rooms[roomId]) return;
-        // Allow leader OR Oren (host) to change pages
-        if (socket.id !== rooms[roomId].leaderId && socket.userEmail !== 'oren001@gmail.com') return;
+        // Allow current leader OR any allowed co-leader to change pages
+        if (socket.id !== rooms[roomId].leaderId && !isAllowedLeader(socket.userEmail)) return;
+        // If a co-leader (not yet leaderId) is driving, make them the active leader
+        if (isAllowedLeader(socket.userEmail) && socket.id !== rooms[roomId].leaderId) {
+            rooms[roomId].leaderId = socket.id;
+            rooms[roomId].leaderName = leaderDisplayName(socket.userEmail);
+            io.to(roomId).emit('leader-updated', { leaderId: socket.id, leaderName: rooms[roomId].leaderName });
+        }
         rooms[roomId].currentPage = pageIndex;
         rooms[roomId].highlightedSegment = -1;
         saveRooms();
@@ -412,7 +430,7 @@ io.on('connection', (socket) => {
 
     socket.on('test-nano-banana', ({ roomId }) => {
         if (!rooms[roomId]) return;
-        if (rooms[roomId].leaderId !== socket.id) return;
+        if (rooms[roomId].leaderId !== socket.id && !isAllowedLeader(socket.userEmail)) return;
         generateNanoTest(roomId, io, rooms).catch(err => {
             io.to(roomId).emit('ai-error', { message: 'שגיאת Leonardo: ' + err.message });
         });
