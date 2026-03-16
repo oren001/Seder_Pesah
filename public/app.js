@@ -824,6 +824,14 @@ function renderLobbyParticipants(participants) {
 
         grid.appendChild(wrapper);
     });
+
+    // Remove fade mask if grid fits within max-height (no scroll needed)
+    const container = grid.closest('.gazebo-grid-container');
+    if (container) {
+        requestAnimationFrame(() => {
+            container.classList.toggle('no-scroll', grid.scrollHeight <= 265);
+        });
+    }
 }
 
 function updateLobbyUI(sederStarted) {
