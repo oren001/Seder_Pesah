@@ -724,6 +724,7 @@ body {
     flex: 1;
     overflow-y: auto;
     padding: 1.5rem;
+    padding-bottom: 90px; /* space for fixed sticky footer */
     display: flex;
     justify-content: center;
     background: linear-gradient(180deg, #1a0a10 0%, #231015 50%, #1a0a10 100%);
@@ -766,18 +767,20 @@ body {
     padding-bottom: 0.5rem;
 }
 
-/* AI Image Styles */
+/* AI Image Styles — .page-image-zone is rendered after the text (or mid-text for long pages) */
+.page-image-zone,
 .page-image-wrap {
     width: 100%;
     border-radius: 20px;
     overflow: hidden;
-    margin-bottom: 2rem;
+    margin: 2rem 0;
     box-shadow: 0 15px 45px rgba(0, 0, 0, 0.12);
     background: #fdfaf5;
     animation: fadeInScale 0.7s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     cursor: pointer;
     border: 1px solid rgba(139, 69, 19, 0.08);
+    min-height: 120px; /* Minimum height for shimmer / placeholder */
 }
 
 .status-overlay {
@@ -863,7 +866,6 @@ body {
 .page-text {
     font-size: 1.45rem;
     color: var(--text);
-    white-space: pre-wrap;
     word-break: break-word;
     overflow-wrap: break-word;
     text-align: justify;
@@ -873,12 +875,26 @@ body {
     -webkit-user-select: text;
 }
 
+/* Text after the mid-page image gets a top separator */
+.page-text-after {
+    padding-top: 0.5rem;
+    border-top: 1px dashed rgba(139, 69, 19, 0.15);
+    margin-top: 0;
+}
+
+/* Each paragraph is block-level, with breathing room between them */
 .text-segment {
     cursor: pointer;
-    transition: all 0.3s ease;
-    padding: 2px 4px;
-    border-radius: 4px;
-    display: inline-block;
+    transition: background 0.2s ease;
+    padding: 0.35rem 0.4rem;
+    border-radius: 6px;
+    display: block;          /* paragraph style */
+    margin-bottom: 0.75rem;
+}
+
+.text-segment:empty,
+.text-segment br:only-child {
+    display: none; /* hide empty/br-only paragraphs */
 }
 
 .text-segment.ltr {
@@ -886,7 +902,7 @@ body {
     text-align: left;
     font-family: 'Assistant', sans-serif;
     letter-spacing: 0.2px;
-    display: inline-block;
+    display: block;
 }
 
 .page-text.ltr-mode {
@@ -918,19 +934,23 @@ body {
     }
 }
 
-/* --- Footer --- */
+/* --- Footer (Sticky at bottom) --- */
 .room-footer {
-    background: rgba(30, 12, 18, 0.9);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: rgba(20, 8, 14, 0.97);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     padding: 0.7rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
     gap: 0.5rem;
-    flex-shrink: 0;
-    border-top: 1px solid rgba(212, 175, 55, 0.1);
+    border-top: 1px solid rgba(212, 175, 55, 0.15);
 }
 
 .progress-center {
@@ -1004,7 +1024,7 @@ body {
 
 .toast {
     position: fixed;
-    bottom: 40px;
+    bottom: 90px; /* above sticky footer */
     left: 50%;
     transform: translateX(-50%) translateY(20px);
     background: linear-gradient(135deg, rgba(45, 17, 24, 0.95), rgba(114, 47, 55, 0.95));
@@ -1064,6 +1084,7 @@ body {
 
     .haggadah-container {
         padding: 0;
+        padding-bottom: 80px; /* space for fixed footer on mobile */
     }
 
     .page-content {
@@ -1085,6 +1106,8 @@ body {
     .room-footer {
         padding: 0.5rem 0.6rem;
         gap: 0.4rem;
+        /* env(safe-area-inset-bottom) handles iPhone home indicator */
+        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
     }
 
     .nav-btn {

@@ -173,24 +173,36 @@ async function uploadInitImage(base64Data) {
     }
 }
 
+// Helper: check if a photo string is a real image (not emoji/icon)
+function isRealPhoto(photo) {
+    return photo && (photo.startsWith('data:') || photo.startsWith('http') || photo.startsWith('blob:'));
+}
+
+// Pick up to N random items from an array
+function pickRandom(arr, n) {
+    const shuffled = [...arr].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(n, shuffled.length));
+}
+
 async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
     if (!rooms[roomId]) return;
     try {
         console.log(`[AI] Personalized Page Generation for room ${roomId}, page ${pageIndex}`);
         io.to(roomId).emit('ai-status', { message: 'מתחיל תהליך עיבוד (NB PRO)...', pageIndex });
 
-        // 1. Upload all valid participant photos
+        // 1. Upload a random subset of participant selfies (max 3)
         const initImageIds = [];
-        const participantsWithPhotos = rooms[roomId].participants.filter(p => p.photo);
+        const allWithPhotos = rooms[roomId].participants.filter(p => isRealPhoto(p.photo));
+        const selected = pickRandom(allWithPhotos, 3); // pick up to 3 randomly
 
-        if (participantsWithPhotos.length === 0) {
-            io.to(roomId).emit('ai-status', { message: 'אין תמונות משתתפים, מייצר תמונה כללית...', pageIndex });
+        if (selected.length === 0) {
+            io.to(roomId).emit('ai-status', { message: 'אין סלפי משתתפים, מייצר תמונה כללית...', pageIndex });
         } else {
             io.to(roomId).emit('ai-status', {
-                message: `מעלה ${participantsWithPhotos.length} תמונות משתתפים ל-Leonardo...`,
+                message: `מעלה ${selected.length} מ-${allWithPhotos.length} תמונות ל-Leonardo...`,
                 pageIndex
             });
-            for (const p of participantsWithPhotos) {
+            for (const p of selected) {
                 const id = await uploadInitImage(p.photo);
                 if (id) {
                     initImageIds.push(id);
@@ -217,6 +229,7 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
         });
 
         if (imageUrl && rooms[roomId]) {
+            if (!rooms[roomId].images) rooms[roomId].images = {}; // ensure images map exists
             rooms[roomId].images[pageIndex] = imageUrl;
             io.to(roomId).emit('image-ready', { pageIndex, imageUrl });
             console.log(`[AI] Page ${pageIndex} ready for room ${roomId}`);

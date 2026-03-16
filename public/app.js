@@ -517,9 +517,13 @@ async function checkVersion() {
         if (!res.ok) return;
         const data = await res.json();
 
-        // Show version in sidebar footer if it exists
+        // Show "last updated at HH:MM" instead of version number
         const versionEl = document.getElementById('version-display');
-        if (versionEl) versionEl.textContent = `גרסה: ${data.version}`;
+        if (versionEl) {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+            versionEl.textContent = `עודכן לאחרונה: ${timeStr}`;
+        }
 
         // Initialize currentVersion on first fetch
         if (!currentVersion) {
@@ -713,6 +717,13 @@ function joinRoom(roomId, rsvpData = null) {
             renderTasks();
             updateLeadershipUI();
             startHeartbeat(currentRoomId);
+
+            // Auto-enable lead mode for the leader (Oren / whoever was assigned leader)
+            const amILeader = (response.leaderId === socket.id) || (me && me.email === 'oren001@gmail.com');
+            if (amILeader) {
+                const leadCheckbox = $$('check-lead-mode');
+                if (leadCheckbox) leadCheckbox.checked = true;
+            }
         } else {
             alert('החדר לא נמצא.');
             window.location.href = '/';
@@ -910,11 +921,63 @@ function onStartSeder() {
 }
 
 
+// Build the AI image zone element (placed at middle or end of page text)
+function buildImageZone(imageData, index) {
+    const imgZone = document.createElement('div');
+    imgZone.className = 'page-image-zone';
+    imgZone.id = `img-wrap-${index}`;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'status-overlay hidden';
+    overlay.id = `status-overlay-${index}`;
+    overlay.innerHTML = `
+        <div class="status-text">אין תמונה עדיין</div>
+        <div class="status-log">לחץ להפקת תמונה AI 🎨</div>
+    `;
+    imgZone.appendChild(overlay);
+
+    if (imageData) {
+        const currentImgUrl = typeof imageData === 'string' ? imageData : imageData.url;
+        const img = document.createElement('img');
+        img.src = currentImgUrl;
+        img.className = 'page-image has-image';
+        img.alt = 'איור AI';
+        imgZone.onclick = (e) => {
+            e.stopPropagation();
+            downloadImage(currentImgUrl, `Haggadah_Page_${index + 1}.png`);
+        };
+        const hint = document.createElement('div');
+        hint.className = 'download-hint';
+        hint.innerHTML = '📥 לחץ להורדה';
+        imgZone.appendChild(hint);
+        imgZone.appendChild(img);
+        if (imageData.featuredPhotos && imageData.featuredPhotos.length > 0) {
+            const bubblesContainer = document.createElement('div');
+            bubblesContainer.className = 'featured-bubbles';
+            imageData.featuredPhotos.forEach(photo => {
+                const bubble = document.createElement('div');
+                bubble.className = 'featured-participant';
+                const bImg = document.createElement('img');
+                bImg.src = photo;
+                bubble.appendChild(bImg);
+                bubblesContainer.appendChild(bubble);
+            });
+            imgZone.appendChild(bubblesContainer);
+        }
+    } else {
+        const shimmer = document.createElement('div');
+        shimmer.className = 'image-shimmer';
+        imgZone.appendChild(shimmer);
+        overlay.classList.remove('hidden');
+        imgZone.onclick = () => triggerPageGeneration(index);
+    }
+    return imgZone;
+}
+
 function renderPage() {
     const page = HAGGADAH[currentPage];
     if (!page) return;
 
-    // Update Gazebo Extras
     updateMealProgress();
     if (exodusMap) exodusMap.updateProgress(currentPage, HAGGADAH.length);
 
@@ -923,102 +986,61 @@ function renderPage() {
 
     const imageData = pageImages[currentPage];
     const index = currentPage;
+    const segments = page.segments || [];
+    // For long pages (>4 segments): place image after the 3rd segment (middle)
+    // For short pages: place image at the end
+    const splitIdx = segments.length > 4 ? 3 : segments.length;
 
     el.style.opacity = '0';
     setTimeout(() => {
         el.innerHTML = '';
 
+        // --- Title ---
         const titleDiv = document.createElement('div');
         titleDiv.className = 'page-title';
         titleDiv.textContent = page.title;
         el.appendChild(titleDiv);
 
-        const imgWrap = document.createElement('div');
-        imgWrap.className = 'page-image-wrap';
-        imgWrap.id = `img-wrap-${index}`;
-        imgWrap.className = 'page-image-wrap';
-        imgWrap.id = `img-wrap-${index}`;
+        // --- Text (before image) ---
+        const textBefore = document.createElement('div');
+        textBefore.className = 'page-text' + (currentLanguage === 'en' ? ' ltr-mode' : '');
 
-        const overlay = document.createElement('div');
-        overlay.className = 'status-overlay hidden';
-        overlay.id = `status-overlay-${index}`;
-        overlay.innerHTML = `
-            <div class="status-text">מייצר תמונה...</div>
-            <div class="status-log">לחץ כאן כדי להתחיל</div>
-        `;
-        imgWrap.appendChild(overlay);
+        // --- Text (after image, only for long pages) ---
+        const textAfter = document.createElement('div');
+        textAfter.className = 'page-text page-text-after' + (currentLanguage === 'en' ? ' ltr-mode' : '');
+        let hasAfterText = false;
 
-        if (imageData) {
-            const currentImgUrl = typeof imageData === 'string' ? imageData : imageData.url;
-            const img = document.createElement('img');
-            img.src = currentImgUrl;
-            img.className = 'page-image has-image';
-            img.alt = page.title;
-
-            // --- Click to Download (Instead of generate) ---
-            imgWrap.onclick = (e) => {
-                e.stopPropagation();
-                downloadImage(currentImgUrl, `Haggadah_Page_${index + 1}.png`);
-            };
-
-            // Add download hint
-            const hint = document.createElement('div');
-            hint.className = 'download-hint';
-            hint.innerHTML = 'לחץ להורדה 📥';
-            imgWrap.appendChild(hint);
-
-            imgWrap.appendChild(img);
-
-            // Add featured participants bubbles if present
-            if (imageData.featuredPhotos && imageData.featuredPhotos.length > 0) {
-                const bubblesContainer = document.createElement('div');
-                bubblesContainer.className = 'featured-bubbles';
-                imageData.featuredPhotos.forEach(photo => {
-                    const bubble = document.createElement('div');
-                    bubble.className = 'featured-participant';
-                    const bImg = document.createElement('img');
-                    bImg.src = photo;
-                    bubble.appendChild(bImg);
-                    bubblesContainer.appendChild(bubble);
-                });
-                imgWrap.appendChild(bubblesContainer);
-            }
-        } else {
-            const shimmer = document.createElement('div');
-            shimmer.className = 'image-shimmer';
-            imgWrap.appendChild(shimmer);
-
-            // Click to Generate ONLY if NO image exists
-            imgWrap.onclick = () => triggerPageGeneration(index);
-
-            // Show overlay with manual prompt
-            overlay.classList.remove('hidden');
-            overlay.querySelector('.status-text').innerText = 'אין תמונה עדיין';
-            overlay.querySelector('.status-log').innerText = 'לחץ כאן כדי לייצר עם AI';
-        }
-
-        el.appendChild(imgWrap);
-
-        const textDiv = document.createElement('div');
-        textDiv.className = 'page-text' + (currentLanguage === 'en' ? ' ltr-mode' : '');
-
-        if (page.segments && page.segments.length > 0) {
-            page.segments.forEach((seg, sIdx) => {
-                const span = document.createElement('span');
-                span.className = 'text-segment';
-                span.id = `seg-${index}-${sIdx}`;
-                span.innerText = currentLanguage === 'he' ? seg.he : (seg.en || seg.he);
-                if (currentLanguage === 'en') span.classList.add('ltr');
-                span.onclick = () => onSegmentClick(sIdx);
-                if (highlightedSegmentIndex === sIdx) span.classList.add('highlighted');
-                textDiv.appendChild(span);
-                textDiv.appendChild(document.createTextNode(' '));
+        if (segments.length > 0) {
+            segments.forEach((seg, sIdx) => {
+                const p = document.createElement('p');
+                p.className = 'text-segment';
+                p.id = `seg-${index}-${sIdx}`;
+                // Use innerHTML to properly render HTML tags (<br/>, <b>, <span>, etc.)
+                p.innerHTML = currentLanguage === 'he' ? seg.he : (seg.en || seg.he);
+                if (currentLanguage === 'en') p.classList.add('ltr');
+                p.onclick = () => onSegmentClick(sIdx);
+                if (highlightedSegmentIndex === sIdx) p.classList.add('highlighted');
+                if (sIdx < splitIdx) {
+                    textBefore.appendChild(p);
+                } else {
+                    textAfter.appendChild(p);
+                    hasAfterText = true;
+                }
             });
-        } else {
-            textDiv.innerText = page.text || "";
+        } else if (page.text) {
+            const p = document.createElement('p');
+            p.className = 'text-segment';
+            p.innerHTML = page.text;
+            textBefore.appendChild(p);
         }
 
-        el.appendChild(textDiv);
+        el.appendChild(textBefore);
+
+        // --- Image Zone (placed at natural reading break) ---
+        el.appendChild(buildImageZone(imageData, index));
+
+        // --- Remaining text after image (long pages only) ---
+        if (hasAfterText) el.appendChild(textAfter);
 
         $$('current-page-num').textContent = currentPage + 1;
         $$('btn-prev').disabled = currentPage === 0;
@@ -1029,16 +1051,17 @@ function renderPage() {
         // Sync button visibility
         const syncBtn = $$('btn-sync');
         const isLeading = $$('check-lead-mode').checked;
-
-        if (isLeading) {
+        if (isLeading || (isFollowingLeader && currentPage === leaderPage)) {
             syncBtn.classList.add('hidden');
-        } else if (!isFollowingLeader || currentPage !== leaderPage) {
-            syncBtn.classList.remove('hidden');
         } else {
-            syncBtn.classList.add('hidden');
+            syncBtn.classList.remove('hidden');
         }
 
         el.style.opacity = '1';
+
+        // Scroll page content to top on page change
+        const container = document.querySelector('.haggadah-container');
+        if (container) container.scrollTop = 0;
     }, 180);
 }
 
@@ -1046,21 +1069,20 @@ function changePage(delta) {
     const next = currentPage + delta;
     if (next >= 0 && next < HAGGADAH.length) {
         const isLeading = $$('check-lead-mode').checked;
+        const amILeader = (leaderId === socket.id) || (me && me.email === 'oren001@gmail.com');
 
-        if (isLeading) {
-            // Global move
+        if (isLeading || amILeader) {
+            // Global move — all followers update too
             currentPage = next;
             socket.emit('change-page', { roomId: currentRoomId, pageIndex: next });
         } else {
-            // Local move (Free Browsing / Freedom)
+            // Local move (Free Browsing)
             isFollowingLeader = false;
             currentPage = next;
             updateLeadershipUI();
         }
 
         renderPage();
-
-        // Auto-trigger effects based on page
         handlePageEffects(next);
     }
 }
