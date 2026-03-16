@@ -495,6 +495,10 @@ async function setupSocket() {
         }
     });
 
+    socket.on('toast-broadcast', ({ message }) => {
+        showToast(message);
+    });
+
     socket.on('page-updated', ({ pageIndex, authorId }) => {
         leaderPage = pageIndex;
         if (authorId === leaderId || isFollowingLeader) {
@@ -834,8 +838,9 @@ function startHeartbeat(roomId) {
 function joinRoom(roomId, rsvpData = null) {
     const photo = rsvpData ? rsvpData.photo : (localStorage.getItem('haggadah_selfie') || selfieDataUrl || generatePlaceholderPhoto());
     const userEmail = me ? me.email : null;
-    
-    socket.emit('join-room', { roomId, photo, userEmail }, (response) => {
+    const name = me ? (me.name || null) : null;
+
+    socket.emit('join-room', { roomId, photo, userEmail, name }, (response) => {
         if (response.success) {
             currentRoomId = response.roomId;
             // MERGE identity to preserve email
@@ -933,11 +938,45 @@ function renderParticipants(participants) {
 
         // Gazebo Grid
         if (gazeboList) {
+            const gazWrap = document.createElement('div');
+            gazWrap.className = 'gazebo-participant-wrap';
+
             const gazDiv = document.createElement('div');
-            gazDiv.className = 'gazebo-avatar' + (!isOnline ? ' offline' : '');
+            gazDiv.className = 'gazebo-avatar' + (!isOnline ? ' offline' : '') + (p.id === leaderId ? ' is-leader' : '');
             gazDiv.onclick = () => openPhotoZoom(photoUrl);
             gazDiv.appendChild(createAvatarEl(photoUrl));
-            gazeboList.appendChild(gazDiv);
+
+            // Crown overlay for current leader
+            if (p.id === leaderId) {
+                const crown = document.createElement('div');
+                crown.className = 'gazebo-crown';
+                crown.textContent = '👑';
+                gazDiv.appendChild(crown);
+            }
+            gazWrap.appendChild(gazDiv);
+
+            // Name label
+            const gName = document.createElement('div');
+            gName.className = 'gazebo-participant-name';
+            gName.textContent = p.name || '';
+            gazWrap.appendChild(gName);
+
+            // Promote button (only for leaders, non-self, non-leader participants)
+            if (amIAllowedLeader() && !(me && p.id === me.id) && p.id !== leaderId) {
+                const promoteBtn = document.createElement('button');
+                promoteBtn.className = 'btn-promote-leader tiny';
+                promoteBtn.textContent = '👑';
+                promoteBtn.title = `הפוך ${p.name || 'אורח'} למנחה`;
+                promoteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (confirm(`להפוך את ${p.name || 'אורח'} למנחה?`)) {
+                        socket.emit('grant-leader', { roomId: currentRoomId, targetSocketId: p.id });
+                    }
+                };
+                gazWrap.appendChild(promoteBtn);
+            }
+
+            gazeboList.appendChild(gazWrap);
         }
     });
 }
@@ -989,7 +1028,25 @@ function renderLobbyParticipants(participants) {
         const nameLabel = document.createElement('div');
         nameLabel.className = 'lobby-participant-name';
         nameLabel.textContent = p.name || 'אורח';
+        // Crown badge for current leader
+        if (p.id === leaderId) {
+            nameLabel.textContent = '👑 ' + (p.name || 'אורח');
+        }
         wrapper.appendChild(nameLabel);
+
+        // "Promote to Leader" button — only visible to co-leaders, not for self
+        if (amIAllowedLeader() && !isMe && p.id !== leaderId) {
+            const promoteBtn = document.createElement('button');
+            promoteBtn.className = 'btn-promote-leader';
+            promoteBtn.textContent = '👑 מנחה';
+            promoteBtn.title = `הפוך ${p.name || 'אורח'} למנחה`;
+            promoteBtn.onclick = () => {
+                if (confirm(`להפוך את ${p.name || 'אורח'} למנחה?`)) {
+                    socket.emit('grant-leader', { roomId: currentRoomId, targetSocketId: p.id });
+                }
+            };
+            wrapper.appendChild(promoteBtn);
+        }
 
         grid.appendChild(wrapper);
     });

@@ -209,8 +209,9 @@ io.on('connection', (socket) => {
         callback({ roomId });
     });
 
-    socket.on('join-room', ({ roomId, photo, userEmail }, callback) => {
+    socket.on('join-room', ({ roomId, photo, userEmail, name }, callback) => {
         if (userEmail) socket.userEmail = userEmail;
+        if (name) socket.userName = name;
         if (!rooms[roomId]) {
             rooms[roomId] = {
                 id: roomId,
@@ -262,10 +263,11 @@ io.on('connection', (socket) => {
         }
         const resolvedPhoto = photo || selfies[photoKey] || null;
 
-        const participant = { 
-            id: socket.id, 
-            photo: resolvedPhoto, 
-            guestCount: 1, 
+        const participant = {
+            id: socket.id,
+            name: socket.userName || null,
+            photo: resolvedPhoto,
+            guestCount: 1,
             online: true,
             lastSeen: Date.now()
         };
@@ -275,6 +277,7 @@ io.on('connection', (socket) => {
             existing.id = socket.id;
             existing.online = true;
             existing.lastSeen = Date.now();
+            if (socket.userName) existing.name = socket.userName;
         } else {
             room.participants.push(participant);
         }
@@ -333,6 +336,23 @@ io.on('connection', (socket) => {
         console.log(`Leadership taken in room ${roomId} by ${rooms[roomId].leaderName}`);
         saveRooms();
         io.to(roomId).emit('leader-updated', { leaderId: socket.id, leaderName: rooms[roomId].leaderName });
+    });
+
+    // Leader grants leadership to any participant (bypasses email check)
+    socket.on('grant-leader', ({ roomId, targetSocketId }) => {
+        if (!rooms[roomId]) return;
+        if (socket.id !== rooms[roomId].leaderId && !isAllowedLeader(socket.userEmail)) {
+            console.log(`[Leader] grant-leader denied for ${socket.id} (${socket.userEmail})`);
+            return;
+        }
+        const room = rooms[roomId];
+        const targetParticipant = room.participants.find(p => p.id === targetSocketId);
+        room.leaderId = targetSocketId;
+        room.leaderName = targetParticipant?.name || 'מנחה';
+        console.log(`[Leader] ${socket.userEmail} granted leadership to ${targetSocketId} (${room.leaderName})`);
+        saveRooms();
+        io.to(roomId).emit('leader-updated', { leaderId: targetSocketId, leaderName: room.leaderName });
+        io.to(roomId).emit('toast-broadcast', { message: `👑 ${room.leaderName} הפך/ה למנחה החדש/ה!` });
     });
 
     socket.on('trigger-effect', ({ roomId, effectType }) => {

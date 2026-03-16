@@ -1128,6 +1128,64 @@ body {
     direction: ltr;
 }
 
+/* --- Grant Leader / Promote Button --- */
+.btn-promote-leader {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 3px 6px;
+    background: linear-gradient(135deg, var(--gold-light), var(--coral));
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    font-family: var(--font-main);
+    cursor: pointer;
+    text-align: center;
+    opacity: 0.85;
+    transition: opacity 0.2s, transform 0.15s;
+    line-height: 1.4;
+}
+.btn-promote-leader:hover {
+    opacity: 1;
+    transform: scale(1.05);
+}
+.btn-promote-leader.tiny {
+    padding: 2px 5px;
+    font-size: 0.6rem;
+}
+
+/* Gazebo participant wrap (for name + promote button) */
+.gazebo-participant-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+.gazebo-participant-name {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--text-on-dark);
+    text-align: center;
+    max-width: 56px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.8;
+}
+.gazebo-avatar.is-leader {
+    box-shadow: 0 0 0 2px var(--gold), 0 0 12px rgba(212,175,55,0.4);
+}
+.gazebo-crown {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+
 /* --- Giggle Easter Egg --- */
 .giggle-word {
     cursor: pointer;
