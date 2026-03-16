@@ -52,6 +52,18 @@
 
             <!-- Auth Section (not logged in) -->
             <div id="lobby-auth-section" class="lobby-auth">
+
+                <!-- Test Mode Login (hidden by default, shown when TEST_MODE is active) -->
+                <div id="test-mode-login" class="hidden" style="text-align:center;">
+                    <div style="background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+                        <span style="font-size: var(--fs-xs); color: var(--gold); text-transform: uppercase; letter-spacing: 1px;">🧪 מצב בדיקה</span>
+                    </div>
+                    <button id="btn-test-host" class="btn primary lobby-btn" style="margin-bottom: 0.8rem;">🕎 כניסה כמנחה</button>
+                    <button id="btn-test-guest" class="btn outline lobby-btn">🍷 כניסה כאורח</button>
+                </div>
+
+                <!-- Normal Auth (hidden in test mode) -->
+                <div id="normal-auth">
                 <div id="g_id_onload"
                     data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
                     data-callback="handleGoogleResponse" data-auto_prompt="false">
@@ -69,6 +81,7 @@
                 <input type="text" id="guest-name" placeholder="הכנס את שמך..." class="lobby-input">
                 <button id="btn-guest-login" class="btn primary lobby-btn">כניסה כאורח 🍷</button>
                 <button id="btn-sign-out-global" class="lobby-link-muted">איפוס / יציאה</button>
+                </div><!-- /normal-auth -->
             </div>
 
             <!-- After Login: Create Room -->
