@@ -1175,6 +1175,11 @@ function updateLobbyUI(sederStarted) {
             
             // If logged in with Google (not a guest)
             if (me && !me.isGuest) {
+                // No leader yet — auto-claim leadership
+                if (!leaderId && currentRoomId) {
+                    socket.emit('take-lead', { roomId: currentRoomId, name: me.name });
+                    return; // leader-updated event will re-trigger updateLobbyUI
+                }
                 guestNote.innerHTML = '👤 מחובר. המנחה יתחיל את הסדר בקרוב... ✨';
             }
             // If guest or not logged in at all
