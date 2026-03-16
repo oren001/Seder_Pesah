@@ -28,6 +28,45 @@ function amIAllowedLeader() {
     return !!(me && me.email && ALLOWED_LEADERS.includes(me.email.toLowerCase()));
 }
 
+// --- Giggle Easter Egg (שָׁדַיִם) ---
+// Matches shin-dalet-yod-(yod)-mem-sofit with any nikkud in between
+const _NIK = '[\u05B0-\u05BD\u05BF\u05C1\u05C2\u05BC]*';
+const GIGGLE_RE = new RegExp(
+    '\u05E9' + _NIK + '\u05D3' + _NIK + '\u05D9' + _NIK + '\u05D9?' + _NIK + '\u05DD', 'g'
+);
+
+function wrapGiggleWords(html) {
+    return html.replace(GIGGLE_RE, '<span class="giggle-word" onclick="playGiggle(event)">$&</span>');
+}
+
+const _giggleMessages = [
+    '😂 שָׁדַיִם!!! זה מהתנ"ך, בסדר?',
+    '🫣 יחזקאל פרק ט"ז פסוק ז\'... 😅',
+    '🎉 המילה הכי מצחיקה בהגדה!',
+    '😂 הנביא ידע מה הוא עושה'
+];
+let _giggleSoundLoaded = false;
+let _giggleAudio = null;
+
+function playGiggle(event) {
+    event.stopPropagation();
+    const span = event.currentTarget;
+    span.classList.remove('giggle-playing');
+    void span.offsetWidth; // force reflow to restart animation
+    span.classList.add('giggle-playing');
+    span.addEventListener('animationend', () => span.classList.remove('giggle-playing'), { once: true });
+
+    if (!_giggleAudio) {
+        _giggleAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3');
+    }
+    _giggleAudio.currentTime = 0;
+    _giggleAudio.play().catch(() => {});
+
+    const msg = _giggleMessages[Math.floor(Math.random() * _giggleMessages.length)];
+    showToast(msg);
+}
+window.playGiggle = playGiggle;
+
 // --- Hebrew to Latin Transliteration ---
 function transliterate(hebrewHtml) {
     const text = hebrewHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -1156,10 +1195,13 @@ function renderPage() {
                 p.className = 'text-segment';
                 p.id = `seg-${index}-${sIdx}`;
                 if (isTranslit) {
-                    p.textContent = transliterate(seg.he);
+                    const transText = transliterate(seg.he);
+                    // Giggle easter egg in translit mode too
+                    p.innerHTML = transText.replace(/shadayim/gi,
+                        '<span class="giggle-word" onclick="playGiggle(event)">$&</span>');
                     p.classList.add('ltr', 'translit-text');
                 } else {
-                    p.innerHTML = seg.he;
+                    p.innerHTML = wrapGiggleWords(seg.he);
                 }
                 p.onclick = () => onSegmentClick(sIdx);
                 if (highlightedSegmentIndex === sIdx) p.classList.add('highlighted');
@@ -1174,10 +1216,12 @@ function renderPage() {
             const p = document.createElement('p');
             p.className = 'text-segment';
             if (isTranslit) {
-                p.textContent = transliterate(page.text);
+                const transText = transliterate(page.text);
+                p.innerHTML = transText.replace(/shadayim/gi,
+                    '<span class="giggle-word" onclick="playGiggle(event)">$&</span>');
                 p.classList.add('ltr', 'translit-text');
             } else {
-                p.innerHTML = page.text;
+                p.innerHTML = wrapGiggleWords(page.text);
             }
             textBefore.appendChild(p);
         }

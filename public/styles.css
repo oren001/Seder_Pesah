@@ -1115,6 +1115,34 @@ body {
     direction: ltr;
 }
 
+/* --- Giggle Easter Egg --- */
+.giggle-word {
+    cursor: pointer;
+    font-weight: bold;
+    color: #e91e8c;
+    border-bottom: 2px dotted #e91e8c;
+    display: inline-block;
+    transition: transform 0.15s, color 0.15s;
+    user-select: none;
+}
+.giggle-word:hover {
+    transform: scale(1.25);
+    color: #ff1744;
+}
+@keyframes giggleWiggle {
+    0%   { transform: rotate(0deg)   scale(1);    }
+    15%  { transform: rotate(-10deg) scale(1.35); }
+    30%  { transform: rotate(10deg)  scale(1.35); }
+    45%  { transform: rotate(-6deg)  scale(1.2);  }
+    60%  { transform: rotate(6deg)   scale(1.15); }
+    75%  { transform: rotate(-3deg)  scale(1.1);  }
+    100% { transform: rotate(0deg)   scale(1);    }
+}
+.giggle-word.giggle-playing {
+    animation: giggleWiggle 0.7s ease;
+    color: #ff1744;
+}
+
 /* Nav buttons in footer — need light text for dark footer */
 .room-footer .nav-btn {
     color: var(--text-on-dark);
