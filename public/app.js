@@ -25,9 +25,9 @@ let activeReaders = [];
 // Test mode flag — set by /api/config when server runs with TEST_MODE=1
 let TEST_MODE = false;
 
-// isLeader is set by the server on login — no email list in client JS
+// Leadership is open — anyone who clicked "Take Lead" is the leader (no email restriction)
 function amIAllowedLeader() {
-    return !!(me && me.isLeader === true);
+    return !!(socket && leaderId && leaderId === socket.id);
 }
 
 // --- Giggle Easter Egg (שָׁדַיִם) ---
@@ -304,6 +304,17 @@ function init() {
     safeAddListener('btn-add-task', 'click', addTask);
     safeAddListener('btn-start-seder', 'click', onStartSeder);
     safeAddListener('btn-lobby-copy-link', 'click', onCopyLink);
+
+    // Lead-mode checkbox — anyone can claim leadership
+    const leadCheckEl = $$('check-lead-mode');
+    if (leadCheckEl) {
+        leadCheckEl.addEventListener('change', () => {
+            if (leadCheckEl.checked && currentRoomId) {
+                socket.emit('take-lead', { roomId: currentRoomId, name: me?.name });
+                isFollowingLeader = false;
+            }
+        });
+    }
 
     // Test mode buttons
     safeAddListener('btn-test-host', 'click', () => {
@@ -659,8 +670,8 @@ async function setupSocket() {
 function triggerPageGeneration(pageIndex) {
     if (!currentRoomId) return;
 
-    // --- Leader Check (Client Side) ---
-    if (leaderId !== socket.id && !amIAllowedLeader()) {
+    // --- Leader Check (Client Side) — AI generation restricted to current leader ---
+    if (!amIAllowedLeader()) {
         showToast('רק עורך הסדר (המנחה) יכול להתחיל יצירת תמונה 👑');
         return;
     }
@@ -871,8 +882,8 @@ function joinRoom(roomId, rsvpData = null) {
     socket.emit('join-room', { roomId, photo, userEmail, name }, (response) => {
         if (response.success) {
             currentRoomId = response.roomId;
-            // MERGE identity — preserve isLeader flag set by server on login
-            me = { ...me, ...response.participant, isLeader: me?.isLeader || false };
+            // MERGE identity — server participant fields update me
+            me = { ...me, ...response.participant };
             
             // Sync leader from response
             leaderId = response.leaderId;
@@ -885,15 +896,9 @@ function joinRoom(roomId, rsvpData = null) {
 
             $$('total-pages').textContent = HAGGADAH.length;
             
-            // Host Admin check for bobomomo
-            const isHost = me.name === 'bobomomo234@gmail.com' || me.email === 'bobomomo234@gmail.com';
+            // Lead toggle visible to everyone — leadership is open
             const leadToggle = document.querySelector('.lead-mode-toggle');
-            if (leadToggle) {
-                leadToggle.style.display = isHost ? 'flex' : 'none';
-                if (!isHost) {
-                    $$('check-lead-mode').checked = false;
-                }
-            }
+            if (leadToggle) leadToggle.style.display = 'flex';
 
             updateUrlParam('room', currentRoomId);
             
@@ -909,9 +914,8 @@ function joinRoom(roomId, rsvpData = null) {
             updateLeadershipUI();
             startHeartbeat(currentRoomId);
 
-            // Auto-enable lead mode for the leader
-            const amILeader = (response.leaderId === socket.id) || amIAllowedLeader();
-            if (amILeader) {
+            // Auto-enable lead mode if we are already the room's leader
+            if (amIAllowedLeader()) {
                 const leadCheckbox = $$('check-lead-mode');
                 if (leadCheckbox) leadCheckbox.checked = true;
             }
@@ -1091,8 +1095,8 @@ function renderLobbyParticipants(participants) {
 function updateLobbyUI(sederStarted) {
     if (sederStarted) return;
     
-    // Co-leaders always count as leader for UI purposes
-    const isLeader = (leaderId === socket.id) || amIAllowedLeader();
+    // Open leadership — whoever took the lead is the leader
+    const isLeader = amIAllowedLeader();
 
     const leaderActions = $$('lobby-leader-actions');
     const guestNote = $$('lobby-guest-note');
@@ -1107,11 +1111,11 @@ function updateLobbyUI(sederStarted) {
             leaderActions.classList.add('hidden');
             if (guestNote) guestNote.classList.remove('hidden');
             
-            // If not a co-leader, but logged in as someone else (not guest)
-            if (me && !me.isGuest && !amIAllowedLeader()) {
-                guestNote.innerHTML = '👤 מחובר כאורח. המנחה יתחיל את הסדר בקרוב... ✨';
-            } 
-            // If Guest or not logged in at all
+            // If logged in with Google (not a guest)
+            if (me && !me.isGuest) {
+                guestNote.innerHTML = '👤 מחובר. המנחה יתחיל את הסדר בקרוב... ✨';
+            }
+            // If guest or not logged in at all
             else if (!me || me.isGuest) {
                 guestNote.innerHTML = `
                     <div id="g-login-lobby" style="margin-top: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid rgba(0,0,0,0.1);">
@@ -1347,7 +1351,7 @@ function changePage(delta) {
     const next = currentPage + delta;
     if (next >= 0 && next < HAGGADAH.length) {
         const isLeading = $$('check-lead-mode').checked;
-        const amILeader = (leaderId === socket.id) || amIAllowedLeader();
+        const amILeader = amIAllowedLeader();
 
         if (isLeading || amILeader) {
             // Global move — all followers update too
@@ -1380,7 +1384,7 @@ function updateLeadershipUI() {
 
     if (!syncBtn || !statusText) return;
 
-    const amILeader = (leaderId === socket.id) || amIAllowedLeader();
+    const amILeader = amIAllowedLeader();
 
     if (isFollowingLeader || amILeader) {
         syncBtn.classList.add('hidden');

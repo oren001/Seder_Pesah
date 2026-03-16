@@ -166,29 +166,10 @@ io.on('connection', (socket) => {
                 name: payload.name,
                 email: payload.email,
                 picture: payload.picture,
-                isLeader: isAllowedLeader(payload.email)
+                isLeader: false  // Leadership is open — claimed via take-lead, not by email
             };
-            socket.userEmail = payload.email; // Store for leadership checks
+            socket.userEmail = payload.email;
             console.log(`[Auth] User logged in: ${userData.name} (${socket.userEmail})`);
-            
-            // Proactively assign leadership if an allowed leader joins/refreshes and is already in a room
-            if (isAllowedLeader(socket.userEmail) && socket.roomId) {
-                const room = rooms[socket.roomId];
-                if (room) {
-                    room.leaderId = socket.id;
-                    room.leaderName = leaderDisplayName(socket.userEmail);
-                    console.log(`[Leader] ${socket.userEmail} re-authenticated. Leadership restored in room ${socket.roomId}`);
-                    saveRooms();
-                    io.to(socket.roomId).emit('leader-updated', { leaderId: socket.id, leaderName: room.leaderName });
-                    io.to(socket.roomId).emit('room-updated', { 
-                        participants: room.participants,
-                        sederStarted: room.sederStarted,
-                        leaderId: room.leaderId,
-                        leaderName: room.leaderName
-                    });
-                }
-            }
-
             socket.emit('google-login-success', userData);
         } catch (err) {
             console.error('[Auth] Login failed:', err.message);
@@ -297,13 +278,6 @@ io.on('connection', (socket) => {
         socket.roomId = roomId; // Set this early!
         socket.join(roomId);
 
-        // Assign leader for any allowed co-leader
-        if (isAllowedLeader(socket.userEmail)) {
-            room.leaderId = socket.id;
-            room.leaderName = leaderDisplayName(socket.userEmail);
-            console.log(`[Leader] ${socket.userEmail} identified as leader in room ${roomId}`);
-        }
-
         // Save selfie if new, restore saved selfie if this socket has none
         const photoKey = socket.userEmail || socket.id;
         if (photo) {
@@ -373,15 +347,9 @@ io.on('connection', (socket) => {
 
     socket.on('take-lead', ({ roomId, name }) => {
         if (!rooms[roomId]) return;
-        
-        // Only allowed co-leaders can take lead
-        if (!isAllowedLeader(socket.userEmail)) {
-            console.log(`[Leader] Leadership denied for ${socket.id} (${socket.userEmail})`);
-            return;
-        }
-
+        // Leadership is open — anyone in the room can claim it
         rooms[roomId].leaderId = socket.id;
-        rooms[roomId].leaderName = name || leaderDisplayName(socket.userEmail);
+        rooms[roomId].leaderName = name || 'מנחה';
         console.log(`Leadership taken in room ${roomId} by ${rooms[roomId].leaderName}`);
         saveRooms();
         io.to(roomId).emit('leader-updated', { leaderId: socket.id, leaderName: rooms[roomId].leaderName });
@@ -390,8 +358,8 @@ io.on('connection', (socket) => {
     // Leader grants leadership to any participant (bypasses email check)
     socket.on('grant-leader', ({ roomId, targetSocketId }) => {
         if (!rooms[roomId]) return;
-        if (socket.id !== rooms[roomId].leaderId && !isAllowedLeader(socket.userEmail)) {
-            console.log(`[Leader] grant-leader denied for ${socket.id} (${socket.userEmail})`);
+        if (socket.id !== rooms[roomId].leaderId) {
+            console.log(`[Leader] grant-leader denied — ${socket.id} is not the current leader`);
             return;
         }
         const room = rooms[roomId];
@@ -411,7 +379,8 @@ io.on('connection', (socket) => {
 
     socket.on('generate-page', ({ roomId, pageIndex }) => {
         if (!rooms[roomId]) return;
-        if (rooms[roomId].leaderId !== socket.id && !isAllowedLeader(socket.userEmail)) {
+        // AI generation is restricted to the current leader — protects Leonardo token quota
+        if (rooms[roomId].leaderId !== socket.id) {
             socket.emit('ai-error', { message: 'רק עורך הסדר יכול להתחיל יצירת תמונה!', pageIndex });
             return;
         }
@@ -424,7 +393,7 @@ io.on('connection', (socket) => {
     socket.on('start-seder', ({ roomId }) => {
         const room = rooms[roomId];
         if (!room) return;
-        if (socket.id !== room.leaderId && !isAllowedLeader(socket.userEmail)) return;
+        if (socket.id !== room.leaderId) return;
         room.sederStarted = true;
         room.currentPage = 0;
         io.to(roomId).emit('seder-started', { currentPage: room.currentPage });
@@ -433,14 +402,8 @@ io.on('connection', (socket) => {
 
     socket.on('change-page', ({ roomId, pageIndex }) => {
         if (!rooms[roomId]) return;
-        // Allow current leader OR any allowed co-leader to change pages
-        if (socket.id !== rooms[roomId].leaderId && !isAllowedLeader(socket.userEmail)) return;
-        // If a co-leader (not yet leaderId) is driving, make them the active leader
-        if (isAllowedLeader(socket.userEmail) && socket.id !== rooms[roomId].leaderId) {
-            rooms[roomId].leaderId = socket.id;
-            rooms[roomId].leaderName = leaderDisplayName(socket.userEmail);
-            io.to(roomId).emit('leader-updated', { leaderId: socket.id, leaderName: rooms[roomId].leaderName });
-        }
+        // Only the current leader can drive navigation for everyone
+        if (socket.id !== rooms[roomId].leaderId) return;
         rooms[roomId].currentPage = pageIndex;
         rooms[roomId].highlightedSegment = -1;
         saveRooms();
@@ -499,7 +462,7 @@ io.on('connection', (socket) => {
 
     socket.on('test-nano-banana', ({ roomId }) => {
         if (!rooms[roomId]) return;
-        if (rooms[roomId].leaderId !== socket.id && !isAllowedLeader(socket.userEmail)) return;
+        if (rooms[roomId].leaderId !== socket.id) return;
         generateNanoTest(roomId, io, rooms).catch(err => {
             io.to(roomId).emit('ai-error', { message: 'שגיאת Leonardo: ' + err.message });
         });
