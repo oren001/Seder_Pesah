@@ -3,7 +3,7 @@
 
 const LEONARDO_API_URL = 'https://cloud.leonardo.ai/api/rest/v1'; // Keep v1 for init-image and polling
 const LEONARDO_V2_URL = 'https://cloud.leonardo.ai/api/rest/v2';
-const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY || '03028d8e-afc4-46f6-b967-069fc4fc01a1';
+const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY || null;
 const NB_PRO_MODEL = 'gemini-image-2';
 
 // Fun, colorful, modern & hilarious prompts for Haggadah sections
@@ -46,6 +46,7 @@ const HAGGADAH_PROMPTS = [
 
 
 async function generateImage(prompt, initImageIds = null, onStatus = null) {
+    if (!LEONARDO_API_KEY) throw new Error('LEONARDO_API_KEY environment variable is not set');
     const body = {
         model: NB_PRO_MODEL,
         parameters: {

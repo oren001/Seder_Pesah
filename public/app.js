@@ -172,7 +172,8 @@ const screens = {
     lobby: $$('lobby-screen'),
     rsvp: $$('rsvp-screen'),
     roomLobby: $$('room-lobby-screen'),
-    room: $$('room-screen')
+    room: $$('room-screen'),
+    gallery: $$('gallery-screen')
 };
 
 let roomTasks = [];
@@ -304,6 +305,16 @@ function init() {
     safeAddListener('btn-add-task', 'click', addTask);
     safeAddListener('btn-start-seder', 'click', onStartSeder);
     safeAddListener('btn-lobby-copy-link', 'click', onCopyLink);
+    safeAddListener('btn-end-seder', 'click', onEndSeder);
+    safeAddListener('btn-gallery-open', 'click', () => { showGallery(); toggleMenu(); });
+    safeAddListener('btn-feedback-open', 'click', () => { showFeedback(); toggleMenu(); });
+
+    const lockCheckEl = $$('check-lock-page');
+    if (lockCheckEl) {
+        lockCheckEl.addEventListener('change', () => {
+            socket.emit('set-page-lock', { roomId: currentRoomId, locked: lockCheckEl.checked });
+        });
+    }
 
     // Lead-mode checkbox — anyone can claim leadership
     const leadCheckEl = $$('check-lead-mode');
@@ -550,6 +561,34 @@ async function setupSocket() {
 
     socket.on('effect-triggered', ({ effectType, authorId }) => {
         triggerLocalEffect(effectType);
+    });
+
+    socket.on('you-were-kicked', () => {
+        showToast('הוצאת מהחדר על ידי המנחה 👋');
+        setTimeout(() => {
+            currentRoomId = null;
+            window.location.href = '/';
+        }, 2000);
+    });
+
+    socket.on('page-lock-updated', ({ locked }) => {
+        const isLeader = amIAllowedLeader();
+        const prevBtn = $$('btn-prev');
+        const nextBtn = $$('btn-next');
+        if (locked && !isLeader) {
+            if (prevBtn) prevBtn.disabled = true;
+            if (nextBtn) nextBtn.disabled = true;
+            showToast('🔒 המנחה נעל את הניווט');
+        } else {
+            if (prevBtn) prevBtn.disabled = false;
+            if (nextBtn) nextBtn.disabled = false;
+            if (locked === false) showToast('🔓 הניווט פתוח שוב');
+        }
+    });
+
+    socket.on('seder-ended', ({ images }) => {
+        Object.assign(pageImages, images || {});
+        showGallery();
     });
 
     socket.on('page-changed', (data) => {
@@ -902,9 +941,18 @@ function joinRoom(roomId, rsvpData = null) {
 
             updateUrlParam('room', currentRoomId);
             
-            if (response.sederStarted) {
+            if (response.sederEnded) {
+                showGallery();
+            } else if (response.sederStarted) {
                 showScreen('room');
                 renderPage();
+                // Restore page lock state
+                if (response.pageLocked && !amIAllowedLeader()) {
+                    const prevBtn = $$('btn-prev');
+                    const nextBtn = $$('btn-next');
+                    if (prevBtn) prevBtn.disabled = true;
+                    if (nextBtn) nextBtn.disabled = true;
+                }
             } else {
                 showScreen('roomLobby');
                 renderLobbyParticipants(response.participants || [response.participant]);
@@ -993,19 +1041,33 @@ function renderParticipants(participants) {
             gName.textContent = p.name || '';
             gazWrap.appendChild(gName);
 
-            // Promote button (only for leaders, non-self, non-leader participants)
-            if (amIAllowedLeader() && !(me && p.id === me.id) && p.id !== leaderId) {
-                const promoteBtn = document.createElement('button');
-                promoteBtn.className = 'btn-promote-leader tiny';
-                promoteBtn.textContent = '👑';
-                promoteBtn.title = `הפוך ${p.name || 'אורח'} למנחה`;
-                promoteBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    if (confirm(`להפוך את ${p.name || 'אורח'} למנחה?`)) {
-                        socket.emit('grant-leader', { roomId: currentRoomId, targetSocketId: p.id });
-                    }
-                };
-                gazWrap.appendChild(promoteBtn);
+            // Leader-only controls for other participants
+            if (amIAllowedLeader() && !(me && p.id === me.id)) {
+                const ctrlRow = document.createElement('div');
+                ctrlRow.className = 'gazebo-ctrl-row';
+
+                if (p.id !== leaderId) {
+                    const promoteBtn = document.createElement('button');
+                    promoteBtn.className = 'btn-promote-leader tiny';
+                    promoteBtn.textContent = '👑';
+                    promoteBtn.title = `הפוך ${p.name || 'אורח'} למנחה`;
+                    promoteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (confirm(`להפוך את ${p.name || 'אורח'} למנחה?`)) {
+                            socket.emit('grant-leader', { roomId: currentRoomId, targetSocketId: p.id });
+                        }
+                    };
+                    ctrlRow.appendChild(promoteBtn);
+                }
+
+                const kickBtn = document.createElement('button');
+                kickBtn.className = 'btn-kick tiny';
+                kickBtn.textContent = '🚪';
+                kickBtn.title = `הוצא ${p.name || 'אורח'}`;
+                kickBtn.onclick = (e) => { e.stopPropagation(); kickParticipant(p.id, p.name); };
+                ctrlRow.appendChild(kickBtn);
+
+                gazWrap.appendChild(ctrlRow);
             }
 
             gazeboList.appendChild(gazWrap);
@@ -1138,10 +1200,11 @@ function updateLobbyUI(sederStarted) {
         }
     }
 
-    // Hide the host login section if we are the leader; show and init it otherwise
+    // Hide the host login section if: already the leader, OR already logged in with Google
     const hostLoginBox = $$('lobby-host-login');
     if (hostLoginBox) {
-        if (isLeader) {
+        const alreadyLoggedIn = me && !me.isGuest;
+        if (isLeader || alreadyLoggedIn) {
             hostLoginBox.style.display = 'none';
         } else {
             hostLoginBox.style.display = '';
@@ -1152,7 +1215,7 @@ function updateLobbyUI(sederStarted) {
                         client_id: '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com',
                         callback: handleGoogleResponse
                     });
-                    google.accounts.id.renderButton(signinDiv, { 
+                    google.accounts.id.renderButton(signinDiv, {
                         theme: 'outline', size: 'medium', text: 'continue_with'
                     });
                 }
@@ -1404,6 +1467,10 @@ function updateLeadershipUI() {
         statusText.classList.remove('is-leading');
     }
 
+    // Show/hide host controls panel
+    const hostControls = $$('menu-host-controls');
+    if (hostControls) hostControls.classList.toggle('hidden', !amILeader);
+
     // Crucial: Also update Lobby if we are in it
     updateLobbyUI(false);
 }
@@ -1455,6 +1522,29 @@ function triggerLocalEffect(type) {
             frog.style.animationDelay = Math.random() * 2 + 's';
             container.appendChild(frog);
         }
+    } else if (type === 'lice') {
+        for (let i = 0; i < 40; i++) {
+            const bug = document.createElement('div');
+            bug.className = 'lice-anim';
+            bug.textContent = '🦟';
+            bug.style.left = Math.random() * 100 + 'vw';
+            bug.style.top = Math.random() * 100 + 'vh';
+            bug.style.animationDelay = Math.random() * 2 + 's';
+            bug.style.fontSize = (0.6 + Math.random() * 0.8) + 'rem';
+            container.appendChild(bug);
+        }
+    } else if (type === 'darkness') {
+        const dark = document.createElement('div');
+        dark.className = 'darkness-overlay';
+        container.appendChild(dark);
+        setTimeout(() => { container.classList.add('hidden'); container.innerHTML = ''; }, 5000);
+        return;
+    } else if (type === 'dayenu') {
+        confetti({ particleCount: 250, spread: 130, origin: { y: 0.4 }, colors: ['#d4af37', '#8b0000', '#1a6b3a', '#fff'] });
+        setTimeout(() => confetti({ particleCount: 120, spread: 80, origin: { x: 0.1, y: 0.6 } }), 600);
+        setTimeout(() => confetti({ particleCount: 120, spread: 80, origin: { x: 0.9, y: 0.6 } }), 900);
+        container.classList.add('hidden');
+        return;
     } else if (type === 'sea') {
         const leftWave = document.createElement('div');
         leftWave.className = 'sea-wave-left';
@@ -1462,11 +1552,7 @@ function triggerLocalEffect(type) {
         rightWave.className = 'sea-wave-right';
         container.appendChild(leftWave);
         container.appendChild(rightWave);
-
-        // Let them stay for a bit then hide
-        setTimeout(() => {
-            container.classList.add('hidden');
-        }, 5000);
+        setTimeout(() => { container.classList.add('hidden'); }, 5000);
         return;
     }
 
@@ -1534,6 +1620,94 @@ function renderTasks() {
         list.appendChild(item);
     });
 }
+
+// --- Host Controls ---
+function kickParticipant(targetSocketId, name) {
+    if (!confirm(`להוציא את ${name || 'האורח'} מהחדר?`)) return;
+    socket.emit('kick-participant', { roomId: currentRoomId, targetSocketId });
+    showToast(`${name || 'האורח'} הוצא מהחדר`);
+}
+
+function onEndSeder() {
+    if (!confirm('לסיים את הסדר ולעבור לגלריה?')) return;
+    socket.emit('end-seder', { roomId: currentRoomId });
+}
+
+function showGallery() {
+    showScreen('gallery');
+    const grid = $$('gallery-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const entries = Object.entries(pageImages);
+    if (entries.length === 0) {
+        grid.innerHTML = '<p style="text-align:center;opacity:0.6;">אין תמונות AI בסדר זה עדיין</p>';
+    } else {
+        entries.sort((a, b) => Number(a[0]) - Number(b[0])).forEach(([idx, imageData]) => {
+            const url = typeof imageData === 'string' ? imageData : imageData?.url;
+            if (!url) return;
+            const page = HAGGADAH[Number(idx)];
+            const card = document.createElement('div');
+            card.className = 'gallery-card';
+            card.innerHTML = `
+                <img src="${url}" alt="עמוד ${Number(idx)+1}" loading="lazy" onclick="openPhotoZoom('${url}')">
+                <div class="gallery-card-title">${page?.title || 'עמוד ' + (Number(idx)+1)}</div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // Fireworks confetti
+    confetti({ particleCount: 200, spread: 120, origin: { y: 0.3 }, colors: ['#d4af37', '#8b0000', '#1a6b3a'] });
+    setTimeout(() => confetti({ particleCount: 100, spread: 80, origin: { x: 0.1, y: 0.5 } }), 800);
+    setTimeout(() => confetti({ particleCount: 100, spread: 80, origin: { x: 0.9, y: 0.5 } }), 1200);
+}
+
+function shareOnWhatsApp() {
+    const text = `סיימנו את הסדר! חג פסח שמח 🍷🎉\nהסדר האינטראקטיבי שלנו: ${window.location.origin}`;
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+window.shareOnWhatsApp = shareOnWhatsApp;
+
+// --- Feedback Modal ---
+function showFeedback() {
+    let modal = $$('feedback-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+}
+
+function closeFeedback() {
+    const modal = $$('feedback-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function submitFeedback() {
+    const rating = document.querySelector('.star-btn.selected')?.dataset.val || '';
+    const text = $$('feedback-text')?.value.trim() || '';
+    if (!rating) { showToast('בחרו כוכבים 🌟'); return; }
+
+    // Broadcast feedback to all room participants as a toast
+    const name = me?.name ? me.name.split(' ')[0] : 'אורח';
+    const stars = '⭐'.repeat(Number(rating));
+    const msg = `${stars} פידבק מ${name}${text ? ': ' + text : ''}`;
+    if (socket && currentRoomId) {
+        socket.emit('broadcast-feedback', { roomId: currentRoomId, message: msg });
+    }
+    showToast('תודה! הפידבק נשלח 💌');
+    closeFeedback();
+    if ($$('feedback-text')) $$('feedback-text').value = '';
+    document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('selected'));
+}
+
+function selectStar(val) {
+    document.querySelectorAll('.star-btn').forEach((b, i) => {
+        b.classList.toggle('selected', i < val);
+    });
+}
+window.selectStar = selectStar;
+window.closeFeedback = closeFeedback;
+window.submitFeedback = submitFeedback;
 
 function triggerNanoTest() {
     if (!currentRoomId) {

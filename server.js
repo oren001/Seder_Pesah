@@ -315,10 +315,13 @@ io.on('connection', (socket) => {
                 participant,
                 currentPage: room.currentPage,
                 sederStarted: room.sederStarted,
+                sederEnded: room.sederEnded,
+                pageLocked: room.pageLocked,
                 images: room.images,
                 tasks: room.tasks,
                 leaderId: room.leaderId,
-                leaderName: room.leaderName
+                leaderName: room.leaderName,
+                participants: room.participants
             });
         }
 
@@ -375,6 +378,49 @@ io.on('connection', (socket) => {
     socket.on('trigger-effect', ({ roomId, effectType }) => {
         if (!rooms[roomId]) return;
         io.to(roomId).emit('effect-triggered', { effectType, authorId: socket.id });
+    });
+
+    // Leader kicks a participant out of the room
+    socket.on('kick-participant', ({ roomId, targetSocketId }) => {
+        if (!rooms[roomId]) return;
+        if (socket.id !== rooms[roomId].leaderId) return;
+        const targetSocket = io.sockets.sockets.get(targetSocketId);
+        if (targetSocket) {
+            targetSocket.emit('you-were-kicked');
+            targetSocket.leave(roomId);
+        }
+        rooms[roomId].participants = rooms[roomId].participants.filter(p => p.id !== targetSocketId);
+        saveRooms();
+        io.to(roomId).emit('room-updated', {
+            participants: rooms[roomId].participants,
+            leaderId: rooms[roomId].leaderId,
+            leaderName: rooms[roomId].leaderName
+        });
+        console.log(`[Kick] ${targetSocketId} kicked from room ${roomId} by ${socket.id}`);
+    });
+
+    // Leader locks/unlocks free navigation for guests
+    socket.on('set-page-lock', ({ roomId, locked }) => {
+        if (!rooms[roomId]) return;
+        if (socket.id !== rooms[roomId].leaderId) return;
+        rooms[roomId].pageLocked = !!locked;
+        saveRooms();
+        io.to(roomId).emit('page-lock-updated', { locked: rooms[roomId].pageLocked });
+    });
+
+    // Broadcast feedback from any participant to the whole room
+    socket.on('broadcast-feedback', ({ roomId, message }) => {
+        if (!rooms[roomId]) return;
+        io.to(roomId).emit('toast-broadcast', { message });
+    });
+
+    // Leader ends the seder — sends everyone to gallery
+    socket.on('end-seder', ({ roomId }) => {
+        if (!rooms[roomId]) return;
+        if (socket.id !== rooms[roomId].leaderId) return;
+        rooms[roomId].sederEnded = true;
+        saveRooms();
+        io.to(roomId).emit('seder-ended', { images: rooms[roomId].images || {} });
     });
 
     socket.on('generate-page', ({ roomId, pageIndex }) => {
