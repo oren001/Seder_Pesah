@@ -980,6 +980,19 @@ body {
     border: 1px solid rgba(212, 175, 55, 0.15);
 }
 
+.meal-footer-indicator {
+    background: rgba(139, 69, 19, 0.08); /* subtle dark red/brown */
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+    font-weight: 800;
+    color: var(--light-text);
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(139, 69, 19, 0.15);
+    white-space: nowrap;
+}
+
 .btn-sync {
     background: linear-gradient(135deg, var(--gold-light), var(--coral));
     border: none;

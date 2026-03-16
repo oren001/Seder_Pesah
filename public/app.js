@@ -1465,6 +1465,9 @@ function updateMealProgress() {
     const text = $$('meal-eta-text');
 
     if (bar) bar.style.width = percent + '%';
+    
+    let footerText = '';
+    
     if (text) {
         // Find index of "Shulchan Orech" if it exists, otherwise use total
         const dinnerIndex = HAGGADAH.findIndex(p => p.title.includes('שולחן עורך'));
@@ -1472,13 +1475,26 @@ function updateMealProgress() {
             const remaining = dinnerIndex - currentPage;
             if (remaining > 0) {
                 text.textContent = `נשארו עוד ${remaining} דפים עד לאוכל 🍗`;
+                footerText = `עברת: ${currentPage + 1} | עד 🍽️: ${remaining}`;
             } else if (remaining === 0) {
                 text.textContent = `בתיאבון! שולחן עורך כאן 🍷🍗`;
+                footerText = `בתיאבון! 🍽️`;
             } else {
                 text.textContent = `אנחנו אחרי האוכל, ממשיכים בהלל! 🍷`;
+                footerText = '';
             }
         } else {
             text.textContent = `${percent}% מההגדה מאחורינו`;
+        }
+    }
+
+    const footerIndicator = $$('meal-footer-indicator');
+    if (footerIndicator) {
+        if (footerText) {
+            footerIndicator.textContent = footerText;
+            footerIndicator.classList.remove('hidden');
+        } else {
+            footerIndicator.classList.add('hidden');
         }
     }
 }
