@@ -22,6 +22,9 @@ let highlightedSegmentIndex = -1;
 let amReading = false;
 let activeReaders = [];
 
+// Test mode flag — set by /api/config when server runs with TEST_MODE=1
+let TEST_MODE = false;
+
 // Co-leader emails — mirrors server.js LEADERS
 const ALLOWED_LEADERS = ['oren001@gmail.com', 'bobomomo234@gmail.com'];
 function amIAllowedLeader() {
@@ -210,6 +213,18 @@ function init() {
     setupTasks();
     requestWakeLock();
 
+    // Check for test mode
+    fetch('/api/config').then(r => r.json()).then(cfg => {
+        if (cfg.testMode) {
+            TEST_MODE = true;
+            console.log('[TEST_MODE] Test mode active — showing test login buttons');
+            const testLogin = document.getElementById('test-mode-login');
+            const normalAuth = document.getElementById('normal-auth');
+            if (testLogin) testLogin.classList.remove('hidden');
+            if (normalAuth) normalAuth.classList.add('hidden');
+        }
+    }).catch(e => console.warn('[Config] Could not fetch config:', e));
+
     // Initialize Exodus Map
     exodusMap = new ExodusMap('exodus-map-root');
 
@@ -290,7 +305,21 @@ function init() {
     safeAddListener('btn-add-task', 'click', addTask);
     safeAddListener('btn-start-seder', 'click', onStartSeder);
     safeAddListener('btn-lobby-copy-link', 'click', onCopyLink);
-    
+
+    // Test mode buttons
+    safeAddListener('btn-test-host', 'click', () => {
+        socket.emit('test-login', { role: 'host' }, (res) => {
+            if (res?.error) return showToast(res.error);
+            console.log('[TEST] Host login response:', res);
+        });
+    });
+    safeAddListener('btn-test-guest', 'click', () => {
+        socket.emit('test-login', { role: 'guest' }, (res) => {
+            if (res?.error) return showToast(res.error);
+            console.log('[TEST] Guest login response:', res);
+        });
+    });
+
     const inputNewTask = $$('input-new-task');
     if (inputNewTask) {
         inputNewTask.addEventListener('keypress', (e) => {
@@ -714,7 +743,7 @@ function notifyNewVersion() {
     if (t) {
         t.innerHTML = `✨ <b>גרסה מעודכנת באוויר!</b> <br>
                        מומלץ לרענן לצפייה בשינויים. <br>
-                       <button onclick="location.reload(true)" class="btn primary tiny" style="margin-top:10px; padding: 5px 15px; font-size: 0.9rem;">רענן עכשיו 🔄</button>`;
+                       <button onclick="location.reload(true)" class="btn primary tiny" style="margin-top:10px; padding: 5px 15px; font-size: var(--fs-sm);">רענן עכשיו 🔄</button>`;
         t.classList.remove('hidden');
         t.classList.add('show');
     } else {

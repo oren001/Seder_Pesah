@@ -21,12 +21,20 @@ function leaderDisplayName(email) {
     return (email && LEADERS[email.toLowerCase()]) || 'מנחה';
 }
 
+const TEST_MODE = process.env.TEST_MODE === '1' || process.env.TEST_MODE === 'true';
+if (TEST_MODE) console.log('[TEST_MODE] ⚠️  Running in test mode — authentication disabled');
+
 const app = express();
 
 // Required by Google Identity Services to allow the popup to communicate with the main window
 app.use((req, res, next) => {
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
     next();
+});
+
+// Expose server config to client (includes test mode flag)
+app.get('/api/config', (req, res) => {
+    res.json({ testMode: TEST_MODE });
 });
 
 const server = http.createServer(app);
@@ -171,6 +179,27 @@ io.on('connection', (socket) => {
             console.error('[Auth] Login failed:', err.message);
             socket.emit('google-login-error', { message: 'אימות נכשל' });
         }
+    });
+
+    // Test-mode login — bypasses Google auth entirely
+    socket.on('test-login', ({ role }, callback) => {
+        if (!TEST_MODE) {
+            return callback?.({ error: 'Test mode is not enabled' });
+        }
+        const isHost = role === 'host';
+        const userData = {
+            id: isHost ? 'test_host_001' : 'test_guest_' + Math.random().toString(36).slice(2, 8),
+            name: isHost ? 'מנחה (מצב בדיקה)' : 'אורח (מצב בדיקה)',
+            email: isHost ? 'oren001@gmail.com' : null,   // Host gets a real leader email
+            picture: null,
+            isGuest: !isHost
+        };
+        if (isHost) {
+            socket.userEmail = userData.email;
+        }
+        console.log(`[TEST] ${isHost ? 'Host' : 'Guest'} logged in: ${userData.name} (socket ${socket.id})`);
+        socket.emit('google-login-success', userData);
+        callback?.({ success: true, userData });
     });
 
     socket.on('create-room', (callback) => {
@@ -490,4 +519,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3004;
-server.listen(PORT, () => console.log(`[Haggadah] Ashkenaz version running -> http://localhost:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`[Haggadah] Ashkenaz version running -> http://localhost:${PORT}`));
