@@ -209,8 +209,8 @@ io.on('connection', (socket) => {
             id: roomId,
             participants: [],
             currentPage: 0,
-            leaderId: null,
-            leaderName: null,
+            leaderId: socket.id,
+            leaderName: socket.userName || 'מנחה',
             tasks: persistedTasks[roomId] || [
                 { id: 'h1', text: '✅ תכנון MVP ראשוני', completed: true, author: 'אורן (מנהל פרויקט)' },
                 { id: 'h2', text: '✅ הקמת שרת (Express, Socket.io)', completed: true, author: 'אורן (מנהל פרויקט)' },
