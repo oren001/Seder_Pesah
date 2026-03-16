@@ -764,10 +764,14 @@ function renderLobbyParticipants(participants) {
 
     participants.forEach(p => {
         const photoUrl = p.photo || generatePlaceholderPhoto();
+
+        // Wrapper holds avatar circle + name label
+        const wrapper = document.createElement('div');
+        wrapper.className = 'lobby-participant-wrap';
+
         const card = document.createElement('div');
         card.className = 'gazebo-avatar lobby-avatar-card';
-        card.style.cssText = 'width:70px;height:70px;position:relative;'; // Consitent with CSS
-        
+
         const img = document.createElement('img');
         img.src = photoUrl;
         card.appendChild(img);
@@ -792,14 +796,19 @@ function renderLobbyParticipants(participants) {
 
             card.title = 'לחץ לעדכון תמונה';
             card.onclick = () => {
-                if (rsvpFlow) {
-                    // Force retake
-                    rsvpFlow.show();
-                }
+                if (rsvpFlow) rsvpFlow.show();
             };
         }
-        
-        grid.appendChild(card);
+
+        wrapper.appendChild(card);
+
+        // Name label under avatar
+        const nameLabel = document.createElement('div');
+        nameLabel.className = 'lobby-participant-name';
+        nameLabel.textContent = p.name || 'אורח';
+        wrapper.appendChild(nameLabel);
+
+        grid.appendChild(wrapper);
     });
 }
 
