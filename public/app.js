@@ -23,7 +23,7 @@ let amReading = false;
 let activeReaders = [];
 
 // Co-leader emails — mirrors server.js LEADERS
-const ALLOWED_LEADERS = ['oren001@gmail.com', 'itai.shultz@hotmail.com'];
+const ALLOWED_LEADERS = ['oren001@gmail.com', 'bobomomo234@gmail.com'];
 function amIAllowedLeader() {
     return !!(me && me.email && ALLOWED_LEADERS.includes(me.email.toLowerCase()));
 }

@@ -12,7 +12,7 @@ const client = new OAuth2Client(CLIENT_ID);
 // Co-leader registry — add emails here to grant full host privileges
 const LEADERS = {
     'oren001@gmail.com':          'אורן (מנהל הסדר)',
-    'itai.shultz@hotmail.com':    'איתי (מנחה)'
+    'bobomomo234@gmail.com':       'איתי (מנחה)'
 };
 function isAllowedLeader(email) {
     return !!(email && LEADERS[email.toLowerCase()]);
