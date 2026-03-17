@@ -41,12 +41,14 @@ class RSVPFlow {
                 return;
             }
             this.data.name = name;
+            this.data.type = 'selfie';
             // Save as guest user
             if (!me || me.isGuest) {
                 me = { name, isGuest: true };
                 localStorage.setItem('haggadah-user', JSON.stringify(me));
             }
-            this.goToStep('look');
+            this.goToStep('selfie');
+            this.startRSVPCamera();
         });
 
         // Allow Enter key on name input
@@ -178,12 +180,13 @@ class RSVPFlow {
 
     show(isEliteEdit = false) {
         showScreen('rsvp');
-        // If already have a name, skip to look
+        this.data.type = 'selfie';
         if (me && me.name) {
             this.data.name = me.name;
             const nameInput = $$('rsvp-name-input');
             if (nameInput) nameInput.value = me.name;
-            this.goToStep('look');
+            this.goToStep('selfie');
+            this.startRSVPCamera();
         } else {
             this.goToStep('name');
         }
