@@ -2968,11 +2968,16 @@ body {
 .inv-slide.kb8 { animation: kb8 var(--kb-dur, 7s) ease-in-out both; }
 
 /* ── Invitation hero video background ─────────────────────────── */
+/* Video from Veo is square with black bars baked in (~46% content width).
+   scale(2) zooms past the bars so real scene fills the container.       */
 .inv-hero-video {
     position: absolute;
-    inset: 0;
+    top: 50%;
+    left: 50%;
     width: 100%;
     height: 100%;
+    transform: translate(-50%, -50%) scale(2);
+    transform-origin: center center;
     object-fit: cover;
     object-position: center center;
     z-index: 0;
