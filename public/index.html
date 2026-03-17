@@ -382,8 +382,10 @@
 
             <div class="menu-section">
                 <div class="menu-label">כלים ואורחים</div>
+                <button id="btn-read-along" class="btn outline small" style="width: 100%; text-align: right;">📖 סמן שאני קורא/ת</button>
+                <button id="btn-lang-toggle" class="btn outline small" style="width: 100%; text-align: right;">🔤 שנה שפה (EN / עב)</button>
                 <button id="btn-toggle-tasks" class="btn outline small" style="width: 100%; text-align: right;">🛖 הַגָּזִיבּוֹ</button>
-                <button id="btn-copy-link" class="btn outline small" style="width: 100%; text-align: right;">הזמן חברים</button>
+                <button id="btn-copy-link" class="btn outline small" style="width: 100%; text-align: right;">📤 הזמן חברים</button>
                 <button id="btn-gallery-open" class="btn outline small" style="width: 100%; text-align: right;">🎨 גלריית הסדר</button>
                 <button id="btn-feedback-open" class="btn outline small" style="width: 100%; text-align: right;">💬 שלחו פידבק</button>
             </div>
@@ -456,21 +458,14 @@
             </div>
         </main>
 
-        <!-- Navigation -->
+        <!-- Navigation — clean: prev | progress | next only -->
         <footer class="room-footer">
             <button id="btn-prev" class="btn nav-btn" disabled>הקודם →</button>
-
-            <button id="btn-read-along" class="btn footer-tool-btn" title="סמן שאני קורא/ת">📖</button>
-
-            <!-- Meal Progress Indicator -->
-            <div id="meal-footer-indicator" class="meal-footer-indicator hidden"></div>
 
             <div class="progress-pill">
                 <span id="current-page-num">1</span> / <span id="total-pages">1</span>
                 <button id="btn-sync" class="btn-sync hidden" title="חזור לסנכרון עם המנחה">🔄</button>
             </div>
-
-            <button id="btn-lang-toggle" class="btn footer-tool-btn" title="מעבר לאותיות אנגליות">EN</button>
 
             <button id="btn-next" class="btn nav-btn primary">← הבא</button>
         </footer>
