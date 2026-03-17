@@ -46,11 +46,14 @@
     <!-- ======== INVITATION / RSVP SCREEN ======== -->
     <div id="invitation-screen" class="screen hidden">
 
-        <!-- Hero: Exodus scene image (generated or placeholder) -->
+        <!-- Hero: Ken Burns slideshow of all Exodus images -->
         <div class="inv-hero">
             <div class="inv-hero-overlay"></div>
-            <img id="inv-hero-img" src="/images/invitation-bg.jpg" alt=""
-                 onerror="this.style.display='none'" class="inv-hero-photo">
+
+            <!-- Slideshow: JS loads available images and drives the crossfade -->
+            <div id="inv-slideshow" class="inv-slideshow">
+                <!-- Slides injected by initInvitationSlideshow() -->
+            </div>
 
             <!-- Stars background (CSS animated) -->
             <div class="inv-stars"></div>

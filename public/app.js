@@ -1,3 +1,84 @@
+// --- Invitation Slideshow ---
+(function initInvitationSlideshow() {
+    const SLIDE_DURATION_MS = 6000; // time each image stays on screen
+    const FADE_MS           = 1600; // must match CSS transition duration
+    const KB_CLASSES        = ['kb1','kb2','kb3','kb4','kb5','kb6','kb7','kb8'];
+
+    // Candidate image URLs — options first (highest quality), fallback to single bg
+    const CANDIDATES = [
+        ...Array.from({ length: 8 }, (_, i) => `/images/invitation-option-${i + 1}.jpg`),
+        '/images/invitation-bg.jpg',
+    ];
+
+    let slides  = [];
+    let current = 0;
+    let timer   = null;
+
+    function tryLoad(urls) {
+        return Promise.all(
+            urls.map(url => new Promise(resolve => {
+                const img = new Image();
+                img.onload  = () => resolve(url);
+                img.onerror = () => resolve(null);
+                img.src = url;
+            }))
+        ).then(results => results.filter(Boolean));
+    }
+
+    function buildSlides(urls) {
+        const container = document.getElementById('inv-slideshow');
+        if (!container || urls.length === 0) return;
+
+        container.innerHTML = '';
+        slides = urls.map((url, i) => {
+            const img = document.createElement('img');
+            img.src       = url;
+            img.className = `inv-slide ${KB_CLASSES[i % KB_CLASSES.length]}`;
+            img.style.setProperty('--kb-dur', SLIDE_DURATION_MS + 'ms');
+            img.alt       = '';
+            container.appendChild(img);
+            return img;
+        });
+
+        showSlide(0);
+    }
+
+    function showSlide(index) {
+        if (slides.length === 0) return;
+        current = ((index % slides.length) + slides.length) % slides.length;
+
+        slides.forEach((s, i) => {
+            if (i === current) {
+                // Restart Ken Burns animation
+                s.style.animation = 'none';
+                void s.offsetWidth; // reflow
+                const kb = KB_CLASSES[current % KB_CLASSES.length];
+                s.className = `inv-slide ${kb} active`;
+                s.style.setProperty('--kb-dur', SLIDE_DURATION_MS + 'ms');
+                s.style.animation = '';
+            } else {
+                s.classList.remove('active');
+            }
+        });
+
+        if (timer) clearTimeout(timer);
+        if (slides.length > 1) {
+            timer = setTimeout(() => showSlide(current + 1), SLIDE_DURATION_MS);
+        }
+    }
+
+    // Start: probe which images exist, then build slideshow
+    function start() {
+        tryLoad(CANDIDATES).then(available => {
+            if (available.length === 0) return; // nothing to show
+            buildSlides(available);
+        });
+    }
+
+    // Expose so showScreen('invitation') can (re)start it
+    window._startInvitationSlideshow = start;
+})();
+
 // --- State ---
 let socket;
 let pendingRoomId = null;
@@ -461,6 +542,7 @@ function init() {
         } else {
             // New user — show beautiful invitation screen first
             showScreen('invitation');
+            if (window._startInvitationSlideshow) window._startInvitationSlideshow();
         }
     } else {
         showScreen('lobby');

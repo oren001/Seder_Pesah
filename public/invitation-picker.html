@@ -92,6 +92,21 @@
       height: 100%;
       object-fit: cover;
       transition: opacity 0.5s;
+      transform-origin: center;
+    }
+
+    /* Ken Burns on hover + subtle idle drift */
+    @keyframes cardKb {
+      0%   { transform: scale(1.0) translate(0%, 0%);   }
+      50%  { transform: scale(1.07) translate(-1.5%, -1%); }
+      100% { transform: scale(1.0) translate(0%, 0%);   }
+    }
+    .card-img-wrap img.ready {
+      animation: cardKb 8s ease-in-out infinite;
+    }
+    /* On hover: speed up the motion */
+    .card:hover .card-img-wrap img.ready {
+      animation-duration: 4s;
     }
     .card-img-wrap .spinner {
       position: absolute;
@@ -277,6 +292,7 @@
         if (o.ready && o.url && imgEl) {
           imgEl.src = o.url + '?t=' + Date.now();
           imgEl.style.opacity = '1';
+          imgEl.classList.add('ready');
           if (spinEl) spinEl.style.display = 'none';
           if (btnEl) {
             btnEl.disabled = false;
