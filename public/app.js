@@ -2093,6 +2093,10 @@ window.onSegmentClick = onSegmentClick;
 
 // --- Utils ---
 function showScreen(name) {
+    // Reset html/body scroll — mobile browsers auto-scroll on input focus
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
     Object.entries(screens).forEach(([k, el]) => {
         if (!el) return;
         if (k === name) {

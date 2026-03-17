@@ -1244,43 +1244,7 @@ const HAGGADAH = [
     ],
     "partOf": "נִרְצָה",
     "partIndex": 5,
-    "partTotal": 7
-  },
-  {
-    "title": "נִרְצָה (ז)",
-    "segments": [
-      {
-        "he": "<small>\nיֵשׁ שֶׁקּוֹרְאִים בְּלֵיל הַסֶּדֶר אֶת מְגִלַּת שִׁיר הַשִּׁירִים.\n\nבִּקְרִיאַת שְׁמַע שֶׁעַל הַמִּטָּה קוֹרִין רַק פָּרָשָׁה רִאשׁוֹנָה כֵּיוָן שֶׁהוּא לֵיל שִׁמּוּרִים.</small>",
-        "en": ""
-      },
-      {
-        "he": "<span id=\".D7.A8.D7.90.D7.95_.D7.92.D7.9D\"></span>ראו גם",
-        "en": ""
-      },
-      {
-        "he": "סדר ליל פסח בקיצור שולחן ערוך\nביאור:הגדה של פסח - ההגדה עם פירושים והסברים מפורטים\nביאור:הגדה של פסח (כיד המלך) - הסברים על פי פירוש הגר\"א",
-        "en": ""
-      },
-      {
-        "he": "<span id=\".D7.A7.D7.99.D7.A9.D7.95.D7.A8.D7.99.D7.9D_.D7.97.D7.99.D7.A6.D7.95.D7.A0.D7.99.D7.99.D7.9D\"></span>קישורים חיצוניים",
-        "en": ""
-      },
-      {
-        "he": "הגדות מעוצבות להורדה על בסיס הטקסט הנ\"ל, באתר \"חג שמח\"",
-        "en": ""
-      },
-      {
-        "he": "<span typeof=\"mw:File\"><img alt=\"דף זה מוגן חלקית\" src=\"//upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Padlock-gold.svg/20px-Padlock-gold.svg.png\" decoding=\"async\" width=\"20\" height=\"20\" class=\"mw-file-element\" srcset=\"//upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Padlock-gold.svg/40px-Padlock-gold.svg.png 1.5x\" data-file-width=\"128\" data-file-height=\"128\" /></span>",
-        "en": ""
-      },
-      {
-        "he": "<span typeof=\"mw:File\"><img alt=\"מוגן חלקית\" src=\"//upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Padlock-gold.svg/40px-Padlock-gold.svg.png\" decoding=\"async\" width=\"30\" height=\"30\" class=\"mw-file-element\" srcset=\"//upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Padlock-gold.svg/60px-Padlock-gold.svg.png 1.5x\" data-file-width=\"128\" data-file-height=\"128\" /></span>\n\n<span id=\"pl-autoconfirmed\"><b>דף זה מוגן</b></span> ויכולים לערוך אותו רק משתמשים רשומים בעלי ותק של ארבעה ימים לפחות. לפרטים וסיבות עיינו ביומן ההגנות ובדף השיחה. אם אתם סבורים שיש לשנות את תוכן הדף, אנא ציינו זאת בדף השיחה.",
-        "en": ""
-      }
-    ],
-    "partOf": "נִרְצָה",
-    "partIndex": 6,
-    "partTotal": 7
+    "partTotal": 6
   }
 ];
 
