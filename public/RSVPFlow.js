@@ -197,32 +197,46 @@ class RSVPFlow {
         if (this.data.photo) {
             localStorage.setItem('haggadah_selfie', this.data.photo);
         }
+        // Join room immediately (background) — onComplete will call showFinish()
+        if (this.callbacks.onComplete) {
+            this.callbacks.onComplete(this.data);
+        }
+    }
+
+    showFinish(participants) {
         this.goToStep('finish');
 
-        // Show the user's photo/avatar in the finish step
+        // Show user's own photo
         const finishPhotoWrap = $$('rsvp-finish-photo');
         if (finishPhotoWrap) {
             finishPhotoWrap.innerHTML = '';
             if (this.data.photo) {
                 const isEmoji = !this.data.photo.startsWith('data:') && !this.data.photo.startsWith('http');
                 if (isEmoji) {
-                    const div = document.createElement('div');
-                    div.className = 'emoji-avatar';
-                    div.textContent = this.data.photo;
-                    finishPhotoWrap.appendChild(div);
+                    finishPhotoWrap.innerHTML = `<div class="emoji-avatar" style="font-size:4rem;line-height:1">${this.data.photo}</div>`;
                 } else {
-                    const img = document.createElement('img');
-                    img.src = this.data.photo;
-                    img.alt = 'הפרופיל שלך';
-                    finishPhotoWrap.appendChild(img);
+                    finishPhotoWrap.innerHTML = `<img src="${this.data.photo}" style="width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);">`;
                 }
             }
         }
 
-        $$('btn-go-to-haggadah').onclick = () => {
-            if (this.callbacks.onComplete) {
-                this.callbacks.onComplete(this.data);
+        // Participant gallery (others only)
+        const grid = $$('finish-participants-grid');
+        const section = $$('finish-participants-section');
+        const others = (participants || []).filter(p => p.photo !== this.data.photo);
+        if (grid && others.length > 0) {
+            section.classList.remove('hidden');
+            const show = others.slice(0, 6);
+            grid.innerHTML = show.map(p => {
+                const isEmoji = p.photo && !p.photo.startsWith('data:') && !p.photo.startsWith('http');
+                const photoHtml = isEmoji
+                    ? `<div class="fp-emoji">${p.photo}</div>`
+                    : `<img src="${p.photo || ''}" class="fp-img" onerror="this.style.display='none'">`;
+                return `<div class="fp-wrap">${photoHtml}<div class="fp-name">${p.name || 'אורח'}</div></div>`;
+            }).join('');
+            if (others.length > 6) {
+                grid.innerHTML += `<div class="fp-wrap"><div class="fp-more">+${others.length - 6}</div></div>`;
             }
-        };
+        }
     }
 }

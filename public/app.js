@@ -988,28 +988,29 @@ function joinRoomAndShowFinish(roomId, rsvpData) {
         updateLeadershipUI();
         renderTasks();
 
-        // Show finish screen with participant gallery + countdown
-        rsvpFlow.showFinish(response.participants || [response.participant]);
-        startFinishCountdown();
-
-        // Wire the "כנס לחדר" button
-        const btn = $$('btn-go-to-haggadah');
         // Apply seder label received from server
         if (response.sederLabel) {
             sederLabel = response.sederLabel;
             updateSederLabelDisplay(sederLabel);
+            const inp = $$('seder-label-input');
+            if (inp) inp.value = sederLabel;
         }
 
-        if (btn) btn.onclick = () => {
-            if (response.sederEnded) { showGallery(); }
-            else if (response.sederStarted) { showScreen('room'); renderPage(); }
-            else {
-                showScreen('roomLobby');
-                renderLobbyParticipants(response.participants || [response.participant]);
-                updateLobbyUI(false);
-                startLobbyCountdown();
-            }
-        };
+        // Go directly to the right screen — no intermediate finish step
+        const userName = name || me?.name || '';
+        showToast(`ברוכים הבאים${userName ? ', ' + userName : ''}! 🌊`);
+
+        if (response.sederEnded) {
+            showGallery();
+        } else if (response.sederStarted) {
+            showScreen('room');
+            renderPage();
+        } else {
+            showScreen('roomLobby');
+            renderLobbyParticipants(response.participants || [response.participant]);
+            updateLobbyUI(false);
+            startLobbyCountdown();
+        }
     });
 }
 
