@@ -525,6 +525,7 @@ function init() {
     // Initial check for room in URL
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room');
+    const previewInvitation = urlParams.get('preview') === 'invitation';
 
     // Load persisted selfie
     const savedSelfie = localStorage.getItem('haggadah_selfie');
@@ -532,7 +533,27 @@ function init() {
         selfieDataUrl = savedSelfie;
     }
 
-    if (roomFromUrl) {
+    // Helper: show invitation screen + start video/slideshow
+    function showInvitationScreen() {
+        showScreen('invitation');
+        const invVid = document.getElementById('inv-hero-video');
+        const invSlide = document.getElementById('inv-slideshow');
+        if (invVid) {
+            invVid.play().catch(() => {
+                invVid.style.display = 'none';
+                if (invSlide) invSlide.style.display = '';
+                if (window._startInvitationSlideshow) window._startInvitationSlideshow();
+            });
+        } else {
+            if (invSlide) invSlide.style.display = '';
+            if (window._startInvitationSlideshow) window._startInvitationSlideshow();
+        }
+    }
+
+    // ?preview=invitation → always show invitation (for host preview, no login needed)
+    if (previewInvitation) {
+        showInvitationScreen();
+    } else if (roomFromUrl) {
         pendingRoomId = roomFromUrl;
         const savedSelfieForRoom = localStorage.getItem('haggadah_selfie');
         if (me && me.name && savedSelfieForRoom) {
@@ -541,21 +562,7 @@ function init() {
             joinRoom(pendingRoomId);
         } else {
             // New user — show beautiful invitation screen first
-            showScreen('invitation');
-            // Try video first; fall back to Ken Burns slideshow if video missing
-            const invVid = document.getElementById('inv-hero-video');
-            const invSlide = document.getElementById('inv-slideshow');
-            if (invVid) {
-                invVid.play().catch(() => {
-                    // Video failed (e.g. file not found) — show slideshow instead
-                    invVid.style.display = 'none';
-                    if (invSlide) invSlide.style.display = '';
-                    if (window._startInvitationSlideshow) window._startInvitationSlideshow();
-                });
-            } else {
-                if (invSlide) invSlide.style.display = '';
-                if (window._startInvitationSlideshow) window._startInvitationSlideshow();
-            }
+            showInvitationScreen();
         }
     } else {
         showScreen('lobby');
