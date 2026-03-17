@@ -2775,24 +2775,56 @@ body {
     padding-bottom: 0.6rem;
 }
 
-/* Host photo bubbles — hidden by default, appear on tap */
+/* Host photos + headline — hidden by default, appear together on tap */
 .inv-hosts-row {
     position: relative;
     z-index: 4;
     display: flex;
-    align-items: flex-end;
-    gap: 20px;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
     /* hidden until tap */
     opacity: 0;
-    transform: translateY(14px) scale(0.9);
+    transform: translateY(16px) scale(0.93);
     pointer-events: none;
-    transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-                transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: opacity 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+                transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .inv-hosts-row.visible {
     opacity: 1;
     transform: translateY(0) scale(1);
     pointer-events: auto;
+}
+
+/* Dramatic headline inside the tap-reveal area */
+.inv-hero-headline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 2px;
+}
+.inv-headline-sub {
+    color: var(--gold-light);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.95);
+}
+.inv-headline-main {
+    color: #fff;
+    font-size: clamp(1.25rem, 5vw, 1.7rem);
+    font-weight: 900;
+    line-height: 1.15;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.95), 0 0 40px rgba(212,175,55,0.25);
+}
+
+/* Photos row inside the reveal container */
+.inv-hosts-photos {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
 }
 
 .inv-host-bubble {
