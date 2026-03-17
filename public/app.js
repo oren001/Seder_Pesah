@@ -533,20 +533,24 @@ function init() {
         selfieDataUrl = savedSelfie;
     }
 
-    // Helper: show invitation screen + start video/slideshow
+    // Helper: show invitation screen → video plays once → then Ken Burns slideshow loops
     function showInvitationScreen() {
         showScreen('invitation');
         const invVid = document.getElementById('inv-hero-video');
         const invSlide = document.getElementById('inv-slideshow');
-        if (invVid) {
-            invVid.play().catch(() => {
-                invVid.style.display = 'none';
-                if (invSlide) invSlide.style.display = '';
-                if (window._startInvitationSlideshow) window._startInvitationSlideshow();
-            });
-        } else {
-            if (invSlide) invSlide.style.display = '';
+
+        function startSlideshow() {
+            if (invVid) invVid.style.display = 'none';
+            if (invSlide) { invSlide.style.display = ''; }
             if (window._startInvitationSlideshow) window._startInvitationSlideshow();
+        }
+
+        if (invVid) {
+            invVid.removeAttribute('loop');          // play once, then switch to slideshow
+            invVid.addEventListener('ended', startSlideshow, { once: true });
+            invVid.play().catch(startSlideshow);     // autoplay blocked → go straight to slideshow
+        } else {
+            startSlideshow();
         }
     }
 

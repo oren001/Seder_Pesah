@@ -50,15 +50,15 @@
         <div class="inv-hero">
             <div class="inv-hero-overlay"></div>
 
-            <!-- Video background — autoplays looped, muted (required for mobile autoplay) -->
+            <!-- Video background — plays once, then Ken Burns slideshow takes over -->
             <video id="inv-hero-video"
                    class="inv-hero-video"
                    src="/videos/invitation-bg.mp4"
-                   autoplay loop muted playsinline preload="auto"
+                   autoplay muted playsinline preload="auto"
                    onerror="this.style.display='none';document.getElementById('inv-slideshow').style.display=''">
             </video>
 
-            <!-- Slideshow fallback (shown only if video fails/missing) -->
+            <!-- Slideshow: 8 AI images cycling after video ends -->
             <div id="inv-slideshow" class="inv-slideshow" style="display:none">
                 <!-- Slides injected by initInvitationSlideshow() -->
             </div>
