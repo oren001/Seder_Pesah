@@ -3133,8 +3133,8 @@ body {
     gap: 0.25rem;
     padding: 0.4rem 0.5rem;
     border-radius: 12px;
-    border: 2px solid transparent;
-    background: rgba(212,175,55,0.08);
+    border: 2px solid rgba(212,175,55,0.3);
+    background: rgba(0,0,0,0.25);
     cursor: pointer;
     transition: border-color 0.18s, background 0.18s, transform 0.15s;
     min-width: 60px;
@@ -3170,13 +3170,14 @@ body {
 
 .rsvp-tile-name {
     font-size: var(--fs-2xs);
-    color: var(--text);
-    font-weight: 600;
+    color: #fff;
+    font-weight: 700;
     text-align: center;
     max-width: 68px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
 }
 
 .rsvp-name-divider {
