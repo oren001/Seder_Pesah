@@ -351,7 +351,7 @@ io.on('connection', (socket) => {
             currentPage: 0,
             leaderId: socket.id,
             leaderName: socket.userName || name || 'מנחה',
-            leaderPin: leaderPin || null,   // PIN for claiming leadership
+            leaderPin: '1111',   // Fixed PIN — anyone who knows the code can lead
             sederLabel: '',
             tasks: persistedTasks[roomId] || [
                 { id: 'h1', text: '✅ תכנון MVP ראשוני', completed: true, author: 'אורן (מנהל פרויקט)' },

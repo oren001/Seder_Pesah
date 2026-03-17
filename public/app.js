@@ -1125,25 +1125,18 @@ function onRetake() {
 // --- Flow ---
 function onCreateRoom() {
     const nameInput = $$('guest-name');
-    const pinInput  = $$('leader-pin-create');
     const name      = nameInput ? nameInput.value.trim() : '';
-    const leaderPin = pinInput  ? pinInput.value.trim()  : '';
 
     if (!name) {
         showToast('נא להזין שם 😊');
         if (nameInput) nameInput.focus();
         return;
     }
-    if (!leaderPin || leaderPin.length < 4) {
-        showToast('נא להזין קוד מנחה (4 ספרות לפחות) 🔑');
-        if (pinInput) pinInput.focus();
-        return;
-    }
 
     me = { name, isGuest: false };
     localStorage.setItem('haggadah-user', JSON.stringify(me));
 
-    socket.emit('create-room', { name, leaderPin }, (response) => {
+    socket.emit('create-room', { name }, (response) => {
         pendingRoomId = response.roomId;
         rsvpFlow.show();
     });
@@ -1712,7 +1705,7 @@ function renderPage() {
 
         // Sync button visibility
         const syncBtn = $$('btn-sync');
-        const isLeading = $$('check-lead-mode').checked;
+        const isLeading = amIAllowedLeader();
         if (isLeading || (isFollowingLeader && currentPage === leaderPage)) {
             syncBtn.classList.add('hidden');
         } else {
@@ -1730,10 +1723,9 @@ function renderPage() {
 function changePage(delta) {
     const next = currentPage + delta;
     if (next >= 0 && next < HAGGADAH.length) {
-        const isLeading = $$('check-lead-mode').checked;
         const amILeader = amIAllowedLeader();
 
-        if (isLeading || amILeader) {
+        if (amILeader) {
             // Global move — all followers update too
             currentPage = next;
             socket.emit('change-page', { roomId: currentRoomId, pageIndex: next });
@@ -1805,7 +1797,7 @@ function handlePageEffects(pageIndex) {
 }
 
 function triggerEffect(effectType) {
-    if (socket && $$('check-lead-mode').checked) {
+    if (socket && amIAllowedLeader()) {
         socket.emit('trigger-effect', { roomId: currentRoomId, effectType });
     } else {
         triggerLocalEffect(effectType);
