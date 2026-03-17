@@ -283,6 +283,92 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// ── 8 invitation image style options ────────────────────────────────────────
+const INVITATION_STYLES = [
+    {
+        id: 1,
+        label: '🌅 שקיעה אפית — ים סוף',
+        description: 'שניהם מובילים המון עצום לשקיעת שמש זהובה, ים מפוצל ברקע',
+        prompt: `Epic cinematic wide shot: a real woman with long dark hair (Yael) and a real man with kind face and close-cropped hair (Danny) stand at the edge of the parted Red Sea, arms outstretched, leading a vast crowd of freed Israelites toward a blazing golden sunset. Walls of deep blue water tower on either side. The sky is on fire — orange, amber, crimson. Ancient robes on their bodies but joy and relief on their modern faces. Dust and golden light. Like a Hollywood historical epic. Photorealistic cinematic photography, ultra-detailed, no cartoon.`
+    },
+    {
+        id: 2,
+        label: '🌌 לילה כוכבים במדבר',
+        description: 'הלילה הראשון של חירות — שניים תחת שמי מדבר זרועי כוכבים',
+        prompt: `Photorealistic night-sky photography. A real woman with long dark hair (Yael) and a real man with kind face and close-cropped hair (Danny) sit by a small desert campfire, looking up at an overwhelming Milky Way blazing across the sky. Ancient desert setting. The firelight is warm orange on their faces, the sky is deep indigo and silver. Freed Israelites resting around them in the background. The first night of freedom. Intimate, magical, awe-inspiring. National Geographic astrophotography quality, photorealistic, no cartoon.`
+    },
+    {
+        id: 3,
+        label: '🎉 חגיגת חירות — צבעונית ושמחה',
+        description: 'חגיגה! ריקודים, פנסים, צבעים עזים — כמו פסטיבל עם נשמה עתיקה',
+        prompt: `Joyful celebration scene: a real woman with long dark hair (Yael) and a real man with kind face and close-cropped hair (Danny) are laughing and dancing with dozens of freed people. Colorful fabric banners, lanterns glowing warm gold and crimson, dust catching the light. Vibrant saturated colors — deep red, saffron yellow, turquoise, purple. Ancient setting but pure festival energy. Confetti of flower petals. Rich, warm, cinematic. Photorealistic, vivid colors, no cartoon.`
+    },
+    {
+        id: 4,
+        label: '🏜️ מדבר מלכותי — זהב ואדום',
+        description: 'שניהם עומדים גאים על רכס חול, פירמידות ברחוק, שמים דרמטיים',
+        prompt: `Majestic desert portrait: a real woman with long dark hair (Yael) and a real man with kind face and close-cropped hair (Danny) stand on top of a golden sand dune, looking into the vast desert ahead. Egyptian pyramids are visible in the far distance against a dramatic stormy-golden sky of burnt sienna and deep violet clouds. They wear flowing ancient robes. Wind in their hair. The scale of freedom and wilderness. Epic, regal, emotional. Photorealistic editorial photography, warm golden tones, no cartoon.`
+    },
+    {
+        id: 5,
+        label: '🕯️ ליל הסדר — שולחן ומשפחה',
+        description: 'שולחן סדר עתיק ומרהיב, הם יושבים בראשו, אורות נרות, חמים ואינטימי',
+        prompt: `Intimate candlelit Passover seder scene: a real woman with long dark hair (Yael) and a real man with kind face and close-cropped hair (Danny) sit at the head of a long ancient seder table surrounded by family. The table is laden with seder plate, matzah, wine cups, beautiful food. Warm golden candlelight, deep shadows, rich warm tones of mahogany and gold. Ancient stone walls. The feeling of family, memory, and belonging. Like a Rembrandt painting brought to life. Photorealistic fine-art photography, warm tones, no cartoon.`
+    },
+    {
+        id: 6,
+        label: '🌊 רגע הנס — ים נבקע',
+        description: 'הרגע הדרמטי: הים נבקע לפניהם, מים כחולים ענקיים, אור פסח אלוהי',
+        prompt: `The miracle moment: a real woman with long dark hair (Yael) and a real man with kind face and close-cropped hair (Danny) stand in awe as the sea splits before them. Towering walls of deep blue-green water curve upward to the sky, sunlight refracting through them creating rainbows. Their faces show wonder and tears of joy. The dry seabed path ahead is golden sand. An entire crowd watches from behind. Breathtaking, mythic scale. Photorealistic visual effects photography, rich blues and golds, cinematic, no cartoon.`
+    },
+    {
+        id: 7,
+        label: '🎨 פוסטר אמנות — סגנון וינטאג׳ צבעוני',
+        description: 'סגנון פוסטר ישראלי רטרו שנות ה-60 — צבעים עזים, גרפיקה מדהימה',
+        prompt: `Vintage Israeli 1960s travel poster art style, but photorealistic. Bold graphic composition: a real woman with long dark hair (Yael) and a real man with kind face and close-cropped hair (Danny) walk forward confidently, the parting Red Sea visible behind them styled as bold flat color shapes of cobalt blue and turquoise. The sky above is divided into bands of coral, gold, and deep teal. Stars and Hebrew lettering subtly in the sky. Rich, graphic, colorful. Like a Bauhaus-influenced retro poster come to life. Photorealistic yet graphic, vibrant colors, cinematic.`
+    },
+    {
+        id: 8,
+        label: '🌸 ארץ מובטחת — בוקר של תקווה',
+        description: 'הגעה לארץ המובטחת — ירוק, אור בוקר, פרחים, תקווה ושמחה',
+        prompt: `The promised land arrival: a real woman with long dark hair (Yael) and a real man with kind face and close-cropped hair (Danny) step into a lush beautiful landscape at sunrise — wildflowers in bloom, rolling green hills, ancient olive trees, morning mist. They look back at a desert fading behind them and forward to paradise. Their faces show wonder and deep happiness. Golden morning light. Rich saturated greens, pinks, and golds. Like a National Geographic photograph of the most beautiful morning in history. Photorealistic fine art photography, hopeful and warm, no cartoon.`
+    }
+];
+
+/**
+ * generateInvitationOptions
+ * -------------------------
+ * Generates all 8 invitation image styles one by one.
+ * Calls onProgress(id, status) after each one finishes.
+ */
+async function generateInvitationOptions(yaelBase64, dannyBase64, onProgress = null) {
+    const log = (id, msg) => {
+        console.log(`[InvOption ${id}]`, msg);
+        if (onProgress) onProgress(id, msg);
+    };
+
+    log(0, 'Uploading reference photos...');
+    const yaelId  = await uploadInitImage(yaelBase64);
+    const dannyId = await uploadInitImage(dannyBase64);
+    if (!yaelId || !dannyId) throw new Error('Failed to upload host photos');
+
+    const results = [];
+    for (const style of INVITATION_STYLES) {
+        log(style.id, `Generating: ${style.label}...`);
+        try {
+            const url = await generateImage(style.prompt, [yaelId, dannyId], msg => log(style.id, msg));
+            results.push({ id: style.id, url, label: style.label, description: style.description });
+            log(style.id, `Done: ${url}`);
+        } catch (err) {
+            log(style.id, `Failed: ${err.message}`);
+            results.push({ id: style.id, url: null, error: err.message, label: style.label, description: style.description });
+        }
+        // Small pause between generations to be nice to the API
+        await sleep(1000);
+    }
+    return results;
+}
+
 /**
  * generateInvitationImage
  * -----------------------
@@ -322,4 +408,4 @@ async function generateInvitationImage(yaelBase64, dannyBase64, onStatus = null)
     return imageUrl;
 }
 
-module.exports = { HAGGADAH_PROMPTS, generateImage, generatePersonalizedPage, generateInvitationImage, uploadInitImage };
+module.exports = { HAGGADAH_PROMPTS, INVITATION_STYLES, generateImage, generatePersonalizedPage, generateInvitationImage, generateInvitationOptions, uploadInitImage };

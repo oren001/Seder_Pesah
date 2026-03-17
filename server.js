@@ -3,7 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
-const { generatePersonalizedPage, generateInvitationImage } = require('./leonardo');
+const { generatePersonalizedPage, generateInvitationImage, generateInvitationOptions, INVITATION_STYLES } = require('./leonardo');
 const { OAuth2Client } = require('google-auth-library');
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com';
@@ -57,6 +57,93 @@ app.get('/api/config', (req, res) => {
 // Reads Yael & Danny's photos from public/images/, generates via Leonardo,
 // saves result to public/images/invitation-bg.jpg
 let _invGenInProgress = false;
+let _optionsGenInProgress = false;
+// Track generation status for each option: { id, status, ready, url }
+const _optionStatus = {};
+
+// ── Generate all 8 options ────────────────────────────────────────────────
+app.get('/api/generate-invitation-options', async (req, res) => {
+    if (_optionsGenInProgress) {
+        return res.json({ status: 'running', options: Object.values(_optionStatus) });
+    }
+
+    const yaelPath  = path.join(__dirname, 'public', 'images', 'yael.jpg');
+    const dannyPath = path.join(__dirname, 'public', 'images', 'danny.jpg');
+
+    if (!fs.existsSync(yaelPath) || !fs.existsSync(dannyPath)) {
+        return res.status(400).json({ error: 'Host photos not found' });
+    }
+
+    // Initialize status for all 8
+    INVITATION_STYLES.forEach(s => {
+        _optionStatus[s.id] = { id: s.id, label: s.label, description: s.description, status: 'waiting', ready: false, url: null };
+    });
+
+    res.json({ status: 'started', message: 'Generating 8 options — check /api/invitation-options-status for progress' });
+
+    _optionsGenInProgress = true;
+    try {
+        const toBase64 = (p) => {
+            const data = fs.readFileSync(p);
+            return `data:image/jpeg;base64,${data.toString('base64')}`;
+        };
+        const results = await generateInvitationOptions(
+            toBase64(yaelPath),
+            toBase64(dannyPath),
+            (id, msg) => {
+                if (_optionStatus[id]) {
+                    _optionStatus[id].status = msg;
+                    console.log(`[Options] [${id}] ${msg}`);
+                }
+            }
+        );
+
+        // Save each result to disk
+        const fetchFn = require('node-fetch');
+        for (const r of results) {
+            if (r.url) {
+                try {
+                    const imgRes = await fetchFn(r.url);
+                    const buffer = Buffer.from(await imgRes.arrayBuffer());
+                    const outPath = path.join(__dirname, 'public', 'images', `invitation-option-${r.id}.jpg`);
+                    fs.writeFileSync(outPath, buffer);
+                    _optionStatus[r.id].ready = true;
+                    _optionStatus[r.id].url   = `/images/invitation-option-${r.id}.jpg`;
+                    _optionStatus[r.id].status = 'ready';
+                    console.log(`[Options] Saved option ${r.id}`);
+                } catch (e) {
+                    _optionStatus[r.id].status = 'error: ' + e.message;
+                }
+            } else {
+                _optionStatus[r.id].status = 'failed: ' + (r.error || 'unknown');
+            }
+        }
+    } catch (err) {
+        console.error('[Options] Generation failed:', err.message);
+    } finally {
+        _optionsGenInProgress = false;
+    }
+});
+
+// ── Status check for the options ──────────────────────────────────────────
+app.get('/api/invitation-options-status', (req, res) => {
+    res.json({
+        inProgress: _optionsGenInProgress,
+        options: Object.values(_optionStatus)
+    });
+});
+
+// ── Pick one of the options as the live invitation background ─────────────
+app.post('/api/set-invitation-bg', express.json(), (req, res) => {
+    const { id } = req.body;
+    if (!id) return res.status(400).json({ error: 'id required' });
+    const src  = path.join(__dirname, 'public', 'images', `invitation-option-${id}.jpg`);
+    const dest = path.join(__dirname, 'public', 'images', 'invitation-bg.jpg');
+    if (!fs.existsSync(src)) return res.status(404).json({ error: `Option ${id} not generated yet` });
+    fs.copyFileSync(src, dest);
+    console.log(`[Options] Set invitation-bg to option ${id}`);
+    res.json({ ok: true, message: `Option ${id} is now the active invitation background!` });
+});
 
 app.get('/api/generate-invitation', async (req, res) => {
     if (_invGenInProgress) {

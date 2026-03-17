@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>בחר תמונת הזמנה 🎨</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #d4af37;
+      --dark: #1a0a10;
+      --darker: #0d0208;
+      --text: #f5e6d3;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Heebo', sans-serif;
+      background: var(--darker);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem 4rem;
+    }
+    h1 {
+      text-align: center;
+      color: var(--gold);
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      text-align: center;
+      opacity: 0.6;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+    #status-bar {
+      text-align: center;
+      background: rgba(212,175,55,0.1);
+      border: 1px solid rgba(212,175,55,0.25);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+      color: var(--gold);
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #generate-btn {
+      display: block;
+      margin: 0 auto 2rem;
+      background: linear-gradient(135deg, #8b1a22, #b8303b);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      padding: 0.9rem 2rem;
+      font-size: 1rem;
+      font-family: 'Heebo', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(212,175,55,0.18);
+      border-radius: 18px;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .card:hover { border-color: var(--gold); transform: translateY(-3px); }
+    .card.active { border-color: var(--gold); border-width: 2px; }
+
+    .card-img-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 66%;
+      background: #1a0a10;
+      overflow: hidden;
+    }
+    .card-img-wrap img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 0.5s;
+    }
+    .card-img-wrap .spinner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      font-size: 0.78rem;
+      opacity: 0.55;
+      padding: 1rem;
+      text-align: center;
+    }
+    .spinner-ring {
+      width: 36px; height: 36px;
+      border: 3px solid rgba(212,175,55,0.2);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .card-body {
+      padding: 0.9rem 1rem 1rem;
+    }
+    .card-label {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 0.3rem;
+    }
+    .card-desc {
+      font-size: 0.8rem;
+      opacity: 0.65;
+      margin-bottom: 0.9rem;
+      line-height: 1.5;
+    }
+    .pick-btn {
+      width: 100%;
+      padding: 0.65rem;
+      background: linear-gradient(135deg, #8b1a22, #b8303b);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: 'Heebo', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .pick-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .pick-btn.chosen {
+      background: linear-gradient(135deg, #2a7a2a, #3da03d);
+    }
+
+    #success-toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2a7a2a;
+      color: white;
+      padding: 0.9rem 1.5rem;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 1rem;
+      opacity: 0;
+      transition: opacity 0.4s;
+      pointer-events: none;
+      z-index: 100;
+      white-space: nowrap;
+    }
+    #success-toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <h1>🎨 בחר תמונת הזמנה</h1>
+  <p class="subtitle">8 סגנונות שונים של יציאת מצרים עם יעלי ודני — בחר את האהוב עליך</p>
+
+  <div id="status-bar">לחץ על הכפתור כדי להתחיל לייצר את 8 האפשרויות ✨</div>
+
+  <button id="generate-btn" onclick="startGeneration()">🌊 צור 8 אפשרויות (15-20 דקות)</button>
+
+  <div class="grid" id="grid"></div>
+
+  <div id="success-toast">✅ התמונה הוגדרה כרקע ההזמנה!</div>
+
+  <script>
+    const STYLES = [
+      { id: 1, label: '🌅 שקיעה אפית — ים סוף',         description: 'שניהם מובילים המון עצום לשקיעת שמש זהובה, ים מפוצל ברקע' },
+      { id: 2, label: '🌌 לילה כוכבים במדבר',           description: 'הלילה הראשון של חירות — שניים תחת שמי מדבר זרועי כוכבים' },
+      { id: 3, label: '🎉 חגיגת חירות — צבעונית ושמחה', description: 'חגיגה! ריקודים, פנסים, צבעים עזים — כמו פסטיבל עם נשמה עתיקה' },
+      { id: 4, label: '🏜️ מדבר מלכותי — זהב ואדום',    description: 'שניהם עומדים גאים על רכס חול, פירמידות ברחוק, שמים דרמטיים' },
+      { id: 5, label: '🕯️ ליל הסדר — שולחן ומשפחה',   description: 'שולחן סדר עתיק ומרהיב, הם יושבים בראשו, אורות נרות' },
+      { id: 6, label: '🌊 רגע הנס — ים נבקע',           description: 'הרגע הדרמטי: הים נבקע לפניהם, מים כחולים ענקיים, אור פסח אלוהי' },
+      { id: 7, label: '🎨 פוסטר אמנות — סגנון וינטאג׳', description: 'סגנון פוסטר ישראלי רטרו שנות ה-60 — צבעים עזים, גרפיקה מדהימה' },
+      { id: 8, label: '🌸 ארץ מובטחת — בוקר של תקווה',  description: 'הגעה לארץ המובטחת — ירוק, אור בוקר, פרחים, תקווה ושמחה' }
+    ];
+
+    let pollInterval = null;
+    let currentBg = null;
+
+    function buildGrid() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      STYLES.forEach(s => {
+        grid.innerHTML += `
+          <div class="card" id="card-${s.id}">
+            <div class="card-img-wrap">
+              <div class="spinner" id="spinner-${s.id}">
+                <div class="spinner-ring"></div>
+                <span id="status-${s.id}">ממתין...</span>
+              </div>
+              <img id="img-${s.id}" src="" style="opacity:0" alt="${s.label}">
+            </div>
+            <div class="card-body">
+              <div class="card-label">${s.label}</div>
+              <div class="card-desc">${s.description}</div>
+              <button class="pick-btn" id="btn-${s.id}" disabled onclick="pickOption(${s.id})">
+                ⏳ עדיין מייצר...
+              </button>
+            </div>
+          </div>`;
+      });
+    }
+
+    async function startGeneration() {
+      const btn = document.getElementById('generate-btn');
+      btn.disabled = true;
+      btn.textContent = '⏳ מייצר...';
+      document.getElementById('status-bar').textContent = 'מתחיל ייצור... עולה תמונות של יעלי ודני ל-AI';
+
+      buildGrid();
+
+      try {
+        const res = await fetch('/api/generate-invitation-options');
+        const data = await res.json();
+        if (data.status === 'started' || data.status === 'running') {
+          document.getElementById('status-bar').textContent = '🌊 מייצר 8 תמונות — כל אחת לוקחת ~2 דקות. הדף מתעדכן אוטומטית!';
+          startPolling();
+        }
+      } catch (e) {
+        document.getElementById('status-bar').textContent = '❌ שגיאה: ' + e.message;
+        btn.disabled = false;
+        btn.textContent = '🌊 נסה שוב';
+      }
+    }
+
+    function startPolling() {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch('/api/invitation-options-status');
+          const data = await res.json();
+          updateCards(data.options);
+          const ready = data.options.filter(o => o.ready).length;
+          const total = data.options.length;
+          if (!data.inProgress && total > 0) {
+            document.getElementById('status-bar').textContent = `✅ הכל מוכן! ${ready} מתוך ${total} אפשרויות נוצרו. בחר את האהוב עליך!`;
+            clearInterval(pollInterval);
+            const btn = document.getElementById('generate-btn');
+            btn.textContent = '🔄 צור מחדש';
+            btn.disabled = false;
+          } else {
+            document.getElementById('status-bar').textContent = `⏳ מייצר... ${ready}/${total} מוכנות`;
+          }
+        } catch(e) {}
+      }, 4000);
+    }
+
+    function updateCards(options) {
+      if (!options) return;
+      options.forEach(o => {
+        const statusEl = document.getElementById('status-' + o.id);
+        const imgEl    = document.getElementById('img-'    + o.id);
+        const spinEl   = document.getElementById('spinner-'+ o.id);
+        const btnEl    = document.getElementById('btn-'    + o.id);
+
+        if (statusEl) statusEl.textContent = o.status || '...';
+
+        if (o.ready && o.url && imgEl) {
+          imgEl.src = o.url + '?t=' + Date.now();
+          imgEl.style.opacity = '1';
+          if (spinEl) spinEl.style.display = 'none';
+          if (btnEl) {
+            btnEl.disabled = false;
+            if (o.id === currentBg) {
+              btnEl.textContent = '✅ פעיל כרגע';
+              btnEl.className = 'pick-btn chosen';
+            } else {
+              btnEl.textContent = '✨ בחר אפשרות זו';
+              btnEl.className = 'pick-btn';
+            }
+          }
+        }
+      });
+    }
+
+    async function pickOption(id) {
+      try {
+        const res = await fetch('/api/set-invitation-bg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          currentBg = id;
+          // Update all buttons
+          STYLES.forEach(s => {
+            const b = document.getElementById('btn-' + s.id);
+            if (!b || b.disabled) return;
+            if (s.id === id) {
+              b.textContent = '✅ פעיל כרגע';
+              b.className = 'pick-btn chosen';
+            } else {
+              b.textContent = '✨ בחר אפשרות זו';
+              b.className = 'pick-btn';
+            }
+          });
+          // Show toast
+          const t = document.getElementById('success-toast');
+          t.classList.add('show');
+          setTimeout(() => t.classList.remove('show'), 3500);
+        }
+      } catch(e) {
+        alert('שגיאה: ' + e.message);
+      }
+    }
+
+    // Auto-check if generation is already in progress on page load
+    (async () => {
+      try {
+        const res = await fetch('/api/invitation-options-status');
+        const data = await res.json();
+        if (data.options && data.options.length > 0) {
+          buildGrid();
+          updateCards(data.options);
+          if (data.inProgress) {
+            document.getElementById('status-bar').textContent = '⏳ ייצור כבר רץ ברקע... הדף מתעדכן אוטומטית';
+            document.getElementById('generate-btn').disabled = true;
+            startPolling();
+          } else {
+            const ready = data.options.filter(o => o.ready).length;
+            if (ready > 0) {
+              document.getElementById('status-bar').textContent = `${ready} אפשרויות מוכנות — בחר את האהוב עליך!`;
+              document.getElementById('generate-btn').textContent = '🔄 צור מחדש';
+            }
+          }
+        }
+      } catch(e) {}
+    })();
+  </script>
+</body>
+</html>

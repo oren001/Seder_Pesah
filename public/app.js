@@ -289,22 +289,6 @@ function init() {
         if (noMsg) noMsg.classList.remove('hidden');
     });
 
-    safeAddListener('btn-gen-invitation', 'click', async () => {
-        const statusEl = $$('gen-invitation-status');
-        const btn = $$('btn-gen-invitation');
-        if (btn) btn.disabled = true;
-        if (statusEl) statusEl.textContent = '⏳ מפעיל ייצור תמונה... יקח כ-2 דקות';
-        try {
-            const res = await fetch('/api/generate-invitation');
-            const data = await res.json();
-            if (statusEl) statusEl.textContent = data.message || '✅ ייצור החל! התמונה תהיה מוכנה בעוד כ-2 דקות. רענן את הדף.';
-        } catch (e) {
-            if (statusEl) statusEl.textContent = '❌ שגיאה — בדוק לוגים';
-        } finally {
-            if (btn) setTimeout(() => { btn.disabled = false; }, 30000);
-        }
-    });
-
     safeAddListener('btn-create-room', 'click', onCreateRoom);
     safeAddListener('btn-take-selfie', 'click', onTakeSelfie);
     safeAddListener('btn-retake', 'click', onRetake);
