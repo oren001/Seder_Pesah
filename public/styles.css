@@ -758,6 +758,7 @@ body {
     padding: clamp(0.5rem, 0.3rem + 1.5vw, 1.5rem);
     padding-bottom: 90px; /* space for fixed sticky footer */
     display: flex;
+    align-items: flex-start;  /* let page-content grow to natural height */
     justify-content: center;
     background: linear-gradient(180deg, #1a0a10 0%, #231015 50%, #1a0a10 100%);
 }
@@ -774,7 +775,6 @@ body {
     position: relative;
     transition: opacity 0.2s ease;
     border-top: 1px solid rgba(0, 0, 0, 0.05);
-    overflow: hidden;
     box-sizing: border-box;
 }
 
