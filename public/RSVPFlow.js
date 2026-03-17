@@ -31,7 +31,33 @@ class RSVPFlow {
     }
 
     setupEventListeners() {
-        // Step Welcome
+        // Step Name
+        this.safeClick('btn-rsvp-name-next', () => {
+            const nameInput = $$('rsvp-name-input');
+            const name = nameInput ? nameInput.value.trim() : '';
+            if (!name) {
+                if (nameInput) nameInput.focus();
+                showToast('נא להזין שם 😊');
+                return;
+            }
+            this.data.name = name;
+            // Save as guest user
+            if (!me || me.isGuest) {
+                me = { name, isGuest: true };
+                localStorage.setItem('haggadah-user', JSON.stringify(me));
+            }
+            this.goToStep('look');
+        });
+
+        // Allow Enter key on name input
+        const nameInput = $$('rsvp-name-input');
+        if (nameInput) {
+            nameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') $$('btn-rsvp-name-next')?.click();
+            });
+        }
+
+        // Step Welcome (legacy)
         this.safeClick('btn-rsvp-share', () => {
             const url = window.location.origin + '?room=' + currentRoomId;
             navigator.clipboard.writeText(url).then(() => {
@@ -43,7 +69,7 @@ class RSVPFlow {
             this.goToStep('look');
         });
 
-        // Steps Name and Guests removed from JS flow logic
+        // Steps Guests removed from JS flow logic
 
         // Step Look
         this.safeClick('choice-selfie', () => {
@@ -152,8 +178,15 @@ class RSVPFlow {
 
     show(isEliteEdit = false) {
         showScreen('rsvp');
-        // Skip name and guests - go straight to 'look' (Selfie vs Avatar)
-        this.goToStep('look');
+        // If already have a name, skip to look
+        if (me && me.name) {
+            this.data.name = me.name;
+            const nameInput = $$('rsvp-name-input');
+            if (nameInput) nameInput.value = me.name;
+            this.goToStep('look');
+        } else {
+            this.goToStep('name');
+        }
     }
 
     complete() {

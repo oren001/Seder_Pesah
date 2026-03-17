@@ -2442,3 +2442,21 @@ body {
     box-sizing: border-box;
     direction: rtl;
 }
+
+/* RSVP Name Step */
+.rsvp-name-input {
+    width: 100%;
+    padding: 0.9rem 1.2rem;
+    font-size: 1.2rem;
+    text-align: center;
+    border-radius: 14px;
+    border: 2px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    outline: none;
+    margin: 1rem 0;
+    font-family: inherit;
+    direction: rtl;
+}
+.rsvp-name-input::placeholder { color: rgba(255,255,255,0.4); }
+.rsvp-name-input:focus { border-color: var(--gold); }

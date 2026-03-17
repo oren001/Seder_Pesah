@@ -305,6 +305,7 @@ function init() {
     safeAddListener('btn-add-task', 'click', addTask);
     safeAddListener('btn-start-seder', 'click', onStartSeder);
     safeAddListener('btn-lobby-copy-link', 'click', onCopyLink);
+    safeAddListener('btn-lobby-share', 'click', onCopyLink);
     safeAddListener('btn-end-seder', 'click', onEndSeder);
     safeAddListener('btn-gallery-open', 'click', () => { showGallery(); toggleMenu(); });
     safeAddListener('btn-feedback-open', 'click', () => { showFeedback(); toggleMenu(); });
@@ -420,21 +421,17 @@ function init() {
 
     if (roomFromUrl) {
         pendingRoomId = roomFromUrl;
-        if (me) {
-            // If we have a saved selfie and are logged in, join automatically
-            const savedSelfie = localStorage.getItem('haggadah_selfie');
-            if (savedSelfie) {
-                console.log('[Init] Auto-joining with saved selfie...');
-                joinRoom(pendingRoomId);
-            } else {
-                rsvpFlow.show();
-            }
+        const savedSelfieForRoom = localStorage.getItem('haggadah_selfie');
+        if (me && me.name && savedSelfieForRoom) {
+            // Returning user — skip RSVP, join directly
+            console.log('[Init] Returning user, auto-joining...');
+            joinRoom(pendingRoomId);
+        } else if (me && me.name && !savedSelfieForRoom) {
+            // Has name but no selfie — go to look step only
+            rsvpFlow.show();
         } else {
-            // Show auth, but hide actions to avoid empty space
-            showScreen('lobby');
-            $$('lobby-auth-section').classList.remove('hidden');
-            $$('lobby-actions-section').classList.add('hidden');
-            showToast('הוזמנת לסדר! התחבר כדי להצטרף 🍷');
+            // New user — full RSVP (name → look → selfie/avatar)
+            rsvpFlow.show();
         }
     } else {
         showScreen('lobby');
@@ -1079,6 +1076,10 @@ function renderLobbyParticipants(participants) {
     const grid = $$('room-lobby-participants');
     if (!grid) return;
     grid.innerHTML = '';
+
+    // Update participant counter
+    const counter = $$('lobby-participant-count');
+    if (counter) counter.textContent = `👥 ${participants.length} נרשמו`;
 
     participants.forEach(p => {
         const photoUrl = p.photo || generatePlaceholderPhoto();

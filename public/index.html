@@ -97,6 +97,17 @@
         <div class="rsvp-card glass">
 
 
+            <!-- Step 1: Name -->
+            <div id="rsvp-step-name" class="rsvp-step hidden">
+                <div class="rsvp-icon">👋</div>
+                <h2>מה שמך?</h2>
+                <p>ככה כולם יזהו אותך ברשימת המוזמנים</p>
+                <input type="text" id="rsvp-name-input" class="rsvp-name-input" placeholder="שם פרטי..." maxlength="30" autocomplete="off">
+                <div class="rsvp-actions">
+                    <button id="btn-rsvp-name-next" class="btn primary">המשך →</button>
+                </div>
+            </div>
+
             <!-- Step 2: Look Choice -->
             <div id="rsvp-step-look" class="rsvp-step hidden">
                 <div class="rsvp-icon">🎭</div>
@@ -166,13 +177,17 @@
     <div id="room-lobby-screen" class="screen hidden">
         <div class="lobby-card" style="max-width: 400px; width: 100%;">
             <div class="waiting-room-header">
-                <h1 class="logo-title">הסדר מתחיל עוד מעט... 🍇</h1>
-                <p class="subtitle" id="lobby-status-text">מחכים שכולם יתיישבו סביב השולחן</p>
+                <h1 class="logo-title">🍷 מי מגיע לסדר?</h1>
+                <p class="subtitle" id="lobby-status-text">שלחו את הקישור לכולם כדי שיירשמו</p>
             </div>
+
+            <button id="btn-lobby-share" class="btn outline small" style="width:100%; margin-bottom: 0.75rem;">
+                📤 שתפו את הקישור בווטסאפ
+            </button>
 
             <div class="waiting-participants">
                 <p style="font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                    👥 מי כבר כאן?
+                    <span id="lobby-participant-count">👥 מי כבר כאן?</span>
                 </p>
                 <div class="gazebo-grid-container">
                     <div id="room-lobby-participants" class="gazebo-grid">
