@@ -6,42 +6,43 @@ const LEONARDO_V2_URL = 'https://cloud.leonardo.ai/api/rest/v2';
 const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY || null;
 const NB_PRO_MODEL = 'gemini-image-2';
 
-// Fun, colorful, modern & hilarious prompts for Haggadah sections
-// Style: vibrant pop-art, Pixar-style 3D, witty & playful — NOT dry/religious
+// Photorealistic "Exodus happened yesterday" style prompts
+// Style: cinematic documentary photography, rich warm colors, subtle anachronistic humor
+// People feel like they were actually there — at the Exodus, but yesterday
 const HAGGADAH_PROMPTS = [
-    { id: 0, title: 'Kadesh', prompt: 'A giant overflowing wine glass at a wild festive dinner party, neon purple and gold splashes, confetti everywhere, Pixar 3D style, vibrant colors, funny cheerful mood, cartoon characters toasting' },
-    { id: 1, title: 'Urchatz', prompt: 'Hilarious scene of people enthusiastically washing hands with a comically oversized golden faucet, soap bubbles flying everywhere like a foam party, bright pop-art colors, playful cartoon style' },
-    { id: 2, title: 'Karpas', prompt: 'A tiny piece of parsley doing a cannonball dive into a giant bowl of salt water, huge splash, onlookers cheering, vibrant neon colors, funny Pixar 3D cartoon style' },
-    { id: 3, title: 'Yachatz', prompt: 'A giant matzah cracker being karate-chopped in half by a funny character, crumbs flying everywhere in slow motion, dramatic action movie lighting, bright colorful pop-art style, humorous' },
-    { id: 4, title: 'Ha Lachma Anya', prompt: 'A wide-open colorful door to a wild party, neon signs saying WELCOME in multiple languages, a red carpet leading to a funky disco-lit dinner table, Pixar 3D style, warm and inviting, funny characters waving' },
-    { id: 5, title: 'Ma Nishtana', prompt: 'An adorable wide-eyed kid standing on a chair at a dinner table pointing at everything confused, giant question marks floating around in neon colors, family laughing, Pixar 3D style, bright and hilarious' },
-    { id: 6, title: 'Avadim Hayinu', prompt: 'Cartoon characters breaking free from colorful chains and dancing, confetti explosion, pyramids in the background with disco lights, epic freedom celebration, vibrant pop-art, Pixar style, funny and triumphant' },
-    { id: 7, title: 'Story of Rabbis', prompt: 'Five nerdy professors having an all-night study marathon with mountains of coffee cups and books, one fell asleep in a pizza box, sunrise through window, vibrant colorful cartoon style, hilarious academic chaos' },
-    { id: 8, title: 'Four Sons', prompt: 'Four hilarious cartoon characters: a bookworm genius with huge glasses, a rebellious punk rocker, a sweet confused teddy bear, and a silent cool character with sunglasses, bright pop-art style, funny personality portraits' },
-    { id: 9, title: 'Vehi Sheamda', prompt: 'A family group photo but through the ages — from ancient to modern — all making the same silly pose, colorful timeline mashup, vibrant neon accents, warm and funny, Pixar 3D style' },
-    { id: 10, title: 'Ten Plagues', prompt: 'A hilarious comic-book grid of ten silly plagues: rubber frogs raining, ketchup river, cartoon locusts wearing sunglasses, total darkness with glowing eyes, bright pop-art colors, funny and over-the-top' },
-    { id: 11, title: 'Dayenu', prompt: 'An epic victory dance party on a split ocean floor with disco balls, confetti, and fireworks, cartoon characters high-fiving, neon colors reflecting off water walls, Pixar 3D, pure joy and celebration' },
-    { id: 12, title: 'Rabban Gamliel', prompt: 'A giant colorful seder plate like a carnival wheel with oversized matzah, a cute cartoon lamb, and hilarious bitter herbs making funny faces, bright pop-art, Pixar style, food with personality' },
-    { id: 13, title: 'In Every Generation', prompt: 'A person taking a selfie and in the phone screen they appear as an ancient Egyptian escapee running through a colorful portal, split reality, vibrant neon, Pixar 3D style, funny time-travel vibe' },
-    { id: 14, title: 'Hallel Part 1', prompt: 'A massive colorful karaoke night with cartoon characters singing passionately into microphones, musical notes and stars flying everywhere, neon stage lights, Pixar 3D style, pure fun energy' },
-    { id: 15, title: 'Rachtzah', prompt: 'A comedic hand-washing competition with judges holding up score cards, dramatic water splashes in slow motion, rainbow colored soap, bright cartoon style, hilarious and over-dramatic' },
-    { id: 16, title: 'Motzi Matzah', prompt: 'A tower of giant matzah crackers being balanced by a funny character, crumbs falling like snow, bright golden lighting, other characters watching in amazement, vibrant Pixar 3D cartoon style' },
-    { id: 17, title: 'Maror', prompt: 'A hilarious face-reaction compilation of cartoon characters tasting super spicy horseradish, eyes watering comically, steam coming out of ears, bright pop-art colors, funny and exaggerated expressions' },
-    { id: 18, title: 'Korech', prompt: 'A giant ridiculous sandwich being assembled like a cooking show challenge, matzah, herbs and charoset flying through the air, a chef character juggling ingredients, bright colorful Pixar 3D style' },
-    { id: 19, title: 'Shulchan Orech', prompt: 'The most epic colorful feast ever with a ridiculously long table stretching to the horizon, mountains of delicious food, happy cartoon characters eating and laughing, warm festive lighting, Pixar 3D style' },
-    { id: 20, title: 'Tzafun', prompt: 'Kids on a hilarious treasure hunt for hidden matzah, one kid looking under a couch cushion finding it glowing like gold, others searching everywhere comically, bright neon colors, Pixar 3D adventure style' },
-    { id: 21, title: 'Barech', prompt: 'A magical golden wine cup floating and glowing, happy cartoon characters around a table raising tiny cups in a cheerful toast, sparkles and stars everywhere, warm vibrant colors, Pixar 3D celebration' },
-    { id: 22, title: 'Hallel & Nirtzah', prompt: 'An epic grand finale party scene — fireworks, confetti, golden Jerusalem skyline in the background, cartoon characters dancing and celebrating, a mysterious cool figure arriving through a glowing door, vibrant neon Pixar 3D style' },
-    { id: 23, title: 'Hallel A', prompt: 'A massive outdoor rock concert with cartoon characters playing instruments on a rainbow stage, colorful sound waves visible in the air, crowd cheering, neon lights, Pixar 3D festival vibe' },
-    { id: 24, title: 'Hallel B', prompt: 'A hilarious choir of mismatched cartoon characters singing with exaggerated expressions, some off-key with musical notes flying crooked, colorful spotlights, confetti, Pixar 3D karaoke party style' },
-    { id: 25, title: 'Hallel C', prompt: 'An epic dance battle between cartoon characters in a disco arena, breakdancing moves, spinning disco balls reflecting rainbow colors, crowd going wild, vibrant neon Pixar 3D style' },
-    { id: 26, title: 'Nirtzah A', prompt: 'A magical portal opening to a futuristic colorful Jerusalem, cartoon characters stepping through excitedly, holographic buildings, flying cars, utopian celebration, vibrant Pixar 3D sci-fi meets tradition' },
-    { id: 27, title: 'Nirtzah B', prompt: 'An adorable cartoon goat being chased through a hilarious Rube Goldberg machine, colorful chain reactions, objects flying, pure cartoon chaos and fun, bright pop-art Pixar 3D style' },
-    { id: 28, title: 'Nirtzah C', prompt: 'A hilarious counting game scene: cartoon characters counting from one to thirteen with increasingly ridiculous items, visual number chaos, bright colors, funny mathematical madness, Pixar 3D style' },
-    { id: 29, title: 'Nirtzah D', prompt: 'A colorful cosmic scene with cartoon characters floating among stars and galaxies, building a playful universe, planets made of matzah and wine, whimsical space adventure, vibrant Pixar 3D style' },
-    { id: 30, title: 'Nirtzah E', prompt: 'An epic cartoon race scene with characters riding comically oversized animals through a colorful obstacle course, finish line made of matzah, crowd cheering with confetti, Pixar 3D style' },
-    { id: 31, title: 'Nirtzah F', prompt: 'A magical treehouse party at night, cartoon characters celebrating on every level, fairy lights everywhere, stars twinkling, a golden cup glowing at the top, warm and magical, vibrant Pixar 3D style' },
-    { id: 32, title: 'Nirtzah G', prompt: 'The ultimate season finale — cartoon characters on a rooftop watching a spectacular fireworks show spelling out NEXT YEAR, golden Jerusalem skyline, champagne toasts, vibrant celebration, Pixar 3D grand finale' }
+    { id: 0, title: 'Kadesh', prompt: 'Real people at a Passover seder table raising ornate silver wine cups in warm candlelight, one person\'s phone buzzing face-down and they are pointedly ignoring it, ancient Egyptian decor mixed with a modern wine bottle peeking in the corner, rich jewel tones, cinematic photorealistic documentary photography' },
+    { id: 1, title: 'Urchatz', prompt: 'Ritual handwashing from an ancient stone pitcher in golden light, one person has a modern smartwatch visible on their wrist and is secretly timing themselves, others waiting patiently with barely-suppressed smiles, terracotta walls, photorealistic editorial photography' },
+    { id: 2, title: 'Karpas', prompt: 'A single sprig of fresh parsley being solemnly dipped into a small bowl of salt water, the entire family leaning in watching this mundane act with absurd reverence, one child looks deeply skeptical, warm candlelight, ancient seder table, photorealistic close-up documentary' },
+    { id: 3, title: 'Yachatz', prompt: 'A matzah being broken precisely in half, the whole family leaning in watching as if witnessing surgery, one half being wrapped in a napkin with the secrecy of a heist, everyone pretending not to notice where it goes, dramatic warm candlelight, photorealistic' },
+    { id: 4, title: 'Ha Lachma Anya', prompt: 'A warm ancient doorway thrown open to the street at night, inviting golden light pouring out, family gesturing welcomingly, matzah visible on the table behind them, an actual neighbor showing up with their coat on looking delighted and slightly confused, photorealistic cinematic' },
+    { id: 5, title: 'Ma Nishtana', prompt: 'A child standing on their chair at the ancient seder table, gesturing at the seder plate with the confidence of a prosecutor presenting evidence, four questions clearly serious business, the entire family watching with genuine delight and barely-controlled smiles, candlelight, photorealistic documentary' },
+    { id: 6, title: 'Avadim Hayinu', prompt: 'Ancient Hebrews walking away from Egyptian pyramids at dawn, exhausted but free, one person in the group has clearly modern sneakers visible under their robe, someone trying to document it on a scroll held exactly like a phone. Epic wide shot, golden sunrise, photorealistic cinematic' },
+    { id: 7, title: 'Story of Rabbis', prompt: 'Five wise rabbis in robes having an intensely animated all-night discussion, table covered in ancient scrolls and at least six empty espresso-sized cups, one asleep face-down in his notes, sunrise just beginning through the window, warm lamp light, photorealistic bookish chaos' },
+    { id: 8, title: 'Four Sons', prompt: 'Four distinctly different people at one seder table: one reading the Haggadah with reading glasses and margin notes, one with arms crossed and clear teenager energy, one looking genuinely sweet and confused, one somehow wearing sunglasses indoors at night, candlelight, photorealistic candid portrait' },
+    { id: 9, title: 'Vehi Sheamda', prompt: 'A sweeping multigenerational family portrait, same pose same expression across four generations, ancient decor around them, youngest in modern pajamas oldest in ancient robes, warm rich golden lighting, photorealistic, deeply moving and slightly absurd' },
+    { id: 10, title: 'Ten Plagues', prompt: 'Photo essay of ten images: actual frogs everywhere but people calmly eating around them, a river mysteriously red while someone photographs it for social media, hail while someone checks a weather app, total darkness with only phone screen glow visible, dry editorial photojournalism humor' },
+    { id: 11, title: 'Dayenu', prompt: 'An entire Passover family on their feet mid-song, arms around each other, wine cups raised, total unbridled joy, someone conducting an invisible orchestra, the family dog has clearly joined in howling, warm golden candlelight, photorealistic candid celebration' },
+    { id: 12, title: 'Rabban Gamliel', prompt: 'An elegantly lit seder plate photographed as if it were a Michelin-star restaurant dish, matzah, maror and shankbone beautifully arranged, a hand pointing to each element with the authority of a sommelier, warm directional light, photorealistic food editorial photography' },
+    { id: 13, title: 'In Every Generation', prompt: 'A modern person taking a selfie in front of ancient Egyptian pyramids, but in the phone screen their reflection shows them dressed in ancient Exodus clothing, slight knowing smile, golden hour light, subtle magical realism, photorealistic cinematic, the joke is just in the reflection' },
+    { id: 14, title: 'Hallel Part 1', prompt: 'Spontaneous Passover singing around the seder table, people of all ages genuinely joining in, one person using a wine glass as a microphone with full commitment, everyone knows every word, the dog howling from the corner, warm golden candlelight, photorealistic candid photography' },
+    { id: 15, title: 'Rachtzah', prompt: 'Elegant ritual handwashing with an ornate ancient silver pitcher, beautiful ceremony, one person is secretly timing themselves on their phone to get the exact right amount of time, others watching with warmth, stone basin, photorealistic editorial photography' },
+    { id: 16, title: 'Motzi Matzah', prompt: 'Two hands blessing two pieces of matzah aloft in golden candlelight, crumbs already on the tablecloth somehow, someone in the background quietly photographing the moment for the family album, warm ceremonial atmosphere, photorealistic, beautiful composition' },
+    { id: 17, title: 'Maror', prompt: 'A lineup of family members tasting horseradish in sequence: first person cautious, second surprised, third with eyes watering, fourth completely stoic but clearly lying, fifth already reaching for water, photorealistic candid portrait series, warm light, deeply relatable human moment' },
+    { id: 18, title: 'Korech', prompt: 'An enormous Hillel sandwich being assembled with engineering precision, matzah, maror and charoset stacked impossibly high, one person already took a bite before the blessing and is looking slightly guilty but satisfied, warm light, photorealistic food photography, joyful chaos' },
+    { id: 19, title: 'Shulchan Orech', prompt: 'The Passover feast at full chaos, epic long table with every dish competing for space, multiple conversations happening simultaneously, a small child asleep under the table, grandmother refilling everyone\'s plate without asking, warm golden overhead light, photorealistic National Geographic quality' },
+    { id: 20, title: 'Tzafun', prompt: 'Kids in full heist mode searching every cushion and chair for the hidden afikoman, one has clearly found it and is negotiating ransom terms with grandfather with complete dead-serious expressions, warm evening light, photorealistic documentary low-angle shot, a movie in one frame' },
+    { id: 21, title: 'Barech', prompt: 'Elijah\'s cup gleaming in candlelight, the front door cracked open for him, everyone at the table staring at the cup waiting for it to move, one person thinks it absolutely did move, the wine level is suspiciously slightly lower, photorealistic, warm mysterious atmosphere' },
+    { id: 22, title: 'Hallel & Nirtzah', prompt: 'Grand finale of the seder, everyone singing together, chairs pushed back, someone standing on theirs, ancient Jerusalem skyline glowing warmly through the window, the night ending in uncontainable family joy, warm candlelight meets blue night sky, photorealistic cinematic wide shot' },
+    { id: 23, title: 'Hallel A', prompt: 'Intense passionate Passover singing, some people eyes closed really feeling every word, others watching them with affection, the room vibrating with shared memory and song, candlelight flickering, photorealistic candid emotional portrait photography' },
+    { id: 24, title: 'Hallel B', prompt: 'Enthusiastic group seder song happening in at least three different keys simultaneously, everyone utterly confident they are correct, the harmonies happening by accident and somehow working, candlelight, warm glow, photorealistic candid' },
+    { id: 25, title: 'Hallel C', prompt: 'Spontaneous dancing in the living room after the seder, ancient song on clearly modern speakers visible in the corner, grandmother dancing with toddler, everyone somehow knows the same moves, pure intergenerational joy, warm light, photorealistic candid celebration' },
+    { id: 26, title: 'Nirtzah A', prompt: 'Family gathered at a window looking out at a glowing Jerusalem skyline at night, some in ancient robes some in modern clothes, all united in the same hopeful gaze, one cup still raised, cinematic photorealistic, warm amber interior light vs cool blue outside' },
+    { id: 27, title: 'Nirtzah B', prompt: 'A very small goat somehow on the edge of the seder table while the family is absorbed in the final songs, one cat watching the goat with absolute focus from across the room, nobody has noticed yet, perfect timing, photorealistic candid, warm candlelight, one perfect absurd moment' },
+    { id: 28, title: 'Nirtzah C', prompt: 'Family counting thirteen things on their fingers, running out of fingers and moving to toes, one person pulled out a notepad, another is inexplicably using an ancient abacus, all counting with total seriousness, warm light, photorealistic, hilariously intense group focus' },
+    { id: 29, title: 'Nirtzah D', prompt: 'Small group sitting outside under an extraordinary desert night sky, the Milky Way blazing above them, they look tiny and genuinely awestruck, someone pointing upward, warm campfire glow on faces, photorealistic astrophotography meets intimate human moment' },
+    { id: 30, title: 'Nirtzah E', prompt: 'Ancient Israelites crossing the desert but with very modern energy: mismatched effort levels, one sitting down already, one sprinting with full commitment, donkeys watching with visible judgment, photorealistic action shot, golden desert light, one epic absurd scene' },
+    { id: 31, title: 'Nirtzah F', prompt: 'Magical outdoor gathering after the seder ends, fairy lights in ancient olive trees, children chasing fireflies, elders talking quietly under the stars, warm dusk light, stone walls, the most perfect evening, photorealistic golden-blue hour photography' },
+    { id: 32, title: 'Nirtzah G', prompt: 'The very end of the seder: sleepy satisfied faces around the table, wine glasses empty, dishes half-cleared, one person asleep upright in their chair, another just smiling into the distance, golden sunrise light just beginning through the window, photorealistic candid, complete and happy' }
 ];
 
 
@@ -101,11 +102,29 @@ async function generateImage(prompt, initImageIds = null, onStatus = null) {
     return pollForImage(generationId, onStatus);
 }
 
+const FUNNY_STATUSES = [
+    'פרעה מנסה לעכב... אבל ה-AI כבר יצא ממצרים 🌊',
+    'ממתין לאישור מסיני... 📡',
+    'בצלאל ממשיך לצייר — בלי עוד 40 שנה 🎨',
+    'ה-AI לא ממהר. גם יציאת מצרים לקחה זמן 📜',
+    'שולח פקס לסיני... 📠 (כן, עדיין)',
+    'ממתין לאישור ממשה... 🌿',
+    'המן ניתן, התמונה מגיעה 🌾',
+    'הים לא נבקע בניסיון הראשון גם 🌊',
+    'עוד קצת... הייצור יוצא לחירות 🕊️',
+    'מפרעה לא קיבלנו תשובה. שולח עוד מכה 🐸',
+    'AI על קצת בצלים, לפחות לא על פרך 💪',
+    'מעבד... טכנולוגיה לעם ישראל ⚡',
+    'כמעט שם — יותר מהיר מ-40 שנה במדבר 🏕️',
+    'המחשב נושם עמוק ויוצר 🖼️',
+    'מחכה לניצוץ יצירתי... 🌟',
+];
+
 async function pollForImage(generationId, onStatus = null) {
     const MAX_ATTEMPTS = 40;
     for (let i = 0; i < MAX_ATTEMPTS; i++) {
         await sleep(3000);
-        if (onStatus) onStatus(`בודק סטטוס... (${i + 1}/${MAX_ATTEMPTS})`);
+        if (onStatus) onStatus(FUNNY_STATUSES[i % FUNNY_STATUSES.length]);
         try {
             const res = await fetch(`${LEONARDO_API_URL}/generations/${generationId}`, {
                 headers: { Authorization: `Bearer ${LEONARDO_API_KEY}` }
@@ -200,7 +219,7 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
     if (!rooms[roomId]) return;
     try {
         console.log(`[AI] Personalized Page Generation for room ${roomId}, page ${pageIndex}`);
-        io.to(roomId).emit('ai-status', { message: 'מתחיל תהליך עיבוד (NB PRO)...', pageIndex });
+        io.to(roomId).emit('ai-status', { message: 'מכינים את ההזמנות ליציאת מצרים... 🌊', pageIndex });
 
         // 1. Upload participant selfies — prioritize active readers
         const initImageIds = [];
@@ -211,11 +230,11 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
         const selected = pickRandom(pool, 3); // API limit: max 3 reference images
 
         if (selected.length === 0) {
-            io.to(roomId).emit('ai-status', { message: 'אין סלפי משתתפים, מייצר תמונה כללית...', pageIndex });
+            io.to(roomId).emit('ai-status', { message: 'אין משתתפים עם תמונה — מייצר סצנה כללית... 📜', pageIndex });
         } else {
-            const src = readers.length > 0 ? 'קוראים פעילים' : 'משתתפים';
+            const names = selected.map(p => p.name || 'משתתף').join(', ');
             io.to(roomId).emit('ai-status', {
-                message: `מעלה ${selected.length} תמונות של ${src} ל-Leonardo...`,
+                message: `מזמין את ${names} לסצנה... ✈️`,
                 pageIndex
             });
             for (const p of selected) {
@@ -234,12 +253,12 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
 
         let finalPrompt = section.prompt;
         if (initImageIds.length > 0) {
-            finalPrompt += `. The people in the reference images should appear as fun cartoon characters in the scene, with exaggerated happy expressions and silly poses. Make it hilarious, warm and memorable`;
+            finalPrompt += `. Include the people from the reference images realistically in the scene — they look like themselves but in period-appropriate clothing, with genuine amused expressions, as if they accidentally ended up at the Exodus. One subtle modern detail on each of them (a watch, sneakers, an earring)`;
         }
-        // Global style suffix — ensure every image is fun and modern
-        finalPrompt += '. Ultra vibrant saturated colors, high energy, witty visual humor, modern pop-art meets Pixar 3D rendering, NOT religious or serious';
+        // Global style suffix — photorealistic, cinematic, with wit
+        finalPrompt += '. Cinematic photorealistic photography, rich warm saturated colors, golden hour light. Real people with genuine emotions. Humor comes from subtle anachronistic modern details hidden in ancient scenes. NOT cartoon, NOT Pixar, NOT illustration — real photography feel, like a BBC documentary that has a sense of humor';
 
-        io.to(roomId).emit('ai-status', { message: 'אוסף נתונים ושולח פקודת ייצור...', pageIndex });
+        io.to(roomId).emit('ai-status', { message: 'שולח את הפקודה לפרעה... 📜', pageIndex });
 
         // 3. Generate Image
         const imageUrl = await generateImage(finalPrompt, initImageIds, (statusMsg) => {

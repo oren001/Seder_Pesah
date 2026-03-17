@@ -163,10 +163,21 @@
             <!-- Step 4: Final Excitement -->
             <div id="rsvp-step-finish" class="rsvp-step hidden">
                 <div id="rsvp-finish-photo" class="rsvp-finish-photo-wrap"></div>
-                <h2>איזה כיף! הכל מוכן.</h2>
-                <p>ככה כולם יראו אתכם בהגדה. <br> <b>עכשיו רק נשאר לשבת סביב השולחן!</b></p>
+                <h2>אחלה! 🌊</h2>
+                <p style="opacity:0.8;">ככה תופיע בהגדה של הסדר</p>
+
+                <div id="finish-participants-section" class="hidden">
+                    <p class="finish-section-label">גם הם מגיעים לסדר:</p>
+                    <div id="finish-participants-grid" class="finish-participants-grid"></div>
+                </div>
+
+                <div class="finish-countdown-box">
+                    <p class="finish-countdown-label" id="finish-countdown-label">⏳ הסדר מתחיל בעוד:</p>
+                    <div id="finish-countdown" class="finish-countdown">טוען...</div>
+                </div>
+
                 <div class="rsvp-actions">
-                    <button id="btn-go-to-haggadah" class="btn primary">אני בשולחן, בואו נתחיל! 📖🚀</button>
+                    <button id="btn-go-to-haggadah" class="btn primary">כנס לחדר ההמתנה 🍷</button>
                 </div>
             </div>
         </div>
@@ -199,12 +210,20 @@
             <!-- Leader controls: only visible to the leader -->
             <div id="lobby-leader-actions" class="hidden">
                 <p style="font-weight: 600;">מנהל הסדר, כשיש מניין - אפשר להתחיל!</p>
+                <input type="text" id="seder-label-input" class="lobby-input"
+                    placeholder="שם הסדר (לדוגמה: בביתם של יעלי ודני קריו)"
+                    maxlength="60" style="font-size: 0.9rem; margin-bottom: 0.75rem;">
                 <button id="btn-start-seder" class="btn primary" style="width: 100%;">התחל את ההגדה 📖🚀</button>
             </div>
 
-            <!-- Guest note -->
-            <div id="lobby-guest-note">
-                המנחה יתחיל את הסדר בקרוב, הישארו איתנו... ✨
+            <!-- Guest ready note -->
+            <div id="lobby-guest-note" class="lobby-ready-note">
+                <div class="ready-title">אחלה! אתה מוכן ליציאת מצרים 🌊</div>
+                <div id="lobby-seder-label-display" class="lobby-seder-label hidden"></div>
+                <div class="lobby-mini-countdown-wrap">
+                    <span class="lobby-mini-countdown-label">הסדר מתחיל בעוד:</span>
+                    <div id="lobby-mini-countdown" class="lobby-mini-countdown">טוען...</div>
+                </div>
             </div>
 
             <!-- Host login section -->

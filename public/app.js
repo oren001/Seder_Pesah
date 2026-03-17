@@ -11,6 +11,8 @@ let currentVersion = null; // Will be set on first checkVersion() call
 let wakeLock = null;
 let exodusMap = null;
 let rsvpFlow = null;
+let sederLabel = ''; // Host-set seder location label
+let _lobbyCountdownInterval = null;
 
 // --- Staging State ---
 let isFollowingLeader = true;
@@ -232,16 +234,15 @@ function init() {
     rsvpFlow = new RSVPFlow({
         onComplete: (data) => {
             console.log('[RSVP] Flow complete:', data);
-            
-            // If we're a guest (not logged in with Google), create a dummy user
-            if (!window.me) {
+
+            // Ensure me has name from RSVP
+            if (!me || !me.name) {
                 const guestName = data.name || 'אורח ' + Math.floor(Math.random() * 900 + 100);
-                window.me = {
-                    id: 'guest_' + Math.random().toString(36).substr(2, 9),
-                    name: guestName,
-                    isGuest: true
-                };
-                localStorage.setItem('haggadah-user', JSON.stringify(window.me));
+                me = { name: guestName, isGuest: true };
+                localStorage.setItem('haggadah-user', JSON.stringify(me));
+            } else if (data.name && me.isGuest) {
+                me.name = data.name;
+                localStorage.setItem('haggadah-user', JSON.stringify(me));
             }
 
             if (currentRoomId) {
@@ -249,10 +250,9 @@ function init() {
                 socket.emit('update-profile', { roomId: currentRoomId, photo: data.photo });
                 showScreen('roomLobby');
             } else if (pendingRoomId) {
-                // Joining for the first time
-                joinRoom(pendingRoomId, data);
+                // Join room, then show finish screen with participants + countdown
+                joinRoomAndShowFinish(pendingRoomId, data);
             } else {
-                // No room context — go back to lobby
                 showScreen('lobby');
                 showToast('הפרופיל נשמר! כדי להצטרף לסדר, פתחו קישור מהמארח 🔗');
             }
@@ -304,8 +304,24 @@ function init() {
     safeAddListener('btn-close-tasks', 'click', toggleTasks);
     safeAddListener('btn-add-task', 'click', addTask);
     safeAddListener('btn-start-seder', 'click', onStartSeder);
+    safeAddListener('seder-label-input', 'input', (e) => {
+        const label = e.target.value;
+        sederLabel = label;
+        if (socket && currentRoomId) socket.emit('set-seder-label', { roomId: currentRoomId, label });
+        updateSederLabelDisplay(label);
+    });
     safeAddListener('btn-lobby-copy-link', 'click', onCopyLink);
-    safeAddListener('btn-lobby-share', 'click', onCopyLink);
+    safeAddListener('btn-lobby-share', 'click', () => {
+        const url = window.location.origin + '?room=' + currentRoomId;
+        const msg =
+            `🍷 *פסח יחד 2026!* 🌊\n\n` +
+            `הצטרפו לסדר הפסח המשותף שלנו!\n\n` +
+            `📸 לחצו על הקישור, צלמו סלפי ותראו מי עוד מגיע לסדר 😄\n\n` +
+            `👇 הצטרפו כאן:\n${url}\n\n` +
+            `חג פסח שמח! 🎉`;
+        const wa = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        window.open(wa, '_blank');
+    });
     safeAddListener('btn-end-seder', 'click', onEndSeder);
     safeAddListener('btn-gallery-open', 'click', () => { showGallery(); toggleMenu(); });
     safeAddListener('btn-feedback-open', 'click', () => { showFeedback(); toggleMenu(); });
@@ -701,6 +717,58 @@ async function setupSocket() {
 
         updateLeadershipUI();
     });
+
+    socket.on('seder-label-updated', ({ label }) => {
+        sederLabel = label;
+        updateSederLabelDisplay(label);
+    });
+}
+
+function updateSederLabelDisplay(label) {
+    // Update the finish screen countdown label
+    const finishLabel = $$('finish-countdown-label');
+    if (finishLabel) {
+        finishLabel.textContent = label
+            ? `⏳ נתחיל את הסדר ${label} בעוד:`
+            : '⏳ הסדר מתחיל בעוד:';
+    }
+    // Update the lobby guest note label
+    const lobbyLabelEl = $$('lobby-seder-label-display');
+    if (lobbyLabelEl) {
+        if (label) {
+            lobbyLabelEl.textContent = label;
+            lobbyLabelEl.classList.remove('hidden');
+        } else {
+            lobbyLabelEl.classList.add('hidden');
+        }
+    }
+}
+
+function startLobbyCountdown() {
+    const sederDate = new Date(2026, 3, 1, 19, 0, 0); // April 1, 2026 19:00
+    const el = $$('lobby-mini-countdown');
+    if (!el) return;
+
+    function update() {
+        const diff = sederDate - new Date();
+        if (diff <= 0) {
+            el.innerHTML = '<span>🍷 הסדר מתחיל עכשיו!</span>';
+            clearInterval(_lobbyCountdownInterval);
+            return;
+        }
+        const days = Math.floor(diff / 86400000);
+        const hours = Math.floor((diff % 86400000) / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        let txt = '';
+        if (days > 0) txt += `<span class="cd-num">${days}</span><span class="cd-unit">ימים</span>`;
+        txt += `<span class="cd-num">${hours}</span><span class="cd-unit">שעות</span>`;
+        txt += `<span class="cd-num">${mins}</span><span class="cd-unit">דקות</span>`;
+        el.innerHTML = txt;
+    }
+
+    clearInterval(_lobbyCountdownInterval);
+    update();
+    _lobbyCountdownInterval = setInterval(update, 60000);
 }
 
 function triggerPageGeneration(pageIndex) {
@@ -897,6 +965,82 @@ function onJoinWithPhoto() {
     joinRoom(pendingRoomId);
 }
 
+// --- Join room after RSVP, then show finish screen with gallery + countdown ---
+function joinRoomAndShowFinish(roomId, rsvpData) {
+    const photo = rsvpData.photo;
+    const name = rsvpData.name || me?.name;
+    const userEmail = me ? me.email : null;
+
+    socket.emit('join-room', { roomId, photo, userEmail, name }, (response) => {
+        if (!response.success) { showToast('שגיאה בכניסה לחדר'); return; }
+
+        currentRoomId = response.roomId;
+        me = { ...me, ...response.participant };
+        leaderId = response.leaderId;
+        leaderName = response.leaderName;
+        leaderPage = response.currentPage;
+        currentPage = response.currentPage;
+        if (response.images) Object.assign(pageImages, response.images);
+        if (response.tasks) roomTasks = response.tasks;
+
+        updateUrlParam('room', currentRoomId);
+        startHeartbeat(currentRoomId);
+        updateLeadershipUI();
+        renderTasks();
+
+        // Show finish screen with participant gallery + countdown
+        rsvpFlow.showFinish(response.participants || [response.participant]);
+        startFinishCountdown();
+
+        // Wire the "כנס לחדר" button
+        const btn = $$('btn-go-to-haggadah');
+        // Apply seder label received from server
+        if (response.sederLabel) {
+            sederLabel = response.sederLabel;
+            updateSederLabelDisplay(sederLabel);
+        }
+
+        if (btn) btn.onclick = () => {
+            if (response.sederEnded) { showGallery(); }
+            else if (response.sederStarted) { showScreen('room'); renderPage(); }
+            else {
+                showScreen('roomLobby');
+                renderLobbyParticipants(response.participants || [response.participant]);
+                updateLobbyUI(false);
+                startLobbyCountdown();
+            }
+        };
+    });
+}
+
+// --- Countdown to seder night (April 1, 2026 at 19:00) ---
+let _countdownInterval = null;
+function startFinishCountdown() {
+    const sederDate = new Date(2026, 3, 1, 19, 0, 0); // April 1, 2026 19:00
+    const el = $$('finish-countdown');
+    if (!el) return;
+
+    function update() {
+        const diff = sederDate - new Date();
+        if (diff <= 0) {
+            el.innerHTML = '<span style="font-size:1.4rem">🍷 הסדר מתחיל עכשיו!</span>';
+            clearInterval(_countdownInterval);
+            return;
+        }
+        const days = Math.floor(diff / 86400000);
+        const hours = Math.floor((diff % 86400000) / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        el.innerHTML =
+            `<span class="cd-num">${days}</span><span class="cd-unit">ימים</span>` +
+            `<span class="cd-num">${hours}</span><span class="cd-unit">שעות</span>` +
+            `<span class="cd-num">${mins}</span><span class="cd-unit">דקות</span>`;
+    }
+
+    clearInterval(_countdownInterval);
+    update();
+    _countdownInterval = setInterval(update, 60000);
+}
+
 // --- Heartbeat: send to server every 5s to show we're actively watching ---
 let heartbeatInterval = null;
 function startHeartbeat(roomId) {
@@ -929,6 +1073,12 @@ function joinRoom(roomId, rsvpData = null) {
             currentPage = response.currentPage;
             if (response.images) Object.assign(pageImages, response.images);
             if (response.tasks) roomTasks = response.tasks;
+            if (response.sederLabel) {
+                sederLabel = response.sederLabel;
+                updateSederLabelDisplay(sederLabel);
+                const inp = $$('seder-label-input');
+                if (inp) inp.value = sederLabel;
+            }
 
             $$('total-pages').textContent = HAGGADAH.length;
             
@@ -954,6 +1104,7 @@ function joinRoom(roomId, rsvpData = null) {
                 showScreen('roomLobby');
                 renderLobbyParticipants(response.participants || [response.participant]);
                 updateLobbyUI(false);
+                startLobbyCountdown();
             }
             renderTasks();
             updateLeadershipUI();
@@ -1738,8 +1889,9 @@ function updateMealProgress() {
     let footerText = '';
     
     if (text) {
-        // Find index of "Shulchan Orech" if it exists, otherwise use total
-        const dinnerIndex = HAGGADAH.findIndex(p => p.title.includes('שולחן עורך'));
+        // Find index of "Shulchan Orech" — strip nikkud (vowel marks) before comparing
+        const stripNikkud = s => s.replace(/[\u0591-\u05C7]/g, '');
+        const dinnerIndex = HAGGADAH.findIndex(p => stripNikkud(p.title).includes('שלחן'));
         if (dinnerIndex !== -1) {
             const remaining = dinnerIndex - currentPage;
             if (remaining > 0) {

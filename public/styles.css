@@ -867,6 +867,34 @@ body {
     display: block;
 }
 
+/* Tiny participant indicator bubbles shown at the bottom of the AI image */
+.featured-bubbles {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    padding: 6px 10px;
+    align-items: center;
+    justify-content: flex-end;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.featured-participant {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    flex-shrink: 0;
+}
+
+.featured-participant img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+}
+
 .image-shimmer {
     width: 100%;
     aspect-ratio: 16/9;
@@ -2024,9 +2052,42 @@ body {
 }
 #room-lobby-screen #lobby-guest-note {
     color: var(--text-on-dark);
-    opacity: 0.7;
+    margin-top: 0.75rem;
+}
+#room-lobby-screen .lobby-ready-note {
+    text-align: center;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    border: 1px solid rgba(212, 175, 55, 0.15);
+}
+#room-lobby-screen .ready-title {
+    font-size: var(--fs-lg);
+    font-weight: 800;
+    color: var(--gold);
+    margin-bottom: 0.25rem;
+}
+#room-lobby-screen .lobby-seder-label {
     font-size: var(--fs-sm);
-    margin-top: 0.5rem;
+    color: var(--text-on-dark);
+    opacity: 0.8;
+    margin-bottom: 0.4rem;
+}
+#room-lobby-screen .lobby-mini-countdown-wrap {
+    font-size: var(--fs-xs);
+    color: var(--text-on-dark);
+    opacity: 0.65;
+    margin-top: 0.4rem;
+}
+#room-lobby-screen .lobby-mini-countdown-label {
+    display: block;
+    margin-bottom: 0.2rem;
+}
+#room-lobby-screen .lobby-mini-countdown {
+    font-size: var(--fs-md);
+    font-weight: 700;
+    color: var(--gold);
+    opacity: 0.9;
 }
 #room-lobby-screen #lobby-leader-actions {
     margin-top: 0.75rem;
@@ -2460,3 +2521,95 @@ body {
 }
 .rsvp-name-input::placeholder { color: rgba(255,255,255,0.4); }
 .rsvp-name-input:focus { border-color: var(--gold); }
+
+/* ===== RSVP Finish Screen ===== */
+.finish-section-label {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin: 1rem 0 0.5rem;
+    font-weight: 600;
+}
+.finish-participants-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+.fp-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+}
+.fp-img {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--gold);
+}
+.fp-emoji {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    border: 2px solid var(--gold);
+}
+.fp-name {
+    font-size: 0.65rem;
+    opacity: 0.8;
+    max-width: 58px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fp-more {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border: 2px dashed var(--gold);
+}
+
+/* Countdown */
+.finish-countdown-box {
+    background: rgba(0,0,0,0.2);
+    border-radius: 16px;
+    padding: 1rem;
+    margin: 1rem 0;
+    border: 1px solid rgba(255,215,0,0.2);
+}
+.finish-countdown-label {
+    font-size: 0.85rem;
+    opacity: 0.75;
+    margin-bottom: 0.5rem;
+}
+.finish-countdown {
+    display: flex;
+    justify-content: center;
+    gap: 0.8rem;
+    align-items: baseline;
+    direction: rtl;
+}
+.cd-num {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--gold);
+    line-height: 1;
+}
+.cd-unit {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-right: -0.4rem;
+}

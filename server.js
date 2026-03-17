@@ -211,6 +211,7 @@ io.on('connection', (socket) => {
             currentPage: 0,
             leaderId: socket.id,
             leaderName: socket.userName || 'מנחה',
+            sederLabel: '',
             tasks: persistedTasks[roomId] || [
                 { id: 'h1', text: '✅ תכנון MVP ראשוני', completed: true, author: 'אורן (מנהל פרויקט)' },
                 { id: 'h2', text: '✅ הקמת שרת (Express, Socket.io)', completed: true, author: 'אורן (מנהל פרויקט)' },
@@ -321,6 +322,7 @@ io.on('connection', (socket) => {
                 tasks: room.tasks,
                 leaderId: room.leaderId,
                 leaderName: room.leaderName,
+                sederLabel: room.sederLabel || '',
                 participants: room.participants
             });
         }
@@ -346,6 +348,12 @@ io.on('connection', (socket) => {
                 sederStarted: room.sederStarted 
             });
         }
+    });
+
+    socket.on('set-seder-label', ({ roomId, label }) => {
+        if (!rooms[roomId]) return;
+        rooms[roomId].sederLabel = (label || '').slice(0, 60);
+        io.to(roomId).emit('seder-label-updated', { label: rooms[roomId].sederLabel });
     });
 
     socket.on('take-lead', ({ roomId, name }) => {
