@@ -752,7 +752,9 @@ body {
 /* --- Haggadah Container --- */
 .haggadah-container {
     flex: 1;
+    min-height: 0;          /* critical: allows flex child to shrink & overflow-y to work */
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding: clamp(0.5rem, 0.3rem + 1.5vw, 1.5rem);
     padding-bottom: 90px; /* space for fixed sticky footer */
     display: flex;
