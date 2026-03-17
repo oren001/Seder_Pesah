@@ -43,12 +43,17 @@
     padding: 0;
 }
 
+html {
+    height: 100%;
+    overflow: hidden;   /* prevent body-level scrolling — each screen scrolls internally */
+}
+
 body {
     font-family: var(--font-main);
     background: var(--bg-dark);
     color: var(--text);
-    min-height: 100vh;
-    overflow-y: auto;
+    height: 100%;
+    overflow: hidden;   /* screens handle their own overflow */
     user-select: none;
     line-height: 1.6;
 }
@@ -250,8 +255,8 @@ body {
 
 #room-lobby-screen {
     background: linear-gradient(145deg, #1a0510 0%, #3d0c1f 25%, #5a1a2e 45%, #722f37 60%, #8b4a30 80%, #a06828 100%);
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100dvh;          /* exact height — no overflow beyond screen */
+    max-height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: flex-start;
