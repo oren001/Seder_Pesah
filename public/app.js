@@ -407,6 +407,20 @@ function init() {
         if (socket && currentRoomId) socket.emit('set-seder-label', { roomId: currentRoomId, label });
         updateSederLabelDisplay(label);
     });
+    safeAddListener('btn-claim-lead-pin', 'click', () => {
+        const pin = $$('leader-pin-input')?.value?.trim();
+        if (!pin) { showToast('נא להזין קוד מנחה 🔑'); return; }
+        socket.emit('claim-lead-with-pin', { roomId: currentRoomId, pin }, (res) => {
+            if (res?.success) {
+                showToast('ברוך הבא מנחה! 👑');
+                const box = $$('lobby-host-login');
+                if (box) box.style.display = 'none';
+            } else {
+                showToast('קוד שגוי ❌');
+            }
+        });
+    });
+
     safeAddListener('btn-lobby-copy-link', 'click', onCopyLink);
     safeAddListener('btn-lobby-share', 'click', () => {
         const url = window.location.origin + '?room=' + currentRoomId;
@@ -1118,7 +1132,26 @@ function onRetake() {
 
 // --- Flow ---
 function onCreateRoom() {
-    socket.emit('create-room', (response) => {
+    const nameInput = $$('guest-name');
+    const pinInput  = $$('leader-pin-create');
+    const name      = nameInput ? nameInput.value.trim() : '';
+    const leaderPin = pinInput  ? pinInput.value.trim()  : '';
+
+    if (!name) {
+        showToast('נא להזין שם 😊');
+        if (nameInput) nameInput.focus();
+        return;
+    }
+    if (!leaderPin || leaderPin.length < 4) {
+        showToast('נא להזין קוד מנחה (4 ספרות לפחות) 🔑');
+        if (pinInput) pinInput.focus();
+        return;
+    }
+
+    me = { name, isGuest: false };
+    localStorage.setItem('haggadah-user', JSON.stringify(me));
+
+    socket.emit('create-room', { name, leaderPin }, (response) => {
         pendingRoomId = response.roomId;
         rsvpFlow.show();
     });
@@ -1491,59 +1524,15 @@ function updateLobbyUI(sederStarted) {
             leaderActions.classList.add('hidden');
             if (guestNote) guestNote.classList.remove('hidden');
             
-            // If logged in with Google (not a guest)
-            if (me && !me.isGuest) {
-                // No leader yet — auto-claim leadership
-                if (!leaderId && currentRoomId) {
-                    socket.emit('take-lead', { roomId: currentRoomId, name: me.name });
-                    return; // leader-updated event will re-trigger updateLobbyUI
-                }
-                guestNote.innerHTML = '👤 מחובר. המנחה יתחיל את הסדר בקרוב... ✨';
-            }
-            // If guest or not logged in at all
-            else if (!me || me.isGuest) {
-                guestNote.innerHTML = `
-                    <div id="g-login-lobby" style="margin-top: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid rgba(0,0,0,0.1);">
-                        <p style="margin-bottom: 0.8rem; font-weight: 600;">מנהל הסדר? התחבר כאן:</p>
-                        <div id="g_id_onload"
-                            data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
-                            data-callback="handleGoogleResponse">
-                        </div>
-                        <div class="g_id_signin" data-type="standard"></div>
-                    </div>
-                `;
-                // Re-init Google button if needed
-                setTimeout(() => {
-                    if (window.google) window.google.accounts.id.renderButton(
-                        document.querySelector(".g_id_signin"),
-                        { theme: "outline", size: "large", text: "continue_with" }
-                    );
-                }, 100);
-            }
+            // Show simple waiting message — PIN box in HTML handles leader login
+            guestNote.innerHTML = '✨ ממתינים שהמנחה יתחיל את הסדר...';
         }
     }
 
-    // Hide the host login section if: already the leader, OR already logged in with Google
+    // Hide PIN login box if already the leader
     const hostLoginBox = $$('lobby-host-login');
     if (hostLoginBox) {
-        const alreadyLoggedIn = me && !me.isGuest;
-        if (isLeader || alreadyLoggedIn) {
-            hostLoginBox.style.display = 'none';
-        } else {
-            hostLoginBox.style.display = '';
-            setTimeout(() => {
-                const signinDiv = document.querySelector('.g_id_signin_lobby');
-                if (signinDiv && window.google && !signinDiv.hasChildNodes()) {
-                    google.accounts.id.initialize({
-                        client_id: '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com',
-                        callback: handleGoogleResponse
-                    });
-                    google.accounts.id.renderButton(signinDiv, {
-                        theme: 'outline', size: 'medium', text: 'continue_with'
-                    });
-                }
-            }, 200);
-        }
+        hostLoginBox.style.display = isLeader ? 'none' : '';
     }
 }
 
@@ -2242,19 +2231,4 @@ function updateReadersStrip() {
     });
 }
 
-// --- Google Auth ---
-function handleGoogleResponse(response) {
-    const credential = response.credential;
-    console.log('Google credential received');
-    
-    // Save credential for session persistence
-    localStorage.setItem('haggadah-google-cred', credential);
-    
-    if (socket) {
-        socket.emit('google-login', { credential });
-    } else {
-        console.error('Socket not initialized during Google login');
-    }
-}
-
-window.handleGoogleResponse = handleGoogleResponse;
+// Google Auth removed — PIN-based host login is used instead

@@ -3102,3 +3102,122 @@ body {
     object-position: center center;
     z-index: 0;
 }
+
+/* ── RSVP Name Picker ──────────────────────────────────────────── */
+.rsvp-name-picker {
+    margin-bottom: 0.75rem;
+}
+
+.rsvp-name-picker-label {
+    font-size: var(--fs-sm);
+    color: var(--light-text);
+    text-align: center;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.rsvp-participants-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    max-height: 180px;
+    overflow-y: auto;
+    padding: 0.25rem;
+}
+
+.rsvp-name-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    background: rgba(212,175,55,0.08);
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, transform 0.15s;
+    min-width: 60px;
+    max-width: 72px;
+}
+
+.rsvp-name-tile:hover,
+.rsvp-name-tile.selected {
+    border-color: var(--gold);
+    background: rgba(212,175,55,0.2);
+    transform: translateY(-2px);
+}
+
+.rsvp-tile-img {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(212,175,55,0.35);
+}
+
+.rsvp-tile-emoji {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    background: rgba(212,175,55,0.1);
+    border: 2px solid rgba(212,175,55,0.25);
+}
+
+.rsvp-tile-name {
+    font-size: var(--fs-2xs);
+    color: var(--text);
+    font-weight: 600;
+    text-align: center;
+    max-width: 68px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rsvp-name-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.65rem 0 0.5rem;
+    color: var(--light-text);
+    font-size: var(--fs-xs);
+}
+
+.rsvp-name-divider::before,
+.rsvp-name-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(114,47,55,0.18);
+}
+
+/* ── Lobby inputs ──────────────────────────────────────────────── */
+.lobby-input {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 1.5px solid rgba(212,175,55,0.35);
+    border-radius: 12px;
+    background: rgba(255,252,245,0.85);
+    font-size: var(--fs-base);
+    font-family: var(--font-main);
+    color: var(--text);
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+    direction: rtl;
+}
+
+.lobby-input:focus {
+    outline: none;
+    border-color: var(--gold);
+    background: #fff;
+}
+
+.lobby-btn {
+    width: 100%;
+    margin-top: 0.5rem;
+}

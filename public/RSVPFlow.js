@@ -189,7 +189,50 @@ class RSVPFlow {
             this.goToStep('look');
         } else {
             this.goToStep('name');
+            // Fetch existing participants for name picker
+            const roomId = pendingRoomId || currentRoomId;
+            if (roomId && socket) {
+                socket.emit('peek-room', { roomId }, (res) => {
+                    if (res && res.participants && res.participants.length > 0) {
+                        this.renderNamePicker(res.participants);
+                    }
+                });
+            }
         }
+    }
+
+    renderNamePicker(participants) {
+        const pickerWrap = $$('rsvp-name-picker');
+        const grid = $$('rsvp-participants-grid');
+        if (!pickerWrap || !grid || participants.length === 0) return;
+
+        grid.innerHTML = participants.map(p => {
+            const isEmoji = p.photo && !p.photo.startsWith('data:') && !p.photo.startsWith('http');
+            const photoHtml = isEmoji
+                ? `<div class="rsvp-tile-emoji">${p.photo}</div>`
+                : p.photo
+                    ? `<img src="${p.photo}" class="rsvp-tile-img" onerror="this.style.display='none'">`
+                    : `<div class="rsvp-tile-emoji">👤</div>`;
+            return `<div class="rsvp-name-tile" data-name="${(p.name || '').replace(/"/g, '&quot;')}">
+                ${photoHtml}
+                <span class="rsvp-tile-name">${p.name || 'אורח'}</span>
+            </div>`;
+        }).join('');
+
+        // Click a tile → fill name input
+        grid.querySelectorAll('.rsvp-name-tile').forEach(tile => {
+            tile.addEventListener('click', () => {
+                const nameInput = $$('rsvp-name-input');
+                if (nameInput) {
+                    nameInput.value = tile.dataset.name;
+                    nameInput.focus();
+                }
+                grid.querySelectorAll('.rsvp-name-tile').forEach(t => t.classList.remove('selected'));
+                tile.classList.add('selected');
+            });
+        });
+
+        pickerWrap.classList.remove('hidden');
     }
 
     complete() {

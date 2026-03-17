@@ -134,49 +134,21 @@
             <h1 class="lobby-title">פסח יחד</h1>
             <p class="lobby-subtitle">הגדה חכמה ומשותפת לכולם 🍷</p>
 
-            <!-- Auth Section (not logged in) -->
+            <!-- Create Room — no auth needed, just name + leader PIN -->
             <div id="lobby-auth-section" class="lobby-auth">
-
-                <!-- Test Mode Login (hidden by default, shown when TEST_MODE is active) -->
-                <div id="test-mode-login" class="hidden" style="text-align:center;">
-                    <div style="background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
-                        <span style="font-size: var(--fs-xs); color: var(--gold); text-transform: uppercase; letter-spacing: 1px;">🧪 מצב בדיקה</span>
-                    </div>
-                    <button id="btn-test-host" class="btn primary lobby-btn" style="margin-bottom: 0.8rem;">🕎 כניסה כמנחה</button>
-                    <button id="btn-test-guest" class="btn outline lobby-btn">🍷 כניסה כאורח</button>
-                </div>
-
-                <!-- Normal Auth (hidden in test mode) -->
-                <div id="normal-auth">
-                <div id="g_id_onload"
-                    data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
-                    data-callback="handleGoogleResponse" data-auto_prompt="false">
-                </div>
-                <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_blue"
-                    data-text="signin_with" data-size="large" data-logo_alignment="left"
-                    style="display: flex; justify-content: center;"></div>
-
-                <div class="lobby-divider">
-                    <span class="lobby-divider-line"></span>
-                    <span class="lobby-divider-text">או</span>
-                    <span class="lobby-divider-line"></span>
-                </div>
-
-                <input type="text" id="guest-name" placeholder="הכנס את שמך..." class="lobby-input">
-                <button id="btn-guest-login" class="btn primary lobby-btn">כניסה כאורח 🍷</button>
-                <button id="btn-sign-out-global" class="lobby-link-muted">איפוס / יציאה</button>
-                </div><!-- /normal-auth -->
-            </div>
-
-            <!-- After Login: Create Room -->
-            <div id="lobby-actions-section" class="lobby-auth hidden">
-                <button id="btn-create-room" class="btn primary lobby-btn">צור חדר סדר חדש 🍷</button>
+                <input type="text" id="guest-name" placeholder="שמך (לדוגמה: יעלי)..." class="lobby-input" maxlength="30" autocomplete="off">
+                <input type="text" id="leader-pin-create" placeholder="קוד מנחה (4 ספרות) 🔑" class="lobby-input" maxlength="8" autocomplete="off"
+                       style="letter-spacing: 4px; text-align: center;">
+                <p style="font-size: var(--fs-xs); opacity: 0.55; text-align: center; margin-top: -0.4rem;">
+                    קוד המנחה מאפשר שליטה על הסדר — שמור אותו לעצמך
+                </p>
+                <button id="btn-create-room" class="btn primary lobby-btn">צור חדר סדר 🍷</button>
                 <a href="/invitation-picker.html" target="_blank"
                    class="btn outline lobby-btn"
                    style="font-size:0.82rem;opacity:0.8;display:block;text-align:center;text-decoration:none;padding:0.65rem;">
                     🎨 בחר תמונת הזמנה (8 סגנונות)
                 </a>
-                <button id="btn-sign-out" class="lobby-link-muted">החלף משתמש / התנתק</button>
+                <button id="btn-sign-out-global" class="lobby-link-muted">איפוס</button>
             </div>
         </div>
     </div>
@@ -186,11 +158,20 @@
         <div class="rsvp-card glass">
 
 
-            <!-- Step 1: Name -->
+            <!-- Step 1: Name picker — shows existing participants + manual input -->
             <div id="rsvp-step-name" class="rsvp-step hidden">
                 <div class="rsvp-icon">👋</div>
-                <h2>מה שמך?</h2>
-                <p>ככה כולם יזהו אותך ברשימת המוזמנים</p>
+                <h2>מי אתה/את?</h2>
+
+                <!-- People already here — hidden if empty -->
+                <div id="rsvp-name-picker" class="rsvp-name-picker hidden">
+                    <p class="rsvp-name-picker-label">כבר כאן — לחץ/י לבחור שם:</p>
+                    <div id="rsvp-participants-grid" class="rsvp-participants-grid"></div>
+                    <div class="rsvp-name-divider">
+                        <span>או הוסף שם חדש</span>
+                    </div>
+                </div>
+
                 <input type="text" id="rsvp-name-input" class="rsvp-name-input" placeholder="שם פרטי..." maxlength="30" autocomplete="off">
                 <div class="rsvp-actions">
                     <button id="btn-rsvp-name-next" class="btn primary">המשך →</button>
@@ -301,19 +282,16 @@
                 </div>
             </div>
 
-            <!-- Host login section -->
+            <!-- Host login — PIN based (no Google needed) -->
             <div id="lobby-host-login">
-                <p style="color: var(--gold); font-weight: 600;">👑 מנהל הסדר? התחבר כדי להתחיל:</p>
-                <div id="g_id_onload_lobby"
-                    data-client_id="256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com"
-                    data-callback="handleGoogleResponse">
-                </div>
-                <div class="g_id_signin_lobby" data-type="standard"></div>
-                <button onclick="(function(){ const d=document.createElement('div'); d.id='g_id_onload_lobby'; d.setAttribute('data-client_id','256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com'); d.setAttribute('data-callback','handleGoogleResponse'); document.body.appendChild(d); if(window.google){ google.accounts.id.initialize({client_id:'256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com',callback:handleGoogleResponse}); google.accounts.id.prompt(); } })()"
-                    class="btn outline small" style="width: 100%;">
-                    🔑 התחבר עם Google
+                <p style="color: var(--gold); font-weight: 600;">👑 מנהל הסדר? הזן קוד:</p>
+                <input type="password" id="leader-pin-input" class="lobby-input"
+                       placeholder="קוד מנחה..." maxlength="8"
+                       style="text-align:center; letter-spacing:4px; font-size:1.2rem;">
+                <button id="btn-claim-lead-pin" class="btn outline small" style="width: 100%;">
+                    👑 כניסה כמנחה
                 </button>
-                <div style="opacity: 0.3; font-size: 0.7rem; text-align: center; color: var(--text-on-dark); margin-top: 0.5rem;">v1.2.4</div>
+                <div style="opacity: 0.3; font-size: 0.7rem; text-align: center; color: var(--text-on-dark); margin-top: 0.5rem;">v1.2.5</div>
             </div>
         </div>
     </div>

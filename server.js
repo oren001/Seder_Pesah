@@ -340,14 +340,18 @@ io.on('connection', (socket) => {
         callback?.({ success: true, userData });
     });
 
-    socket.on('create-room', (callback) => {
+    socket.on('create-room', ({ leaderPin, name } = {}, callback) => {
+        // Support both old signature (callback only) and new (data, callback)
+        if (typeof leaderPin === 'function') { callback = leaderPin; leaderPin = null; name = null; }
         const roomId = generateId();
+        if (name) socket.userName = name;
         rooms[roomId] = {
             id: roomId,
             participants: [],
             currentPage: 0,
             leaderId: socket.id,
-            leaderName: socket.userName || 'מנחה',
+            leaderName: socket.userName || name || 'מנחה',
+            leaderPin: leaderPin || null,   // PIN for claiming leadership
             sederLabel: '',
             tasks: persistedTasks[roomId] || [
                 { id: 'h1', text: '✅ תכנון MVP ראשוני', completed: true, author: 'אורן (מנהל פרויקט)' },
@@ -501,6 +505,29 @@ io.on('connection', (socket) => {
         console.log(`Leadership taken in room ${roomId} by ${rooms[roomId].leaderName}`);
         saveRooms();
         io.to(roomId).emit('leader-updated', { leaderId: socket.id, leaderName: rooms[roomId].leaderName });
+    });
+
+    // Peek at a room's participants without joining (for name picker in RSVP)
+    socket.on('peek-room', ({ roomId }, callback) => {
+        const room = rooms[roomId];
+        if (!room) return callback?.({ exists: false, participants: [] });
+        const safe = room.participants.map(p => ({ name: p.name, photo: p.photo }));
+        callback?.({ exists: true, participants: safe });
+    });
+
+    // Claim leader status using the room PIN (replaces Google-based host auth)
+    socket.on('claim-lead-with-pin', ({ roomId, pin }, callback) => {
+        const room = rooms[roomId];
+        if (!room) return callback?.({ success: false, reason: 'room not found' });
+        if (!room.leaderPin) return callback?.({ success: false, reason: 'no pin set' });
+        if (room.leaderPin !== String(pin)) return callback?.({ success: false, reason: 'wrong pin' });
+        room.leaderId   = socket.id;
+        room.leaderName = socket.userName || 'מנחה';
+        console.log(`[PIN] Leadership claimed in room ${roomId} by ${room.leaderName}`);
+        saveRooms();
+        io.to(roomId).emit('leader-updated', { leaderId: socket.id, leaderName: room.leaderName });
+        io.to(roomId).emit('toast-broadcast', { message: `👑 ${room.leaderName} הוא/היא המנחה!` });
+        callback?.({ success: true });
     });
 
     // Leader grants leadership to any participant (bypasses email check)
