@@ -2613,3 +2613,284 @@ body {
     opacity: 0.7;
     margin-right: -0.4rem;
 }
+
+
+/* ============================================================
+   INVITATION / RSVP SCREEN
+   ============================================================ */
+
+#invitation-screen {
+    background: var(--bg-dark);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+}
+
+/* ---- Hero ---- */
+.inv-hero {
+    position: relative;
+    width: 100%;
+    min-height: 52vw;
+    max-height: 340px;
+    overflow: hidden;
+    background: linear-gradient(160deg, #0d0208 0%, #1e0812 40%, #2d1a08 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 0;
+}
+
+.inv-hero-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 30%;
+    opacity: 0.55;
+}
+
+.inv-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(10,2,6,0.15) 0%,
+        rgba(10,2,6,0.05) 40%,
+        rgba(10,2,6,0.85) 100%
+    );
+    z-index: 1;
+}
+
+/* Animated star dots */
+.inv-stars {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-image:
+        radial-gradient(1.5px 1.5px at 15% 20%, rgba(212,175,55,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 75% 12%, rgba(255,255,255,0.55) 0%, transparent 100%),
+        radial-gradient(1px 1px at 45% 8%,  rgba(255,255,255,0.45) 0%, transparent 100%),
+        radial-gradient(2px 2px at 88% 30%, rgba(212,175,55,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 60% 45%, rgba(212,175,55,0.4) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 5%  75%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 95% 65%, rgba(212,175,55,0.6) 0%, transparent 100%);
+    animation: starsTwinkle 4s ease-in-out infinite alternate;
+}
+
+@keyframes starsTwinkle {
+    0%   { opacity: 0.6; }
+    100% { opacity: 1;   }
+}
+
+.inv-top-badge {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    color: var(--gold);
+    font-size: var(--fs-xs);
+    letter-spacing: 2px;
+    white-space: nowrap;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+    font-weight: 600;
+}
+
+/* Host photo bubbles */
+.inv-hosts-row {
+    position: absolute;
+    bottom: -44px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 4;
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+}
+
+.inv-host-bubble {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.inv-host-img {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center top;
+    border: 3px solid var(--gold);
+    box-shadow: 0 0 18px rgba(212,175,55,0.5), 0 4px 18px rgba(0,0,0,0.7);
+    background: var(--bg-dark-warm);
+}
+
+.inv-host-name {
+    color: var(--gold-light);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+}
+
+.inv-heart {
+    font-size: 1.5rem;
+    margin-bottom: 50px;
+    animation: heartbeat 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(220,50,50,0.6));
+}
+
+@keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.2); }
+}
+
+/* ---- Invitation Card ---- */
+.inv-card {
+    margin-top: 60px;
+    width: calc(100% - 2.5rem);
+    max-width: 420px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(212,175,55,0.22);
+    border-radius: 22px;
+    padding: 1.5rem 1.75rem 1.25rem;
+    text-align: center;
+    backdrop-filter: blur(12px);
+    animation: invFadeUp 0.7s 0.2s ease both;
+}
+
+@keyframes invFadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.inv-title {
+    color: var(--gold-light);
+    font-size: var(--fs-2xl);
+    font-weight: 900;
+    margin-bottom: 0.35rem;
+    letter-spacing: 0.5px;
+}
+
+.inv-subtitle {
+    color: var(--text-on-dark);
+    font-size: var(--fs-lg);
+    opacity: 0.88;
+    margin-bottom: 0.2rem;
+}
+
+.inv-event {
+    color: var(--text-on-dark);
+    font-size: var(--fs-xl);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.inv-divider {
+    color: var(--gold);
+    letter-spacing: 4px;
+    font-size: var(--fs-xs);
+    margin: 0.6rem 0;
+    opacity: 0.5;
+}
+
+.inv-date-line {
+    color: var(--gold-light);
+    font-size: var(--fs-md);
+    font-weight: 700;
+    margin-bottom: 0.15rem;
+}
+
+.inv-time-line {
+    color: var(--text-on-dark);
+    font-size: var(--fs-base);
+    opacity: 0.75;
+    margin-bottom: 0.75rem;
+}
+
+.inv-tagline {
+    font-size: var(--fs-sm);
+    color: var(--gold);
+    opacity: 0.7;
+    font-style: italic;
+    letter-spacing: 0.3px;
+}
+
+/* ---- RSVP ---- */
+.inv-rsvp {
+    width: calc(100% - 2.5rem);
+    max-width: 420px;
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.7rem;
+    animation: invFadeUp 0.7s 0.4s ease both;
+}
+
+.inv-rsvp-question {
+    color: var(--text-on-dark);
+    font-size: var(--fs-lg);
+    font-weight: 600;
+    text-align: center;
+}
+
+.inv-btn-yes {
+    width: 100%;
+    padding: 1rem;
+    font-size: var(--fs-lg);
+    font-weight: 800;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #8b1a22 0%, #b8303b 100%);
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(114,47,55,0.5);
+    letter-spacing: 0.5px;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.inv-btn-yes:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 10px rgba(114,47,55,0.4);
+}
+
+.inv-btn-no {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.35);
+    font-size: var(--fs-sm);
+    cursor: pointer;
+    padding: 0.4rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* ---- No message ---- */
+.inv-no-msg {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-on-dark);
+    gap: 0.75rem;
+    animation: invFadeUp 0.5s ease both;
+}
+
+.inv-no-msg h2 {
+    font-size: var(--fs-2xl);
+    color: var(--gold-light);
+}
+
+.inv-no-msg p {
+    font-size: var(--fs-lg);
+    opacity: 0.8;
+}

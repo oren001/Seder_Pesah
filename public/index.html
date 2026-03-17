@@ -43,6 +43,62 @@
         </p>
     </div>
 
+    <!-- ======== INVITATION / RSVP SCREEN ======== -->
+    <div id="invitation-screen" class="screen hidden">
+
+        <!-- Hero: Exodus scene image (generated or placeholder) -->
+        <div class="inv-hero">
+            <div class="inv-hero-overlay"></div>
+            <img id="inv-hero-img" src="/images/invitation-bg.jpg" alt=""
+                 onerror="this.style.display='none'" class="inv-hero-photo">
+
+            <!-- Stars background (CSS animated) -->
+            <div class="inv-stars"></div>
+
+            <!-- Top badge -->
+            <div class="inv-top-badge">✦ הגדת קריו · פסח תשפ"ו ✦</div>
+
+            <!-- Host photos floating over hero -->
+            <div class="inv-hosts-row">
+                <div class="inv-host-bubble">
+                    <img src="/images/yael.jpg" alt="יעלי" class="inv-host-img">
+                    <span class="inv-host-name">יעלי</span>
+                </div>
+                <div class="inv-heart">❤️</div>
+                <div class="inv-host-bubble">
+                    <img src="/images/danny.jpg" alt="דני" class="inv-host-img">
+                    <span class="inv-host-name">דני</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invitation card -->
+        <div class="inv-card">
+            <h1 class="inv-title">יעלי ודני קריו</h1>
+            <p class="inv-subtitle">מזמינים אתכם ואת משפחתכם</p>
+            <p class="inv-event">לסדר פסח משפחתי 🍷🕯️</p>
+            <div class="inv-divider">✦ &nbsp; ✦ &nbsp; ✦</div>
+            <p class="inv-date-line">ליל חמישי, 1 באפריל 2026</p>
+            <p class="inv-time-line">19:30 · רמת גן</p>
+            <p class="inv-tagline">כאילו אנחנו יצאנו ממצרים — אתמול 🌊</p>
+        </div>
+
+        <!-- RSVP -->
+        <div class="inv-rsvp">
+            <p class="inv-rsvp-question">האם תוכלו להצטרף אלינו?</p>
+            <button id="btn-inv-yes" class="btn inv-btn-yes">כן! אני בא 🍷</button>
+            <button id="btn-inv-no"  class="inv-btn-no">לא אוכל להגיע 😢</button>
+        </div>
+
+        <!-- "No" thank-you message (hidden by default) -->
+        <div id="inv-no-msg" class="inv-no-msg hidden">
+            <div style="font-size:3.5rem;">😢</div>
+            <h2>חבל מאוד...</h2>
+            <p>נחסר לנו! חג פסח שמח 🌊</p>
+        </div>
+
+    </div>
+
     <!-- ======== LOBBY SCREEN ======== -->
     <div id="lobby-screen" class="screen active">
         <div class="lobby-inner">
@@ -87,6 +143,10 @@
             <!-- After Login: Create Room -->
             <div id="lobby-actions-section" class="lobby-auth hidden">
                 <button id="btn-create-room" class="btn primary lobby-btn">צור חדר סדר חדש 🍷</button>
+                <button id="btn-gen-invitation" class="btn outline lobby-btn" style="font-size:0.8rem;opacity:0.7;">
+                    🎨 צור תמונת הזמנה (יציאת מצרים עם יעלי ודני)
+                </button>
+                <div id="gen-invitation-status" style="font-size:0.75rem;color:var(--gold);text-align:center;min-height:1.2em;padding:0.3rem;"></div>
                 <button id="btn-sign-out" class="lobby-link-muted">החלף משתמש / התנתק</button>
             </div>
         </div>

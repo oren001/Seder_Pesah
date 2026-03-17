@@ -171,6 +171,7 @@ function transliterate(hebrewHtml) {
 const $$ = id => document.getElementById(id);
 
 const screens = {
+    invitation: $$('invitation-screen'),
     lobby: $$('lobby-screen'),
     rsvp: $$('rsvp-screen'),
     roomLobby: $$('room-lobby-screen'),
@@ -273,6 +274,37 @@ function init() {
     setInterval(checkVersion, 60000); // Check every minute
 
     // Add event listeners (Safely)
+    // --- Invitation screen ---
+    safeAddListener('btn-inv-yes', 'click', () => {
+        // User accepted invitation → proceed to RSVP (name + selfie)
+        rsvpFlow.show();
+    });
+    safeAddListener('btn-inv-no', 'click', () => {
+        // User declined — show the "we'll miss you" note
+        const invWrap = $$('invitation-screen').querySelector('.inv-card');
+        const rsvp    = $$('invitation-screen').querySelector('.inv-rsvp');
+        if (invWrap) invWrap.style.display = 'none';
+        if (rsvp)    rsvp.style.display    = 'none';
+        const noMsg = $$('inv-no-msg');
+        if (noMsg) noMsg.classList.remove('hidden');
+    });
+
+    safeAddListener('btn-gen-invitation', 'click', async () => {
+        const statusEl = $$('gen-invitation-status');
+        const btn = $$('btn-gen-invitation');
+        if (btn) btn.disabled = true;
+        if (statusEl) statusEl.textContent = '⏳ מפעיל ייצור תמונה... יקח כ-2 דקות';
+        try {
+            const res = await fetch('/api/generate-invitation');
+            const data = await res.json();
+            if (statusEl) statusEl.textContent = data.message || '✅ ייצור החל! התמונה תהיה מוכנה בעוד כ-2 דקות. רענן את הדף.';
+        } catch (e) {
+            if (statusEl) statusEl.textContent = '❌ שגיאה — בדוק לוגים';
+        } finally {
+            if (btn) setTimeout(() => { btn.disabled = false; }, 30000);
+        }
+    });
+
     safeAddListener('btn-create-room', 'click', onCreateRoom);
     safeAddListener('btn-take-selfie', 'click', onTakeSelfie);
     safeAddListener('btn-retake', 'click', onRetake);
@@ -439,15 +471,12 @@ function init() {
         pendingRoomId = roomFromUrl;
         const savedSelfieForRoom = localStorage.getItem('haggadah_selfie');
         if (me && me.name && savedSelfieForRoom) {
-            // Returning user — skip RSVP, join directly
+            // Returning user — skip invitation + RSVP, join directly
             console.log('[Init] Returning user, auto-joining...');
             joinRoom(pendingRoomId);
-        } else if (me && me.name && !savedSelfieForRoom) {
-            // Has name but no selfie — go to look step only
-            rsvpFlow.show();
         } else {
-            // New user — full RSVP (name → look → selfie/avatar)
-            rsvpFlow.show();
+            // New user — show beautiful invitation screen first
+            showScreen('invitation');
         }
     } else {
         showScreen('lobby');

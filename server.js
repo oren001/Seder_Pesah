@@ -3,7 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
-const { generateAllImages, generateNanoTest } = require('./leonardo');
+const { generatePersonalizedPage, generateInvitationImage } = require('./leonardo');
 const { OAuth2Client } = require('google-auth-library');
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com';
@@ -49,6 +49,55 @@ app.use((req, res, next) => {
 // Server config endpoint — intentionally empty to avoid leaking internals
 app.get('/api/config', (req, res) => {
     res.json({});
+});
+
+// ── Invitation image generation endpoint ─────────────────────────────────
+// GET /api/generate-invitation
+// Called by the host admin panel to generate (or regenerate) the hero image.
+// Reads Yael & Danny's photos from public/images/, generates via Leonardo,
+// saves result to public/images/invitation-bg.jpg
+let _invGenInProgress = false;
+
+app.get('/api/generate-invitation', async (req, res) => {
+    if (_invGenInProgress) {
+        return res.json({ status: 'running', message: 'Generation already in progress...' });
+    }
+
+    const yaelPath  = path.join(__dirname, 'public', 'images', 'yael.jpg');
+    const dannyPath = path.join(__dirname, 'public', 'images', 'danny.jpg');
+    const outPath   = path.join(__dirname, 'public', 'images', 'invitation-bg.jpg');
+
+    if (!fs.existsSync(yaelPath) || !fs.existsSync(dannyPath)) {
+        return res.status(400).json({ error: 'Host photos not found in public/images/' });
+    }
+
+    // Kick off async generation — respond immediately so request doesn't timeout
+    res.json({ status: 'started', message: 'Generating Exodus invitation image...' });
+
+    _invGenInProgress = true;
+    try {
+        const toBase64 = (p) => {
+            const data = fs.readFileSync(p);
+            return `data:image/jpeg;base64,${data.toString('base64')}`;
+        };
+        const yaelBase64  = toBase64(yaelPath);
+        const dannyBase64 = toBase64(dannyPath);
+
+        console.log('[Server] Generating invitation background image...');
+        const imageUrl = await generateInvitationImage(yaelBase64, dannyBase64,
+            msg => console.log('[InvGen]', msg));
+
+        // Download and save
+        const fetchFn = require('node-fetch');
+        const imgRes = await fetchFn(imageUrl);
+        const buffer = Buffer.from(await imgRes.arrayBuffer());
+        fs.writeFileSync(outPath, buffer);
+        console.log(`[Server] Invitation image saved: ${outPath} (${Math.round(buffer.length/1024)} KB)`);
+    } catch (err) {
+        console.error('[Server] Invitation image generation failed:', err.message);
+    } finally {
+        _invGenInProgress = false;
+    }
 });
 
 const server = http.createServer(app);
@@ -438,7 +487,6 @@ io.on('connection', (socket) => {
             socket.emit('ai-error', { message: 'רק עורך הסדר יכול להתחיל יצירת תמונה!', pageIndex });
             return;
         }
-        const { generatePersonalizedPage } = require('./leonardo');
         generatePersonalizedPage(roomId, pageIndex, io, rooms).catch(err => {
             io.to(roomId).emit('ai-error', { message: 'שגיאת מערכת: ' + err.message, pageIndex });
         });
@@ -514,12 +562,10 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('tasks-updated', { tasks: rooms[roomId].tasks });
     });
 
+    // test-nano-banana: legacy dev test — now a no-op (replaced by /api/generate-invitation)
     socket.on('test-nano-banana', ({ roomId }) => {
         if (!rooms[roomId]) return;
-        if (rooms[roomId].leaderId !== socket.id) return;
-        generateNanoTest(roomId, io, rooms).catch(err => {
-            io.to(roomId).emit('ai-error', { message: 'שגיאת Leonardo: ' + err.message });
-        });
+        console.log('[test-nano-banana] No-op (use /api/generate-invitation instead)');
     });
 
     // Heartbeat: client pings to show they're still watching

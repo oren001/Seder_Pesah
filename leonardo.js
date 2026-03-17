@@ -283,4 +283,43 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-module.exports = { HAGGADAH_PROMPTS, generateImage, generatePersonalizedPage };
+/**
+ * generateInvitationImage
+ * -----------------------
+ * One-time generation: creates a cinematic Exodus scene featuring
+ * Yael & Danny using their photos as character references.
+ * Returns the public image URL (does NOT save to disk — caller should do that).
+ *
+ * @param {string} yaelBase64  - data:image/jpeg;base64,... for Yael's photo
+ * @param {string} dannyBase64 - data:image/jpeg;base64,... for Danny's photo
+ * @param {function} onStatus  - optional status callback
+ * @returns {Promise<string>} image URL
+ */
+async function generateInvitationImage(yaelBase64, dannyBase64, onStatus = null) {
+    const log = msg => { console.log('[InvitationImage]', msg); if (onStatus) onStatus(msg); };
+
+    log('Uploading Yael\'s photo...');
+    const yaelId = await uploadInitImage(yaelBase64);
+    if (!yaelId) throw new Error('Failed to upload Yael\'s photo');
+
+    log('Uploading Danny\'s photo...');
+    const dannyId = await uploadInitImage(dannyBase64);
+    if (!dannyId) throw new Error('Failed to upload Danny\'s photo');
+
+    const prompt = `Cinematic wide-angle photorealistic photograph. A dramatic Exodus scene: ` +
+        `a warm sea of people leaving Egypt at golden hour, ancient pyramids silhouetted against ` +
+        `an enormous fiery sky of orange, amber, and deep violet. Two specific real people lead ` +
+        `the crowd — a warm dark-haired woman with a radiant joyful smile (Yael) and a man with ` +
+        `a kind face and close-cropped hair (Danny) — both dressed in ancient flowing robes but ` +
+        `with modern expressions of joy and hope. The crowd behind them stretches to the horizon. ` +
+        `Dust catching the golden backlight. Epic, emotional, cinematic. Rich warm colors: ` +
+        `burnt sienna, gold, deep red. Dramatic sky. Like a National Geographic cover. ` +
+        `Photorealistic documentary photography, NOT cartoon, NOT CGI, NOT illustration.`;
+
+    log('Generating Exodus scene...');
+    const imageUrl = await generateImage(prompt, [yaelId, dannyId], log);
+    log('Done!');
+    return imageUrl;
+}
+
+module.exports = { HAGGADAH_PROMPTS, generateImage, generatePersonalizedPage, generateInvitationImage, uploadInitImage };
