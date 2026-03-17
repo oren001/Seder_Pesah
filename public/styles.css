@@ -2896,6 +2896,7 @@ body {
 }
 
 /* ---- No message ---- */
+.inv-no-msg.hidden { display: none; }   /* .hidden only fades — override for layout */
 .inv-no-msg {
     flex: 1;
     display: flex;
