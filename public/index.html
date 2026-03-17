@@ -46,12 +46,20 @@
     <!-- ======== INVITATION / RSVP SCREEN ======== -->
     <div id="invitation-screen" class="screen hidden">
 
-        <!-- Hero: Ken Burns slideshow of all Exodus images -->
+        <!-- Hero: Video background (falls back to Ken Burns slideshow) -->
         <div class="inv-hero">
             <div class="inv-hero-overlay"></div>
 
-            <!-- Slideshow: JS loads available images and drives the crossfade -->
-            <div id="inv-slideshow" class="inv-slideshow">
+            <!-- Video background — autoplays looped, muted (required for mobile autoplay) -->
+            <video id="inv-hero-video"
+                   class="inv-hero-video"
+                   src="/videos/invitation-bg.mp4"
+                   autoplay loop muted playsinline preload="auto"
+                   onerror="this.style.display='none';document.getElementById('inv-slideshow').style.display=''">
+            </video>
+
+            <!-- Slideshow fallback (shown only if video fails/missing) -->
+            <div id="inv-slideshow" class="inv-slideshow" style="display:none">
                 <!-- Slides injected by initInvitationSlideshow() -->
             </div>
 

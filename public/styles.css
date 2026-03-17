@@ -2966,3 +2966,14 @@ body {
 .inv-slide.kb6 { animation: kb6 var(--kb-dur, 7s) ease-in-out both; }
 .inv-slide.kb7 { animation: kb7 var(--kb-dur, 7s) ease-in-out both; }
 .inv-slide.kb8 { animation: kb8 var(--kb-dur, 7s) ease-in-out both; }
+
+/* ── Invitation hero video background ─────────────────────────── */
+.inv-hero-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+    z-index: 0;
+}

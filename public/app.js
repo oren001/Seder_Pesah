@@ -542,7 +542,20 @@ function init() {
         } else {
             // New user — show beautiful invitation screen first
             showScreen('invitation');
-            if (window._startInvitationSlideshow) window._startInvitationSlideshow();
+            // Try video first; fall back to Ken Burns slideshow if video missing
+            const invVid = document.getElementById('inv-hero-video');
+            const invSlide = document.getElementById('inv-slideshow');
+            if (invVid) {
+                invVid.play().catch(() => {
+                    // Video failed (e.g. file not found) — show slideshow instead
+                    invVid.style.display = 'none';
+                    if (invSlide) invSlide.style.display = '';
+                    if (window._startInvitationSlideshow) window._startInvitationSlideshow();
+                });
+            } else {
+                if (invSlide) invSlide.style.display = '';
+                if (window._startInvitationSlideshow) window._startInvitationSlideshow();
+            }
         }
     } else {
         showScreen('lobby');

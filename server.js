@@ -1,3 +1,4 @@
+require('dotenv').config();   // loads .env for local dev (no-op in production)
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
