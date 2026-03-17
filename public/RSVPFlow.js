@@ -185,8 +185,8 @@ class RSVPFlow {
             this.data.name = me.name;
             const nameInput = $$('rsvp-name-input');
             if (nameInput) nameInput.value = me.name;
-            this.goToStep('selfie');
-            this.startRSVPCamera();
+            // Always show the selfie-vs-skip choice (never auto-open camera)
+            this.goToStep('look');
         } else {
             this.goToStep('name');
         }
