@@ -407,6 +407,16 @@ function init() {
         if (socket && currentRoomId) socket.emit('set-seder-label', { roomId: currentRoomId, label });
         updateSederLabelDisplay(label);
     });
+    safeAddListener('btn-save-guest-list', 'click', () => {
+        const ta = $$('guest-list-ta');
+        if (!ta) return;
+        const names = ta.value.split('\n').map(n => n.trim()).filter(Boolean);
+        socket.emit('set-guest-list', { roomId: currentRoomId, names }, (res) => {
+            if (res?.success) showToast(`✓ ${res.count} אורחים נשמרו ברשימה 📋`);
+            else showToast('שגיאה בשמירה ❌');
+        });
+    });
+
     safeAddListener('btn-claim-lead-pin', 'click', () => {
         const pin = $$('leader-pin-input')?.value?.trim();
         if (!pin) { showToast('נא להזין קוד מנחה 🔑'); return; }

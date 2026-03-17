@@ -3183,6 +3183,22 @@ body {
     text-shadow: 0 1px 3px rgba(0,0,0,0.7);
 }
 
+/* Pending guest — in guest list but hasn't joined yet */
+.rsvp-tile-pending {
+    border-color: rgba(212,175,55,0.15);
+    background: rgba(0,0,0,0.12);
+    opacity: 0.75;
+}
+.rsvp-tile-pending:hover {
+    opacity: 1;
+    border-color: var(--gold);
+    background: rgba(212,175,55,0.2);
+}
+.rsvp-tile-camera {
+    font-size: 1.2rem;
+    background: rgba(212,175,55,0.08);
+}
+
 .rsvp-name-divider {
     display: flex;
     align-items: center;

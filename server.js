@@ -352,6 +352,7 @@ io.on('connection', (socket) => {
             leaderId: socket.id,
             leaderName: socket.userName || name || 'מנחה',
             leaderPin: '1111',   // Fixed PIN — anyone who knows the code can lead
+            guestList: [],       // Pre-set expected guests (names only)
             sederLabel: '',
             tasks: persistedTasks[roomId] || [
                 { id: 'h1', text: '✅ תכנון MVP ראשוני', completed: true, author: 'אורן (מנהל פרויקט)' },
@@ -516,8 +517,22 @@ io.on('connection', (socket) => {
     socket.on('peek-room', ({ roomId }, callback) => {
         const room = rooms[roomId];
         if (!room) return callback?.({ exists: false, participants: [] });
-        const safe = room.participants.map(p => ({ name: p.name, photo: p.photo }));
-        callback?.({ exists: true, participants: safe });
+        const joined = room.participants.map(p => ({ name: p.name, photo: p.photo }));
+        const joinedNames = new Set(joined.map(p => p.name));
+        // Include expected guests not yet joined (shown as pending in name picker)
+        const pending = (room.guestList || [])
+            .filter(n => !joinedNames.has(n))
+            .map(n => ({ name: n, photo: null, pending: true }));
+        callback?.({ exists: true, participants: [...joined, ...pending] });
+    });
+
+    // Host sets the pre-populated guest name list
+    socket.on('set-guest-list', ({ roomId, names }, callback) => {
+        const room = rooms[roomId];
+        if (!room) return callback?.({ success: false });
+        if (room.leaderId !== socket.id) return callback?.({ success: false, reason: 'not leader' });
+        room.guestList = (names || []).map(n => String(n).trim()).filter(Boolean);
+        callback?.({ success: true, count: room.guestList.length });
     });
 
     // Claim leader status using the room PIN (replaces Google-based host auth)

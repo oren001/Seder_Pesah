@@ -208,27 +208,42 @@ class RSVPFlow {
 
         grid.innerHTML = participants.map(p => {
             const isEmoji = p.photo && !p.photo.startsWith('data:') && !p.photo.startsWith('http');
-            const photoHtml = isEmoji
-                ? `<div class="rsvp-tile-emoji">${p.photo}</div>`
-                : p.photo
-                    ? `<img src="${p.photo}" class="rsvp-tile-img" onerror="this.style.display='none'">`
-                    : `<div class="rsvp-tile-emoji">👤</div>`;
-            return `<div class="rsvp-name-tile" data-name="${(p.name || '').replace(/"/g, '&quot;')}">
+            // Pending guests (from guest list, not yet joined) show camera icon
+            const photoHtml = p.pending
+                ? `<div class="rsvp-tile-emoji rsvp-tile-camera">📸</div>`
+                : isEmoji
+                    ? `<div class="rsvp-tile-emoji">${p.photo}</div>`
+                    : p.photo
+                        ? `<img src="${p.photo}" class="rsvp-tile-img" onerror="this.style.display='none'">`
+                        : `<div class="rsvp-tile-emoji">👤</div>`;
+            const pendingClass = p.pending ? ' rsvp-tile-pending' : '';
+            return `<div class="rsvp-name-tile${pendingClass}" data-name="${(p.name || '').replace(/"/g, '&quot;')}" data-pending="${p.pending ? '1' : ''}">
                 ${photoHtml}
                 <span class="rsvp-tile-name">${p.name || 'אורח'}</span>
             </div>`;
         }).join('');
 
         // Click a tile → fill name input
+        // Pending tiles (expected guests) → go directly to selfie (no look step)
         grid.querySelectorAll('.rsvp-name-tile').forEach(tile => {
             tile.addEventListener('click', () => {
+                const name = tile.dataset.name;
                 const nameInput = $$('rsvp-name-input');
-                if (nameInput) {
-                    nameInput.value = tile.dataset.name;
-                    nameInput.focus();
-                }
+                if (nameInput) { nameInput.value = name; nameInput.focus(); }
                 grid.querySelectorAll('.rsvp-name-tile').forEach(t => t.classList.remove('selected'));
                 tile.classList.add('selected');
+
+                if (tile.dataset.pending === '1') {
+                    // Pre-set guest → straight to selfie
+                    this.data.name = name;
+                    this.data.type = 'selfie';
+                    if (!me || me.isGuest) {
+                        me = { name, isGuest: true };
+                        localStorage.setItem('haggadah-user', JSON.stringify(me));
+                    }
+                    this.goToStep('selfie');
+                    this.startRSVPCamera();
+                }
             });
         });
 

@@ -264,6 +264,21 @@
                 <input type="text" id="seder-label-input" class="lobby-input"
                     placeholder="שם הסדר (לדוגמה: בביתם של יעלי ודני קריו)"
                     maxlength="60" style="font-size: 0.9rem; margin-bottom: 0.75rem;">
+
+                <!-- Guest list — names appear in RSVP picker for guests to select -->
+                <details id="guest-list-details" style="margin-bottom: 0.75rem;">
+                    <summary style="cursor:pointer; font-size:0.85rem; color:var(--gold); font-weight:600; padding: 0.4rem 0;">
+                        📋 רשימת אורחים צפויים
+                    </summary>
+                    <p style="font-size:0.75rem; opacity:0.6; margin: 0.3rem 0 0.5rem;">שם לכל שורה — יופיעו בבחירת שם לאורחים:</p>
+                    <textarea id="guest-list-ta" rows="9" class="lobby-input"
+                        style="width:100%; min-height:150px; font-family:inherit; font-size:0.9rem; resize:vertical; box-sizing:border-box; line-height:1.8;"
+                        placeholder="אמנון כרמל&#10;דרור דגן&#10;אפרת וולפסון&#10;אלעד&#10;ערן הורוביץ&#10;אבגני&#10;אייל&#10;איתי שולץ&#10;יוליה"></textarea>
+                    <button id="btn-save-guest-list" class="btn outline small" style="width:100%; margin-top:0.4rem;">
+                        💾 שמור רשימה
+                    </button>
+                </details>
+
                 <button id="btn-start-seder" class="btn primary" style="width: 100%;">התחל את ההגדה 📖🚀</button>
             </div>
 
