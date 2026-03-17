@@ -1350,18 +1350,31 @@ function renderParticipants(participants) {
     const list = $$('participants-list');
     const gazeboList = $$('gazebo-participants');
 
-    list.innerHTML = '';
+    // ── Header strip: smart diff to avoid image flashing ──────────────
+    const newIds = new Set(participants.map(p => p.id));
+    // Remove avatars no longer in the room
+    list.querySelectorAll('[data-pid]').forEach(el => {
+        if (!newIds.has(el.dataset.pid)) el.remove();
+    });
+
     if (gazeboList) gazeboList.innerHTML = '';
 
     participants.forEach(p => {
         const photoUrl = p.photo || generatePlaceholderPhoto();
         const isOnline = p.online !== false;
-        
-        // Header Strip
-        const div = document.createElement('div');
-        div.className = 'avatar' + (me && p.id === me.id ? ' me' : '') + (!isOnline ? ' offline' : '');
-        div.appendChild(createAvatarEl(photoUrl));
-        list.appendChild(div);
+        const cls = 'avatar' + (me && p.id === me.id ? ' me' : '') + (!isOnline ? ' offline' : '');
+
+        // Header Strip — reuse existing element if possible
+        const existing = list.querySelector(`[data-pid="${CSS.escape(p.id)}"]`);
+        if (existing) {
+            existing.className = cls; // update online/me status only
+        } else {
+            const div = document.createElement('div');
+            div.className = cls;
+            div.dataset.pid = p.id;
+            div.appendChild(createAvatarEl(photoUrl));
+            list.appendChild(div);
+        }
 
         // Gazebo Grid
         if (gazeboList) {
