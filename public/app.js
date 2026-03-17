@@ -444,16 +444,8 @@ function init() {
         });
     }
 
-    // Lead-mode checkbox — anyone can claim leadership
-    const leadCheckEl = $$('check-lead-mode');
-    if (leadCheckEl) {
-        leadCheckEl.addEventListener('change', () => {
-            if (leadCheckEl.checked && currentRoomId) {
-                socket.emit('take-lead', { roomId: currentRoomId, name: me?.name });
-                isFollowingLeader = false;
-            }
-        });
-    }
+    // Lead-mode checkbox — hidden; leadership now requires PIN via claim-lead-with-pin
+    // (kept for sync toggle only — does not grant leadership)
 
     // Test mode buttons
     safeAddListener('btn-test-host', 'click', () => {

@@ -498,13 +498,18 @@ io.on('connection', (socket) => {
     });
 
     socket.on('take-lead', ({ roomId, name }) => {
-        if (!rooms[roomId]) return;
-        // Leadership is open — anyone in the room can claim it
-        rooms[roomId].leaderId = socket.id;
-        rooms[roomId].leaderName = name || 'מנחה';
-        console.log(`Leadership taken in room ${roomId} by ${rooms[roomId].leaderName}`);
+        const room = rooms[roomId];
+        if (!room) return;
+        // Block free take-lead if room has a PIN — must use claim-lead-with-pin
+        if (room.leaderPin) {
+            socket.emit('toast-broadcast', { message: 'נדרש קוד מנחה 🔑' });
+            return;
+        }
+        room.leaderId = socket.id;
+        room.leaderName = name || 'מנחה';
+        console.log(`Leadership taken in room ${roomId} by ${room.leaderName}`);
         saveRooms();
-        io.to(roomId).emit('leader-updated', { leaderId: socket.id, leaderName: rooms[roomId].leaderName });
+        io.to(roomId).emit('leader-updated', { leaderId: socket.id, leaderName: room.leaderName });
     });
 
     // Peek at a room's participants without joining (for name picker in RSVP)
