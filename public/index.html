@@ -182,19 +182,24 @@
 
             <!-- Step 2: Look Choice -->
             <div id="rsvp-step-look" class="rsvp-step hidden">
-                <div class="rsvp-icon">🎭</div>
-                <h2>איך תופיעו בהגדה?</h2>
-                <p>בחרו איך כולם יראו אתכם ברשימת המשתתפים:</p>
-                <div class="look-choice-grid">
-                    <div id="choice-selfie" class="look-option">
-                        <div class="look-icon">📸</div>
-                        <span>סלפי חי</span>
+                <div class="rsvp-icon">✨</div>
+                <h2>רגע לפני שמצטרפים...</h2>
+
+                <!-- Primary: selfie CTA -->
+                <div id="choice-selfie" class="look-selfie-cta">
+                    <div class="look-selfie-preview">📸</div>
+                    <div class="look-selfie-text">
+                        <strong>צלמו סלפי</strong>
+                        <span>תופיעו בתמונות ה-AI של ההגדה!<br>
+                        <small>כל עמוד ייצור ויחשוב עליכם כחלק מיציאת מצרים 🌊</small></span>
                     </div>
-                    <div id="choice-avatar" class="look-option">
-                        <div class="look-icon">🍷</div>
-                        <span>אייקון מגניב</span>
-                    </div>
+                    <div class="look-selfie-arrow">←</div>
                 </div>
+
+                <!-- Secondary: skip -->
+                <button id="choice-avatar" class="look-skip-btn">
+                    המשך בלי תמונה (אפשר תמיד להוסיף אחר כך)
+                </button>
             </div>
 
             <!-- Step 3a: Avatar Picker -->

@@ -41,14 +41,12 @@ class RSVPFlow {
                 return;
             }
             this.data.name = name;
-            this.data.type = 'selfie';
             // Save as guest user
             if (!me || me.isGuest) {
                 me = { name, isGuest: true };
                 localStorage.setItem('haggadah-user', JSON.stringify(me));
             }
-            this.goToStep('selfie');
-            this.startRSVPCamera();
+            this.goToStep('look');   // ← show selfie vs skip choice
         });
 
         // Allow Enter key on name input
@@ -80,8 +78,10 @@ class RSVPFlow {
             this.startRSVPCamera();
         });
         this.safeClick('choice-avatar', () => {
+            // "Skip" — assign a random Passover emoji and join immediately
             this.data.type = 'avatar';
-            this.goToStep('avatar');
+            this.data.photo = AVATARS[Math.floor(Math.random() * AVATARS.length)];
+            this.complete();
         });
 
         // Step Avatar

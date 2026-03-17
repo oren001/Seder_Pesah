@@ -1809,55 +1809,79 @@ body {
     width: 100%;
 }
 
-.look-choice-grid {
+/* ── Look step: selfie CTA (primary) ───────────────────────────── */
+.look-selfie-cta {
     display: flex;
-    gap: 0.75rem;
+    align-items: center;
+    gap: 1rem;
     width: 100%;
-    margin-top: 0.5rem;
-}
-
-.look-option {
-    flex: 1;
-    padding: 1.2rem 0.8rem;
-    border-radius: 16px;
-    border: 2px solid transparent;
+    padding: 1.1rem 1.2rem;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #0f9b8e 0%, #1a6b8a 100%);
+    box-shadow: 0 8px 28px rgba(15, 155, 142, 0.45);
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-top: 0.5rem;
+    text-align: right;
+}
+.look-selfie-cta:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 36px rgba(15, 155, 142, 0.55);
+}
+.look-selfie-preview {
+    font-size: 2.6rem;
+    flex-shrink: 0;
+}
+.look-selfie-text {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-#choice-selfie {
-    background: linear-gradient(145deg, #0f9b8e, #1a6b8a);
-    box-shadow: 0 6px 20px rgba(15, 155, 142, 0.3);
-}
-
-#choice-selfie:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 30px rgba(15, 155, 142, 0.4);
-}
-
-#choice-avatar {
-    background: linear-gradient(145deg, var(--primary), #a06828);
-    box-shadow: 0 6px 20px rgba(114, 47, 55, 0.3);
-}
-
-#choice-avatar:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 30px rgba(114, 47, 55, 0.4);
-}
-
-.look-option .look-icon {
-    font-size: var(--fs-2xl);
-}
-
-.look-option span {
-    font-weight: 700;
+    gap: 0.2rem;
     color: white;
-    font-size: var(--fs-sm);
 }
+.look-selfie-text strong {
+    font-size: var(--fs-lg);
+    font-weight: 800;
+}
+.look-selfie-text span {
+    font-size: var(--fs-sm);
+    opacity: 0.9;
+    line-height: 1.4;
+}
+.look-selfie-text small {
+    font-size: var(--fs-xs);
+    opacity: 0.75;
+}
+.look-selfie-arrow {
+    font-size: 1.5rem;
+    color: rgba(255,255,255,0.7);
+    flex-shrink: 0;
+}
+
+/* ── Look step: skip link (secondary) ──────────────────────────── */
+.look-skip-btn {
+    margin-top: 1rem;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.45);
+    font-size: var(--fs-xs);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 0.3rem 0.5rem;
+    transition: color 0.2s;
+    width: 100%;
+    text-align: center;
+}
+.look-skip-btn:hover {
+    color: rgba(255,255,255,0.7);
+}
+
+/* Legacy grid classes (kept for backward compat) */
+.look-choice-grid { display: flex; gap: 0.75rem; width: 100%; margin-top: 0.5rem; }
+.look-option { flex:1; padding:1.2rem 0.8rem; border-radius:16px; border:2px solid transparent; cursor:pointer; transition:all 0.3s; display:flex; flex-direction:column; align-items:center; gap:0.5rem; }
+.look-option .look-icon { font-size: var(--fs-2xl); }
+.look-option span { font-weight:700; color:white; font-size:var(--fs-sm); }
 
 .avatar-grid {
     display: grid;
