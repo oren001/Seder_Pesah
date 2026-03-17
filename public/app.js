@@ -533,9 +533,55 @@ function init() {
         selfieDataUrl = savedSelfie;
     }
 
+    // Countdown to Seder: April 1 2026 18:30 AEDT (Sydney, UTC+11)
+    function startSederCountdown() {
+        const seder = new Date('2026-04-01T18:30:00+11:00');
+        const pad = n => String(n).padStart(2, '0');
+        function tick() {
+            const diff = seder - Date.now();
+            if (diff <= 0) {
+                ['cd-days','cd-hours','cd-mins','cd-secs'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = '00';
+                });
+                return;
+            }
+            const days  = Math.floor(diff / 86400000);
+            const hours = Math.floor((diff % 86400000) / 3600000);
+            const mins  = Math.floor((diff % 3600000)  / 60000);
+            const secs  = Math.floor((diff % 60000)    / 1000);
+            const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = pad(v); };
+            set('cd-days', days); set('cd-hours', hours); set('cd-mins', mins); set('cd-secs', secs);
+            setTimeout(tick, 1000);
+        }
+        tick();
+    }
+
+    // Host photos: appear on tap anywhere in the hero, disappear 1s after touch ends
+    function initHostPhotosTap() {
+        const hero = document.querySelector('.inv-hero');
+        const hostsRow = document.querySelector('.inv-hosts-row');
+        if (!hero || !hostsRow) return;
+        let hideTimer = null;
+        function showHosts() {
+            clearTimeout(hideTimer);
+            hostsRow.classList.add('visible');
+        }
+        function scheduleHide() {
+            clearTimeout(hideTimer);
+            hideTimer = setTimeout(() => hostsRow.classList.remove('visible'), 1000);
+        }
+        hero.addEventListener('touchstart', showHosts,    { passive: true });
+        hero.addEventListener('touchend',   scheduleHide, { passive: true });
+        hero.addEventListener('mousedown',  showHosts);
+        hero.addEventListener('mouseup',    scheduleHide);
+    }
+
     // Helper: show invitation screen → video plays once → then Ken Burns slideshow loops
     function showInvitationScreen() {
         showScreen('invitation');
+        startSederCountdown();
+        initHostPhotosTap();
         const invVid = document.getElementById('inv-hero-video');
         const invSlide = document.getElementById('inv-slideshow');
 
