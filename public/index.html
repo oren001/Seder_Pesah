@@ -201,6 +201,11 @@
                     <div class="look-selfie-arrow">←</div>
                 </div>
 
+                <!-- Keep current photo (shown only when user already has a selfie) -->
+                <button id="choice-keep" class="look-keep-btn hidden">
+                    ✅ להישאר עם התמונה הנוכחית
+                </button>
+
                 <!-- Secondary: skip -->
                 <button id="choice-avatar" class="look-skip-btn">
                     המשך בלי תמונה (אפשר תמיד להוסיף אחר כך)
@@ -589,6 +594,13 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script>
+    // On HTTP, Wake Lock API always rejects and NoSleep.js logs every rejection.
+    // Remove it so NoSleep falls straight to the video-element fallback (which works on HTTP).
+    if (location.protocol !== 'https:' && 'wakeLock' in navigator) {
+        delete Navigator.prototype.wakeLock;
+    }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/nosleep.js@0.12.0/dist/NoSleep.min.js"></script>
 
     <script src="haggadah_data.js?v=1.2.5"></script>

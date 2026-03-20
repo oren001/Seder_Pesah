@@ -1913,6 +1913,23 @@ body {
     flex-shrink: 0;
 }
 
+/* ── Look step: keep current photo ─────────────────────────────── */
+.look-keep-btn {
+    margin-top: 0.75rem;
+    background: rgba(212,175,55,0.15);
+    border: 1px solid rgba(212,175,55,0.4);
+    color: var(--gold);
+    font-size: var(--fs-sm);
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    width: 100%;
+    text-align: center;
+    transition: background 0.2s;
+}
+.look-keep-btn:hover { background: rgba(212,175,55,0.25); }
+
 /* ── Look step: skip link (secondary) ──────────────────────────── */
 .look-skip-btn {
     margin-top: 1rem;

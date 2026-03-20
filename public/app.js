@@ -988,33 +988,36 @@ function triggerPageGeneration(pageIndex) {
 
 // --- Wake Lock ---
 let _noSleep = null;
+let _noSleepActive = false;
 
 async function requestWakeLock() {
-    // Try NoSleep.js first (works on HTTP too — uses hidden video trick)
+    if (_noSleepActive) return;
     if (typeof NoSleep !== 'undefined') {
         try {
             if (!_noSleep) _noSleep = new NoSleep();
             await _noSleep.enable();
-            console.log('NoSleep enabled');
+            _noSleepActive = true;
             return;
         } catch (e) { /* needs user gesture — will retry on first interaction */ }
     }
-    // Fallback: native Wake Lock API (HTTPS only)
-    if ('wakeLock' in navigator) {
+    if ('wakeLock' in navigator && location.protocol === 'https:') {
         try {
             wakeLock = await navigator.wakeLock.request('screen');
             wakeLock.addEventListener('release', () => {
+                _noSleepActive = false;
                 if (document.visibilityState === 'visible') requestWakeLock();
             });
-        } catch (err) { /* silently fail */ }
+            _noSleepActive = true;
+        } catch (err) { /* silent */ }
     }
 }
 
 // Enable NoSleep on first user touch (required by browsers for video autoplay)
 function _enableNoSleepOnGesture() {
+    if (_noSleepActive) return;
     if (typeof NoSleep !== 'undefined') {
         if (!_noSleep) _noSleep = new NoSleep();
-        _noSleep.enable().catch(() => {});
+        _noSleep.enable().then(() => { _noSleepActive = true; }).catch(() => {});
     }
     document.removeEventListener('touchstart', _enableNoSleepOnGesture);
     document.removeEventListener('click', _enableNoSleepOnGesture);
@@ -1022,9 +1025,9 @@ function _enableNoSleepOnGesture() {
 document.addEventListener('touchstart', _enableNoSleepOnGesture, { once: true });
 document.addEventListener('click', _enableNoSleepOnGesture, { once: true });
 
-// Re-request on visibility change
-document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === 'visible') requestWakeLock();
+// Re-request on visibility change (only if wake lock was released)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !_noSleepActive) requestWakeLock();
 });
 
 function setupTasks() {

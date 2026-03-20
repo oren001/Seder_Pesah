@@ -77,6 +77,10 @@ class RSVPFlow {
             this.goToStep('selfie');
             this.startRSVPCamera();
         });
+        this.safeClick('choice-keep', () => {
+            // Keep existing selfie — go straight to join
+            this.complete();
+        });
         this.safeClick('choice-avatar', () => {
             // "Skip" — assign a random Passover emoji and join immediately
             this.data.type = 'avatar';
@@ -91,11 +95,18 @@ class RSVPFlow {
         // Step Selfie
         this.safeClick('btn-rsvp-take', () => this.takeRSVPSelfie());
         this.safeClick('btn-rsvp-retake', () => this.retakeRSVPSelfie());
-        this.safeClick('btn-finish-selfie', () => {
-            // Go to exodus-card step instead of completing immediately
+        this.safeClick('btn-finish-selfie', async () => {
             this.stopRSVPCamera();
-            this.goToStep('exodus-card');
-            this._startExodusCard();
+            try {
+                const r = await fetch('/api/exodus-card-enabled');
+                const d = await r.json();
+                if (d.enabled) {
+                    this.goToStep('exodus-card');
+                    this._startExodusCard();
+                    return;
+                }
+            } catch (e) { /* API unreachable — skip exodus card */ }
+            this.complete();
         });
         this.safeClick('btn-rsvp-back-selfie', () => {
             this.stopRSVPCamera();
@@ -250,7 +261,17 @@ class RSVPFlow {
             this.data.name = me.name;
             const nameInput = $$('rsvp-name-input');
             if (nameInput) nameInput.value = me.name;
-            // Always show the selfie-vs-skip choice (never auto-open camera)
+            // If user already has a real selfie, show "keep current photo" option
+            const existingSelfie = localStorage.getItem('haggadah_selfie');
+            const keepBtn = $$('choice-keep');
+            if (keepBtn) {
+                if (existingSelfie && (existingSelfie.startsWith('data:') || existingSelfie.startsWith('http'))) {
+                    this.data.photo = existingSelfie;
+                    keepBtn.classList.remove('hidden');
+                } else {
+                    keepBtn.classList.add('hidden');
+                }
+            }
             this.goToStep('look');
         } else {
             this.goToStep('name');

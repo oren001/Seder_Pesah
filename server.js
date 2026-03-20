@@ -222,7 +222,14 @@ app.post('/api/set-invitation-bg', express.json(), (req, res) => {
 // ── Exodus Character Card — one-per-person, token-protected ──────────────
 const _exodusCardUsed = new Set(); // IP-based rate limit (reset on server restart)
 
+app.get('/api/exodus-card-enabled', (req, res) => {
+    res.json({ enabled: !!process.env.LEONARDO_API_KEY });
+});
+
 app.post('/api/generate-exodus-card', express.json({ limit: '2mb' }), async (req, res) => {
+    if (!process.env.LEONARDO_API_KEY) {
+        return res.status(503).json({ error: 'ai_not_configured', message: 'Leonardo API key not set' });
+    }
     const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').split(',')[0].trim();
     if (_exodusCardUsed.has(ip)) {
         return res.status(429).json({ error: 'already_used', message: 'כבר יצרת את התמונה שלך 🎨' });
