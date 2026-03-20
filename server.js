@@ -494,6 +494,9 @@ io.on('connection', (socket) => {
                 { id: 'dev-4', text: '☁️ חיבור למסד נתונים', completed: false, author: 'אורן (מנהל פרויקט)' },
                 { id: 'dev-5', text: '🎥 שילוב אודיו / וידאו', completed: false, author: 'אורן (מנהל פרויקט)' }
             ],
+            leaderId: null,
+            leaderName: null,
+            leaderPin: '1111',
             sederStarted: false,
             createdAt: new Date().toISOString()
         };
@@ -533,6 +536,7 @@ io.on('connection', (socket) => {
                 ],
                 leaderId: null,
                 leaderName: null,
+                leaderPin: '1111',
                 sederStarted: false,
                 createdAt: new Date().toISOString()
             };
