@@ -223,20 +223,8 @@ app.post('/api/set-invitation-bg', express.json(), (req, res) => {
 const _exodusCardUsed = new Set(); // IP-based rate limit (reset on server restart)
 
 app.get('/api/exodus-card-enabled', async (req, res) => {
-    const key = process.env.LEONARDO_API_KEY;
-    if (!key) return res.json({ enabled: false });
-    // Quick validation: hit Leonardo user-info endpoint to confirm key is alive
-    try {
-        const r = await fetch('https://cloud.leonardo.ai/api/rest/v1/me', {
-            headers: { Authorization: `Bearer ${key}` }
-        });
-        if (r.ok) return res.json({ enabled: true });
-        console.warn('[ExodusCard] Leonardo key check failed:', r.status);
-        return res.json({ enabled: false });
-    } catch (e) {
-        console.warn('[ExodusCard] Leonardo key check error:', e.message);
-        return res.json({ enabled: false });
-    }
+    // Force disabled to prevent RSVP hangs — no longer using this flow
+    return res.json({ enabled: false });
 });
 
 app.post('/api/generate-exodus-card', express.json({ limit: '2mb' }), async (req, res) => {
