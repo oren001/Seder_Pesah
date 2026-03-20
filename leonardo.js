@@ -4,7 +4,8 @@
 const LEONARDO_API_URL = 'https://cloud.leonardo.ai/api/rest/v1'; // Keep v1 for init-image and polling
 const LEONARDO_V2_URL = 'https://cloud.leonardo.ai/api/rest/v2';
 const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY || null;
-const NB_PRO_MODEL = 'gemini-image-2';
+const NB_PRO_MODEL = 'nano-banana-2';
+const CONTENT_REFERENCE_PREPROCESSOR_ID = 364; // Content Reference for image guidance
 
 // Photorealistic "Exodus happened yesterday" style prompts
 // Style: cinematic documentary photography, rich warm colors, subtle anachronistic humor
@@ -48,31 +49,31 @@ const HAGGADAH_PROMPTS = [
 
 async function generateImage(prompt, initImageIds = null, onStatus = null) {
     if (!LEONARDO_API_KEY) throw new Error('LEONARDO_API_KEY environment variable is not set');
+    const parameters = {
+        prompt,
+        quantity: 1,
+        width: 1024,
+        height: 1024,
+    };
+
+    // Use controlnets for image references (V2 API format for nano-banana-2)
+    if (initImageIds && initImageIds.length > 0) {
+        parameters.controlnets = initImageIds.map(id => ({
+            initImageId: id,
+            initImageType: 'UPLOADED',
+            preprocessorId: CONTENT_REFERENCE_PREPROCESSOR_ID,
+            strengthType: 'High',
+        }));
+    }
+
     const body = {
         model: NB_PRO_MODEL,
-        parameters: {
-            prompt,
-            quantity: 1,
-            width: 1024,
-            height: 1024,
-            prompt_enhance: "OFF"
-        },
+        parameters,
         public: false
     };
 
-    if (initImageIds && initImageIds.length > 0) {
-        body.parameters.guidances = {
-            image_reference: initImageIds.map(id => ({
-                image: {
-                    id: id,
-                    type: "UPLOADED"
-                },
-                strength: "HIGH"
-            }))
-        };
-    }
-
-    if (onStatus) onStatus('שולח בקשה למודל (V2)...');
+    if (onStatus) onStatus('שולח בקשה למודל...');
+    console.log('[Leonardo] Sending V2 generation request:', JSON.stringify(body).substring(0, 300));
 
     const res = await fetch(`${LEONARDO_V2_URL}/generations`, {
         method: 'POST',
@@ -85,17 +86,18 @@ async function generateImage(prompt, initImageIds = null, onStatus = null) {
     });
 
     const data = await res.json();
+    console.log('[Leonardo] V2 response status:', res.status, 'body:', JSON.stringify(data).substring(0, 500));
     if (res.status !== 200) {
         console.error('[Leonardo Error] Status:', res.status, 'Response:', JSON.stringify(data));
-        throw new Error(`Leonardo API error: ${res.status}`);
+        throw new Error(`Leonardo API error: ${res.status} — ${JSON.stringify(data).substring(0, 200)}`);
     }
 
-    // V2 Response structure: data.generate.generationId
-    const generationId = data.generate?.generationId || data.sdGenerationJob?.generationId;
+    // V2 Response: check multiple possible structures
+    const generationId = data.sdGenerationJob?.generationId || data.generate?.generationId;
 
     if (!generationId) {
         console.error('[Leonardo Error] Unexpected Response Structure:', JSON.stringify(data));
-        throw new Error('No generationId returned from Leonardo');
+        throw new Error('No generationId returned from Leonardo — response: ' + JSON.stringify(data).substring(0, 200));
     }
 
     if (onStatus) onStatus('הייצור החל, ממתין לתמונה...');
