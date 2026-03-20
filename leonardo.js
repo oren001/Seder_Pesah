@@ -1,7 +1,7 @@
-// Leonardo Phoenix AI image generation pipeline
-// Model: Leonardo Phoenix (6b645e3a-d64f-4341-a6d8-7a3690fbf042)
+// Leonardo AI image generation pipeline
+// Model: nano-banana-2 via V2 API
 
-const LEONARDO_API_URL = 'https://cloud.leonardo.ai/api/rest/v1'; // Keep v1 for init-image and polling
+const LEONARDO_API_URL = 'https://cloud.leonardo.ai/api/rest/v1'; // V1 for init-image and polling
 const LEONARDO_V2_URL = 'https://cloud.leonardo.ai/api/rest/v2';
 const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY || null;
 const NB_PRO_MODEL = 'nano-banana-2';
@@ -441,13 +441,13 @@ async function generateExodusCard(photoBase64, name) {
         `Epic Hollywood biblical movie poster, photorealistic cinematic photography. ` +
         `A heroic figure in ancient Hebrew robes and worn sandals, one arm raised dramatically ` +
         `toward a parting Red Sea, the other gripping a gnarled wooden staff. ` +
-        `Expression: determined, inspired, and just slightly bewildered — ` +
+        `Expression: determined, inspired, and slightly bewildered, ` +
         `like they suddenly remembered they left the oven on back in Egypt. ` +
         `Background: golden desert sunrise, colossal walls of turquoise water ` +
         `curling 60 metres high on both sides, thousands of freed Hebrew slaves ` +
         `streaming through the dry seabed behind them, dust catching the backlight. ` +
-        `At the bottom of the image, large bold golden movie-poster lettering reads: ` +
-        `"${safeN} — יוצא ממצרים"`;
+        `At the bottom, large bold golden movie-poster title text reads: ` +
+        `${safeN} - Exodus`;
 
     // Same reference-image suffix as generatePersonalizedPage
     if (initImageIds.length > 0) {
