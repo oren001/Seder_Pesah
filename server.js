@@ -223,7 +223,9 @@ app.post('/api/set-invitation-bg', express.json(), (req, res) => {
 const _exodusCardUsed = new Set(); // IP-based rate limit (reset on server restart)
 
 app.get('/api/exodus-card-enabled', (req, res) => {
-    res.json({ enabled: !!process.env.LEONARDO_API_KEY });
+    // Disabled until a valid Leonardo API key is configured and tested
+    // Original: res.json({ enabled: !!process.env.LEONARDO_API_KEY });
+    res.json({ enabled: false });
 });
 
 app.post('/api/generate-exodus-card', express.json({ limit: '2mb' }), async (req, res) => {
