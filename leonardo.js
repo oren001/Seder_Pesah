@@ -1,11 +1,10 @@
-// Leonardo AI image generation pipeline
-// Model: nano-banana-2 via V2 API
+// Leonardo Phoenix AI image generation pipeline
+// Model: Leonardo Phoenix (6b645e3a-d64f-4341-a6d8-7a3690fbf042)
 
-const LEONARDO_API_URL = 'https://cloud.leonardo.ai/api/rest/v1'; // V1 for init-image and polling
+const LEONARDO_API_URL = 'https://cloud.leonardo.ai/api/rest/v1'; // Keep v1 for init-image and polling
 const LEONARDO_V2_URL = 'https://cloud.leonardo.ai/api/rest/v2';
 const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY || null;
-const NB_PRO_MODEL = 'nano-banana-2';
-const CONTENT_REFERENCE_PREPROCESSOR_ID = 364; // Content Reference for image guidance
+const NB_PRO_MODEL = 'gemini-image-2';
 
 // Photorealistic "Exodus happened yesterday" style prompts
 // Style: cinematic documentary photography, rich warm colors, subtle anachronistic humor
@@ -49,31 +48,31 @@ const HAGGADAH_PROMPTS = [
 
 async function generateImage(prompt, initImageIds = null, onStatus = null) {
     if (!LEONARDO_API_KEY) throw new Error('LEONARDO_API_KEY environment variable is not set');
-    const parameters = {
-        prompt,
-        quantity: 1,
-        width: 1024,
-        height: 1024,
-    };
-
-    // Use controlnets for image references (V2 API format for nano-banana-2)
-    if (initImageIds && initImageIds.length > 0) {
-        parameters.controlnets = initImageIds.map(id => ({
-            initImageId: id,
-            initImageType: 'UPLOADED',
-            preprocessorId: CONTENT_REFERENCE_PREPROCESSOR_ID,
-            strengthType: 'High',
-        }));
-    }
-
     const body = {
         model: NB_PRO_MODEL,
-        parameters,
+        parameters: {
+            prompt,
+            quantity: 1,
+            width: 1024,
+            height: 1024,
+            prompt_enhance: "OFF"
+        },
         public: false
     };
 
-    if (onStatus) onStatus('שולח בקשה למודל...');
-    console.log('[Leonardo] Sending V2 generation request:', JSON.stringify(body).substring(0, 300));
+    if (initImageIds && initImageIds.length > 0) {
+        body.parameters.guidances = {
+            image_reference: initImageIds.map(id => ({
+                image: {
+                    id: id,
+                    type: "UPLOADED"
+                },
+                strength: "HIGH"
+            }))
+        };
+    }
+
+    if (onStatus) onStatus('שולח בקשה למודל (V2)...');
 
     const res = await fetch(`${LEONARDO_V2_URL}/generations`, {
         method: 'POST',
@@ -86,18 +85,17 @@ async function generateImage(prompt, initImageIds = null, onStatus = null) {
     });
 
     const data = await res.json();
-    console.log('[Leonardo] V2 response status:', res.status, 'body:', JSON.stringify(data).substring(0, 500));
     if (res.status !== 200) {
         console.error('[Leonardo Error] Status:', res.status, 'Response:', JSON.stringify(data));
-        throw new Error(`Leonardo API error: ${res.status} — ${JSON.stringify(data).substring(0, 200)}`);
+        throw new Error(`Leonardo API error: ${res.status}`);
     }
 
-    // V2 Response: check multiple possible structures
-    const generationId = data.sdGenerationJob?.generationId || data.generate?.generationId;
+    // V2 Response structure: data.generate.generationId
+    const generationId = data.generate?.generationId || data.sdGenerationJob?.generationId;
 
     if (!generationId) {
         console.error('[Leonardo Error] Unexpected Response Structure:', JSON.stringify(data));
-        throw new Error('No generationId returned from Leonardo — response: ' + JSON.stringify(data).substring(0, 200));
+        throw new Error('No generationId returned from Leonardo');
     }
 
     if (onStatus) onStatus('הייצור החל, ממתין לתמונה...');
@@ -427,46 +425,27 @@ async function generateInvitationImage(yaelBase64, dannyBase64, onStatus = null)
 // participant's selfie as a character reference.
 async function generateExodusCard(photoBase64, name) {
     const safeN = (name || 'חברי').replace(/"/g, "'");
+    const initId = await uploadInitImage(photoBase64);
+    if (!initId) throw new Error('Failed to upload selfie');
 
-    // Try to upload selfie for image reference (like generatePersonalizedPage does)
-    let initImageIds = [];
-    try {
-        const initId = await uploadInitImage(photoBase64);
-        if (initId) initImageIds.push(initId);
-    } catch (e) {
-        console.warn('[ExodusCard] Selfie upload failed, generating without reference:', e.message);
-    }
-
-    let prompt =
+    const prompt =
         `Epic Hollywood biblical movie poster, photorealistic cinematic photography. ` +
-        `A heroic figure in ancient Hebrew robes and worn sandals, one arm raised dramatically ` +
+        `The EXACT person from the reference photo is the undisputed star of the Exodus — ` +
+        `their face preserved perfectly, front and centre. ` +
+        `They wear ancient Hebrew robes and worn sandals, one arm raised dramatically ` +
         `toward a parting Red Sea, the other gripping a gnarled wooden staff. ` +
-        `Expression: determined, inspired, and slightly bewildered, ` +
+        `Expression: determined, inspired, and just slightly bewildered — ` +
         `like they suddenly remembered they left the oven on back in Egypt. ` +
         `Background: golden desert sunrise, colossal walls of turquoise water ` +
         `curling 60 metres high on both sides, thousands of freed Hebrew slaves ` +
         `streaming through the dry seabed behind them, dust catching the backlight. ` +
-        `At the bottom, large bold golden movie-poster title text reads: ` +
-        `${safeN} - Exodus`;
+        `At the bottom of the image, large bold golden movie-poster lettering reads: ` +
+        `"${safeN} — יוצא ממצרים". ` +
+        `Style: cinematic photorealistic, rich warm saturated desert colours, ` +
+        `epic dramatic lighting, Oscar-winning biblical epic feel. ` +
+        `NOT cartoon, NOT illustration, NOT Pixar, NOT CGI. Looks like a real film set photo.`;
 
-    // Same reference-image suffix as generatePersonalizedPage
-    if (initImageIds.length > 0) {
-        prompt += `. Include the people from the reference images realistically in the scene — they look like themselves but in period-appropriate clothing, with genuine amused expressions, as if they accidentally ended up at the Exodus. One subtle modern detail on each of them (a watch, sneakers, an earring)`;
-    }
-    // Same global style suffix as generatePersonalizedPage
-    prompt += '. Cinematic photorealistic photography, rich warm saturated colors, golden hour light. Real people with genuine emotions. NOT cartoon, NOT Pixar, NOT illustration — real photography feel, like a BBC documentary that has a sense of humor';
-
-    // First attempt: with image references (if available)
-    try {
-        return await generateImage(prompt, initImageIds.length > 0 ? initImageIds : null);
-    } catch (err) {
-        // Fallback: try without image references
-        if (initImageIds.length > 0) {
-            console.warn('[ExodusCard] Generation with image refs failed, retrying without:', err.message);
-            return await generateImage(prompt, null);
-        }
-        throw err;
-    }
+    return await generateImage(prompt, [initId]);
 }
 
 module.exports = { HAGGADAH_PROMPTS, INVITATION_STYLES, generateImage, generatePersonalizedPage,
