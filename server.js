@@ -355,6 +355,7 @@ try {
             rooms[id].participants.forEach(p => p.online = false);
             rooms[id].leaderId = null; // Clear stale socket IDs on restart
             rooms[id].leaderName = null;
+            if (!rooms[id].leaderPin) rooms[id].leaderPin = '1111'; // Patch legacy rooms
         }
         console.log(`[Persistence] Restored ${Object.keys(rooms).length} rooms.`);
     }
@@ -472,7 +473,6 @@ io.on('connection', (socket) => {
             currentPage: 0,
             leaderId: socket.id,
             leaderName: socket.userName || name || 'מנחה',
-            leaderPin: '1111',   // Fixed PIN — anyone who knows the code can lead
             guestList: [],       // Pre-set expected guests (names only)
             sederLabel: '',
             tasks: persistedTasks[roomId] || [
