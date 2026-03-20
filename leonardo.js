@@ -427,14 +427,19 @@ async function generateInvitationImage(yaelBase64, dannyBase64, onStatus = null)
 // participant's selfie as a character reference.
 async function generateExodusCard(photoBase64, name) {
     const safeN = (name || 'חברי').replace(/"/g, "'");
-    const initId = await uploadInitImage(photoBase64);
-    if (!initId) throw new Error('Failed to upload selfie');
 
-    const prompt =
+    // Try to upload selfie for image reference (like generatePersonalizedPage does)
+    let initImageIds = [];
+    try {
+        const initId = await uploadInitImage(photoBase64);
+        if (initId) initImageIds.push(initId);
+    } catch (e) {
+        console.warn('[ExodusCard] Selfie upload failed, generating without reference:', e.message);
+    }
+
+    let prompt =
         `Epic Hollywood biblical movie poster, photorealistic cinematic photography. ` +
-        `The EXACT person from the reference photo is the undisputed star of the Exodus — ` +
-        `their face preserved perfectly, front and centre. ` +
-        `They wear ancient Hebrew robes and worn sandals, one arm raised dramatically ` +
+        `A heroic figure in ancient Hebrew robes and worn sandals, one arm raised dramatically ` +
         `toward a parting Red Sea, the other gripping a gnarled wooden staff. ` +
         `Expression: determined, inspired, and just slightly bewildered — ` +
         `like they suddenly remembered they left the oven on back in Egypt. ` +
@@ -442,12 +447,26 @@ async function generateExodusCard(photoBase64, name) {
         `curling 60 metres high on both sides, thousands of freed Hebrew slaves ` +
         `streaming through the dry seabed behind them, dust catching the backlight. ` +
         `At the bottom of the image, large bold golden movie-poster lettering reads: ` +
-        `"${safeN} — יוצא ממצרים". ` +
-        `Style: cinematic photorealistic, rich warm saturated desert colours, ` +
-        `epic dramatic lighting, Oscar-winning biblical epic feel. ` +
-        `NOT cartoon, NOT illustration, NOT Pixar, NOT CGI. Looks like a real film set photo.`;
+        `"${safeN} — יוצא ממצרים"`;
 
-    return await generateImage(prompt, [initId]);
+    // Same reference-image suffix as generatePersonalizedPage
+    if (initImageIds.length > 0) {
+        prompt += `. Include the people from the reference images realistically in the scene — they look like themselves but in period-appropriate clothing, with genuine amused expressions, as if they accidentally ended up at the Exodus. One subtle modern detail on each of them (a watch, sneakers, an earring)`;
+    }
+    // Same global style suffix as generatePersonalizedPage
+    prompt += '. Cinematic photorealistic photography, rich warm saturated colors, golden hour light. Real people with genuine emotions. NOT cartoon, NOT Pixar, NOT illustration — real photography feel, like a BBC documentary that has a sense of humor';
+
+    // First attempt: with image references (if available)
+    try {
+        return await generateImage(prompt, initImageIds.length > 0 ? initImageIds : null);
+    } catch (err) {
+        // Fallback: try without image references
+        if (initImageIds.length > 0) {
+            console.warn('[ExodusCard] Generation with image refs failed, retrying without:', err.message);
+            return await generateImage(prompt, null);
+        }
+        throw err;
+    }
 }
 
 module.exports = { HAGGADAH_PROMPTS, INVITATION_STYLES, generateImage, generatePersonalizedPage,
