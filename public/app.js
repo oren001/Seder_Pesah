@@ -285,6 +285,7 @@ function createAvatarEl(photoUrl) {
     const img = document.createElement('img');
     img.src = photoUrl;
     img.alt = '';
+    img.onerror = function() { this.style.display = 'none'; };
     return img;
 }
 
@@ -1401,7 +1402,7 @@ function renderParticipants(participants) {
     if (gazeboList) gazeboList.innerHTML = '';
 
     participants.forEach(p => {
-        const photoUrl = p.photo || generatePlaceholderPhoto();
+        const photoUrl = p.photo || generatePlaceholderPhoto(p.name);
         const isOnline = p.online !== false;
         const cls = 'avatar' + (me && p.id === me.id ? ' me' : '') + (!isOnline ? ' offline' : '');
 
@@ -1476,9 +1477,16 @@ function renderParticipants(participants) {
     });
 }
 
+let _lobbyFingerprint = '';
 function renderLobbyParticipants(participants) {
     const grid = $$('room-lobby-participants');
     if (!grid) return;
+
+    // Skip full re-render if nothing changed
+    const fp = participants.map(p => `${p.id}:${p.name}:${p.photo}:${p.active}:${p.id === leaderId}`).join('|');
+    if (fp === _lobbyFingerprint) return;
+    _lobbyFingerprint = fp;
+
     grid.innerHTML = '';
 
     // Update participant counter
@@ -1486,7 +1494,7 @@ function renderLobbyParticipants(participants) {
     if (counter) counter.textContent = `👥 ${participants.length} נרשמו`;
 
     participants.forEach(p => {
-        const photoUrl = p.photo || generatePlaceholderPhoto();
+        const photoUrl = p.photo || generatePlaceholderPhoto(p.name);
 
         // Wrapper holds avatar circle + name label
         const wrapper = document.createElement('div');
@@ -2291,16 +2299,24 @@ function downloadImage(url, filename) {
     document.body.removeChild(link);
 }
 
-function generatePlaceholderPhoto() {
+const _placeholderCache = {};
+function generatePlaceholderPhoto(name) {
+    const key = name || '?';
+    if (_placeholderCache[key]) return _placeholderCache[key];
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 80;
     const ctx = canvas.getContext('2d');
-    const hue = Math.floor(Math.random() * 360);
+    // Deterministic hue from name
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) hash = key.charCodeAt(i) + ((hash << 5) - hash);
+    const hue = Math.abs(hash) % 360;
     ctx.fillStyle = `hsl(${hue}, 60%, 50%)`;
     ctx.beginPath();
     ctx.arc(40, 40, 40, 0, Math.PI * 2);
     ctx.fill();
-    return canvas.toDataURL();
+    const url = canvas.toDataURL();
+    _placeholderCache[key] = url;
+    return url;
 }
 
 window.onload = init;
