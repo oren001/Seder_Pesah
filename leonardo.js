@@ -4,7 +4,7 @@
 const LEONARDO_API_URL = 'https://cloud.leonardo.ai/api/rest/v1'; // V1 for init-image and polling
 const LEONARDO_V2_URL = 'https://cloud.leonardo.ai/api/rest/v2';
 const LEONARDO_API_KEY = process.env.LEONARDO_API_KEY || null;
-const NB_PRO_MODEL = 'nano-banana-2';
+const NB_PRO_MODEL = 'nano-banana-pro';
 const CONTENT_REFERENCE_PREPROCESSOR_ID = 364; // Content Reference for image guidance
 
 // Photorealistic "Exodus happened yesterday" style prompts
