@@ -363,18 +363,7 @@ try {
 
 function saveRooms() {
     try {
-        // Don't save photo data inside rooms (save separately)
-        const roomsToSave = {};
-        for (const id in rooms) {
-            roomsToSave[id] = {
-                ...rooms[id],
-                participants: rooms[id].participants.map(p => ({
-                    ...p,
-                    photo: undefined // Strip photos from room file; they're in selfies.json
-                }))
-            };
-        }
-        fs.writeFileSync(ROOMS_FILE, JSON.stringify(roomsToSave, null, 2));
+        fs.writeFileSync(ROOMS_FILE, JSON.stringify(rooms, null, 2));
     } catch (e) { console.error('Failed to save rooms:', e); }
 }
 
