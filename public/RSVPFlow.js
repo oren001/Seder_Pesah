@@ -359,12 +359,14 @@ class RSVPFlow {
         }, 3500);
 
         try {
+            console.log('[ExodusCard] Sending photo to server...', this.data.photo?.substring(0, 50));
             const res = await fetch('/api/generate-exodus-card', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ photo: this.data.photo, name: this.data.name || 'חברי' })
             });
 
+            console.log('[ExodusCard] Server response status:', res.status);
             clearInterval(tipInterval);
 
             if (res.status === 429) {
@@ -377,20 +379,21 @@ class RSVPFlow {
             }
 
             const data = await res.json();
+            console.log('[ExodusCard] Server response data:', JSON.stringify(data).substring(0, 200));
             if (data.imageUrl) {
                 localStorage.setItem('haggadah_exodus_card', data.imageUrl);
                 this._showExodusResult(data.imageUrl);
             } else {
-                throw new Error(data.error || 'שגיאה');
+                throw new Error(data.error || `Server returned ${res.status}`);
             }
         } catch (err) {
             clearInterval(tipInterval);
-            console.error('[ExodusCard]', err);
-            // Auto-continue to seder on failure — don't leave user stuck
+            console.error('[ExodusCard] Error:', err.message, err);
             const status = $$('exodus-card-status');
-            if (status) status.textContent = 'ממשיכים לסדר! 🍷';
+            if (status) status.textContent = `⚠️ ${err.message} — ממשיכים לסדר`;
             $$('exodus-card-loading')?.classList.add('hidden');
-            setTimeout(() => this.complete(), 1500);
+            $$('btn-exodus-continue')?.classList.remove('hidden');
+            setTimeout(() => this.complete(), 4000);
         }
     }
 

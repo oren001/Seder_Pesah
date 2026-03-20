@@ -241,6 +241,7 @@ app.get('/api/exodus-card-enabled', async (req, res) => {
 
 app.post('/api/generate-exodus-card', express.json({ limit: '2mb' }), async (req, res) => {
     if (!process.env.LEONARDO_API_KEY) {
+        console.warn('[ExodusCard] LEONARDO_API_KEY not set');
         return res.status(503).json({ error: 'ai_not_configured', message: 'Leonardo API key not set' });
     }
     const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').split(',')[0].trim();
@@ -248,18 +249,20 @@ app.post('/api/generate-exodus-card', express.json({ limit: '2mb' }), async (req
         return res.status(429).json({ error: 'already_used', message: 'כבר יצרת את התמונה שלך 🎨' });
     }
     const { photo, name } = req.body || {};
+    console.log(`[ExodusCard] Request from ${ip}, name="${name}", photo length=${photo?.length || 0}, starts with="${photo?.substring(0, 30)}"`);
     if (!photo || !photo.startsWith('data:image')) {
+        console.warn(`[ExodusCard] Invalid photo — missing or wrong format`);
         return res.status(400).json({ error: 'photo required' });
     }
     _exodusCardUsed.add(ip); // lock before async work to prevent concurrent requests
     try {
-        console.log(`[ExodusCard] Generating for "${name || '?'}" (${ip})`);
+        console.log(`[ExodusCard] Generating for "${name || '?'}" (${ip})...`);
         const imageUrl = await generateExodusCard(photo, name || 'חברי');
-        console.log(`[ExodusCard] Done for "${name}" → ${imageUrl}`);
+        console.log(`[ExodusCard] Done for "${name}" → ${imageUrl?.substring(0, 80)}`);
         res.json({ imageUrl });
     } catch (err) {
         _exodusCardUsed.delete(ip); // allow one retry on error
-        console.error('[ExodusCard] Error:', err.message);
+        console.error(`[ExodusCard] FAILED for "${name}" (${ip}):`, err.message, err.stack);
         res.status(500).json({ error: err.message });
     }
 });
