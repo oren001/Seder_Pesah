@@ -4,7 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
-const { generatePersonalizedPage, generateInvitationImage, generateInvitationOptions, INVITATION_STYLES } = require('./leonardo');
+const { generatePersonalizedPage, generateInvitationImage, generateInvitationOptions, INVITATION_STYLES, generateExodusCard } = require('./leonardo');
 const { OAuth2Client } = require('google-auth-library');
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com';
@@ -50,6 +50,79 @@ app.use((req, res, next) => {
 // Server config endpoint — intentionally empty to avoid leaking internals
 app.get('/api/config', (req, res) => {
     res.json({});
+});
+
+// ── Test seed endpoint — creates a room pre-populated with fake participants ──
+app.post('/api/test/seed-room', express.json(), (req, res) => {
+    const { count = 30 } = req.body || {};
+    const NAMES = ['אורן','יעלי','דני','מירי','יוסי','תמר','אבי','נועה','גיל','רונית',
+        'שי','לירון','עמית','הילה','בני','שירה','אלון','דפנה','עידו','ורד',
+        'ניר','מיכל','רן','עינת','אסף','רחל','גבי','ליאת','טל','אריה'];
+
+    // Generate a tiny colored-circle selfie as base64
+    function fakePhoto(hue) {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><circle cx="40" cy="40" r="40" fill="hsl(${hue},70%,55%)"/><text x="40" y="52" font-size="32" text-anchor="middle" fill="white">${String.fromCodePoint(0x1F600 + Math.floor(hue/15) % 80)}</text></svg>`;
+        return 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64');
+    }
+
+    const targetRoomId = req.body.roomId;
+    let roomId;
+
+    if (targetRoomId && rooms[targetRoomId]) {
+        // Add fake users to existing room
+        roomId = targetRoomId;
+        const existing = rooms[roomId];
+        const startIdx = existing.participants.length;
+        for (let i = 0; i < count; i++) {
+            existing.participants.push({
+                id: `fake-${startIdx + i}`,
+                name: NAMES[(startIdx + i) % NAMES.length] + ((startIdx + i) >= NAMES.length ? ` ${Math.floor((startIdx + i) / NAMES.length) + 1}` : ''),
+                photo: fakePhoto((startIdx + i) * 12),
+                online: true,
+                isGuest: true,
+                socketId: `fake-${startIdx + i}`
+            });
+        }
+        io.to(roomId).emit('room-updated', { participants: existing.participants });
+    } else {
+        // Create new seeded room
+        roomId = 'TEST-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+        const participants = Array.from({ length: count }, (_, i) => ({
+            id: `fake-${i}`,
+            name: NAMES[i % NAMES.length] + (i >= NAMES.length ? ` ${Math.floor(i / NAMES.length) + 1}` : ''),
+            photo: fakePhoto(i * 12),
+            online: i < 4,
+            isGuest: true,
+            socketId: `fake-${i}`
+        }));
+        rooms[roomId] = {
+            id: roomId,
+            participants,
+            currentPage: 5,
+            leaderId: 'fake-0',
+            leaderName: participants[0].name,
+            leaderPin: '1111',
+            tasks: [],
+            sederStarted: true,
+            reactions: { 5: { 'fake-0': '🙏', 'fake-1': '🎉', 'fake-2': '🙏' } },
+            miYodea: {},
+            images: {},
+            createdAt: new Date().toISOString()
+        };
+    }
+
+    console.log(`[TEST] Seeded room ${roomId} with ${count} fake participants`);
+    res.json({ roomId, participantCount: rooms[roomId].participants.length, leaderName: rooms[roomId].leaderName });
+});
+
+// ── Test: inject a fake image into a live room and broadcast to all clients ─
+app.post('/api/test/inject-image', express.json(), (req, res) => {
+    const { roomId, pageIndex, imageUrl } = req.body;
+    if (!rooms[roomId]) return res.status(404).json({ error: 'room not found' });
+    if (!rooms[roomId].images) rooms[roomId].images = {};
+    rooms[roomId].images[pageIndex] = { url: imageUrl, featuredPhotos: [] };
+    io.to(roomId).emit('image-ready', { pageIndex, imageUrl, featuredPhotos: [] });
+    res.json({ ok: true });
 });
 
 // ── Invitation image generation endpoint ─────────────────────────────────
@@ -144,6 +217,31 @@ app.post('/api/set-invitation-bg', express.json(), (req, res) => {
     fs.copyFileSync(src, dest);
     console.log(`[Options] Set invitation-bg to option ${id}`);
     res.json({ ok: true, message: `Option ${id} is now the active invitation background!` });
+});
+
+// ── Exodus Character Card — one-per-person, token-protected ──────────────
+const _exodusCardUsed = new Set(); // IP-based rate limit (reset on server restart)
+
+app.post('/api/generate-exodus-card', express.json({ limit: '2mb' }), async (req, res) => {
+    const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').split(',')[0].trim();
+    if (_exodusCardUsed.has(ip)) {
+        return res.status(429).json({ error: 'already_used', message: 'כבר יצרת את התמונה שלך 🎨' });
+    }
+    const { photo, name } = req.body || {};
+    if (!photo || !photo.startsWith('data:image')) {
+        return res.status(400).json({ error: 'photo required' });
+    }
+    _exodusCardUsed.add(ip); // lock before async work to prevent concurrent requests
+    try {
+        console.log(`[ExodusCard] Generating for "${name || '?'}" (${ip})`);
+        const imageUrl = await generateExodusCard(photo, name || 'חברי');
+        console.log(`[ExodusCard] Done for "${name}" → ${imageUrl}`);
+        res.json({ imageUrl });
+    } catch (err) {
+        _exodusCardUsed.delete(ip); // allow one retry on error
+        console.error('[ExodusCard] Error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.get('/api/generate-invitation', async (req, res) => {
@@ -615,6 +713,54 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('seder-ended', { images: rooms[roomId].images || {} });
     });
 
+    // Emoji reaction on a page
+    socket.on('page-react', ({ roomId, pageIndex, emoji }) => {
+        if (!rooms[roomId]) return;
+        if (!rooms[roomId].reactions) rooms[roomId].reactions = {};
+        if (!rooms[roomId].reactions[pageIndex]) rooms[roomId].reactions[pageIndex] = {};
+        const prev = rooms[roomId].reactions[pageIndex][socket.id];
+        if (prev === emoji) {
+            delete rooms[roomId].reactions[pageIndex][socket.id]; // toggle off
+        } else {
+            rooms[roomId].reactions[pageIndex][socket.id] = emoji;
+        }
+        io.to(roomId).emit('reactions-updated', { pageIndex, reactions: rooms[roomId].reactions[pageIndex] });
+    });
+
+    // מי יודע: volunteer join/leave
+    socket.on('mi-yodea-join', ({ roomId, slotNum, participant }) => {
+        if (!rooms[roomId]) return;
+        if (!rooms[roomId].miYodea) rooms[roomId].miYodea = {};
+        if (!rooms[roomId].miYodea[slotNum]) rooms[roomId].miYodea[slotNum] = [];
+        const slot = rooms[roomId].miYodea[slotNum];
+        if (slot.length >= 6) return; // max 6
+        if (!slot.find(p => p.id === participant.id)) slot.push(participant);
+        io.to(roomId).emit('mi-yodea-updated', { slotNum, participants: slot });
+    });
+
+    socket.on('mi-yodea-leave', ({ roomId, slotNum, participant }) => {
+        if (!rooms[roomId] || !rooms[roomId].miYodea) return;
+        const slot = rooms[roomId].miYodea[slotNum] || [];
+        rooms[roomId].miYodea[slotNum] = slot.filter(p => p.id !== participant.id);
+        io.to(roomId).emit('mi-yodea-updated', { slotNum, participants: rooms[roomId].miYodea[slotNum] });
+    });
+
+    // מי יודע: leader triggers AI image generation for a slot
+    socket.on('mi-yodea-generate', ({ roomId, slotNum }) => {
+        if (!rooms[roomId]) return;
+        if (rooms[roomId].leaderId !== socket.id) return;
+        const participants = (rooms[roomId].miYodea || {})[slotNum] || [];
+        const selfies = participants.map(p => p.photo).filter(Boolean);
+        const numHe = ['','אחד','שניים','שלושה','ארבעה','חמישה','שישה','שבעה','שמונה','תשעה','עשרה','אחד עשר','שנים עשר','שלושה עשר'][slotNum] || slotNum;
+        const prompt = `מי יודע ${numHe}? — אנשים מסביב לשולחן סדר פסח, חגיגי, ישראלי, מגוון, רגשי, אנלוגי מחומם`;
+        generatePersonalizedPage(roomId, `mi-yodea-${slotNum}`, io, rooms, { prompt, selfies }).then(() => {
+            const imageUrl = rooms[roomId].images?.[`mi-yodea-${slotNum}`]?.url;
+            if (imageUrl) io.to(roomId).emit('mi-yodea-image-ready', { slotNum, imageUrl });
+        }).catch(err => {
+            io.to(roomId).emit('toast-broadcast', { message: `שגיאה ביצירת תמונה ${slotNum}: ${err.message}` });
+        });
+    });
+
     socket.on('generate-page', ({ roomId, pageIndex }) => {
         if (!rooms[roomId]) return;
         // AI generation is restricted to the current leader — protects Leonardo token quota
@@ -650,12 +796,24 @@ io.on('connection', (socket) => {
     socket.on('set-highlight', ({ roomId, pageIndex, segmentIndex }) => {
         if (!rooms[roomId]) return;
         rooms[roomId].highlightedSegment = segmentIndex;
-        // Include highlighter info so others can see who is reading
         const highlighter = rooms[roomId].participants.find(p => p.id === socket.id);
-        socket.to(roomId).emit('highlight-updated', {
-            pageIndex, segmentIndex,
-            highlighterName: highlighter ? (highlighter.name || 'משתתף') : null,
-            highlighterPhoto: highlighter ? highlighter.photo : null
+
+        // Track per-user paragraph position
+        if (!rooms[roomId].paragraphTaps) rooms[roomId].paragraphTaps = {};
+        if (segmentIndex >= 0) {
+            rooms[roomId].paragraphTaps[socket.id] = {
+                segmentIndex, pageIndex,
+                name: highlighter?.name || 'משתתף',
+                photo: highlighter?.photo || null
+            };
+        } else {
+            delete rooms[roomId].paragraphTaps[socket.id];
+        }
+
+        // Broadcast updated taps to everyone (including sender)
+        io.to(roomId).emit('paragraphs-updated', {
+            pageIndex,
+            taps: rooms[roomId].paragraphTaps
         });
     });
 
@@ -724,15 +882,31 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         const roomId = socket.roomId;
         if (!roomId || !rooms[roomId]) return;
-        const p = rooms[roomId].participants.find(p => p.id === socket.id);
+        const room = rooms[roomId];
+        const p = room.participants.find(p => p.id === socket.id);
         if (p) {
             p.online = false;
             if (!p.photo) {
-                rooms[roomId].participants = rooms[roomId].participants.filter(x => x.id !== socket.id);
+                room.participants = room.participants.filter(x => x.id !== socket.id);
             }
         }
+
+        // Auto-promote: if the leader left, give leadership to the next online participant
+        if (room.leaderId === socket.id) {
+            const nextLeader = room.participants.find(x => x.online !== false && x.id !== socket.id);
+            if (nextLeader) {
+                room.leaderId = nextLeader.id;
+                room.leaderName = nextLeader.name;
+                io.to(roomId).emit('leader-updated', { leaderId: nextLeader.id, leaderName: nextLeader.name });
+                io.to(roomId).emit('toast-broadcast', { message: `👑 ${nextLeader.name} הפך/ה למנחה` });
+            } else {
+                room.leaderId = null;
+                room.leaderName = null;
+            }
+        }
+
         saveRooms();
-        io.to(roomId).emit('room-updated', { participants: rooms[roomId].participants, currentPage: rooms[roomId].currentPage, leaderId: rooms[roomId].leaderId, leaderName: rooms[roomId].leaderName });
+        io.to(roomId).emit('room-updated', { participants: room.participants, currentPage: room.currentPage, leaderId: room.leaderId, leaderName: room.leaderName });
     });
 });
 

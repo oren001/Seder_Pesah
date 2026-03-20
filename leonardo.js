@@ -215,43 +215,53 @@ function pickRandom(arr, n) {
     return shuffled.slice(0, Math.min(n, shuffled.length));
 }
 
-async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
+async function generatePersonalizedPage(roomId, pageIndex, io, rooms, options = {}) {
     if (!rooms[roomId]) return;
     try {
         console.log(`[AI] Personalized Page Generation for room ${roomId}, page ${pageIndex}`);
         io.to(roomId).emit('ai-status', { message: 'מכינים את ההזמנות ליציאת מצרים... 🌊', pageIndex });
 
-        // 1. Upload participant selfies — prioritize active readers
+        // 1. Upload participant selfies
         const initImageIds = [];
-        const readers = rooms[roomId].participants.filter(p => p.isReading && p.online && isRealPhoto(p.photo));
-        const allWithPhotos = rooms[roomId].participants.filter(p => isRealPhoto(p.photo));
-        // Use readers if any, otherwise fallback to all participants
-        const pool = readers.length > 0 ? readers : allWithPhotos;
-        const selected = pickRandom(pool, 3); // API limit: max 3 reference images
+        let selected = [];
 
-        if (selected.length === 0) {
-            io.to(roomId).emit('ai-status', { message: 'אין משתתפים עם תמונה — מייצר סצנה כללית... 📜', pageIndex });
+        if (options.selfies && options.selfies.length > 0) {
+            // מי יודע override: use provided selfies (up to 3 for API limit)
+            const selfieUrls = options.selfies.slice(0, 3).filter(Boolean);
+            io.to(roomId).emit('ai-status', { message: `מכניסים ${selfieUrls.length} משתתפים לתמונה... ✨`, pageIndex });
+            for (const photoUrl of selfieUrls) {
+                const id = await uploadInitImage(photoUrl);
+                if (id) initImageIds.push(id);
+            }
         } else {
-            const names = selected.map(p => p.name || 'משתתף').join(', ');
-            io.to(roomId).emit('ai-status', {
-                message: `מזמין את ${names} לסצנה... ✈️`,
-                pageIndex
-            });
-            for (const p of selected) {
-                const id = await uploadInitImage(p.photo);
-                if (id) {
-                    initImageIds.push(id);
-                } else {
-                    console.error('[AI] Failed to upload a participant photo');
+            // Default: prioritize active readers
+            const readers = rooms[roomId].participants.filter(p => p.isReading && p.online && isRealPhoto(p.photo));
+            const allWithPhotos = rooms[roomId].participants.filter(p => isRealPhoto(p.photo));
+            const pool = readers.length > 0 ? readers : allWithPhotos;
+            selected = pickRandom(pool, 3); // API limit: max 3 reference images
+
+            if (selected.length === 0) {
+                io.to(roomId).emit('ai-status', { message: 'אין משתתפים עם תמונה — מייצר סצנה כללית... 📜', pageIndex });
+            } else {
+                const names = selected.map(p => p.name || 'משתתף').join(', ');
+                io.to(roomId).emit('ai-status', { message: `מזמין את ${names} לסצנה... ✈️`, pageIndex });
+                for (const p of selected) {
+                    const id = await uploadInitImage(p.photo);
+                    if (id) initImageIds.push(id);
+                    else console.error('[AI] Failed to upload a participant photo');
                 }
             }
         }
 
         // 2. Setup Prompt
-        const section = HAGGADAH_PROMPTS[pageIndex];
-        if (!section) throw new Error('Invalid page index');
-
-        let finalPrompt = section.prompt;
+        let finalPrompt;
+        if (options.prompt) {
+            finalPrompt = options.prompt;
+        } else {
+            const section = HAGGADAH_PROMPTS[pageIndex];
+            if (!section) throw new Error('Invalid page index');
+            finalPrompt = section.prompt;
+        }
         if (initImageIds.length > 0) {
             finalPrompt += `. Include the people from the reference images realistically in the scene — they look like themselves but in period-appropriate clothing, with genuine amused expressions, as if they accidentally ended up at the Exodus. One subtle modern detail on each of them (a watch, sneakers, an earring)`;
         }
@@ -267,7 +277,9 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms) {
 
         if (imageUrl && rooms[roomId]) {
             if (!rooms[roomId].images) rooms[roomId].images = {}; // ensure images map exists
-            const featuredPhotos = selected.map(p => p.photo).filter(Boolean);
+            const featuredPhotos = options.selfies
+                ? options.selfies.filter(Boolean)
+                : selected.map(p => p.photo).filter(Boolean);
             rooms[roomId].images[pageIndex] = { url: imageUrl, featuredPhotos };
             io.to(roomId).emit('image-ready', { pageIndex, imageUrl, featuredPhotos });
             console.log(`[AI] Page ${pageIndex} ready for room ${roomId} (featuring ${featuredPhotos.length} participants)`);
@@ -408,4 +420,33 @@ async function generateInvitationImage(yaelBase64, dannyBase64, onStatus = null)
     return imageUrl;
 }
 
-module.exports = { HAGGADAH_PROMPTS, INVITATION_STYLES, generateImage, generatePersonalizedPage, generateInvitationImage, generateInvitationOptions, uploadInitImage };
+// ── Exodus Character Card ──────────────────────────────────────────────────
+// Generates a once-per-user personalized movie-poster image using the
+// participant's selfie as a character reference.
+async function generateExodusCard(photoBase64, name) {
+    const safeN = (name || 'חברי').replace(/"/g, "'");
+    const initId = await uploadInitImage(photoBase64);
+    if (!initId) throw new Error('Failed to upload selfie');
+
+    const prompt =
+        `Epic Hollywood biblical movie poster, photorealistic cinematic photography. ` +
+        `The EXACT person from the reference photo is the undisputed star of the Exodus — ` +
+        `their face preserved perfectly, front and centre. ` +
+        `They wear ancient Hebrew robes and worn sandals, one arm raised dramatically ` +
+        `toward a parting Red Sea, the other gripping a gnarled wooden staff. ` +
+        `Expression: determined, inspired, and just slightly bewildered — ` +
+        `like they suddenly remembered they left the oven on back in Egypt. ` +
+        `Background: golden desert sunrise, colossal walls of turquoise water ` +
+        `curling 60 metres high on both sides, thousands of freed Hebrew slaves ` +
+        `streaming through the dry seabed behind them, dust catching the backlight. ` +
+        `At the bottom of the image, large bold golden movie-poster lettering reads: ` +
+        `"${safeN} — יוצא ממצרים". ` +
+        `Style: cinematic photorealistic, rich warm saturated desert colours, ` +
+        `epic dramatic lighting, Oscar-winning biblical epic feel. ` +
+        `NOT cartoon, NOT illustration, NOT Pixar, NOT CGI. Looks like a real film set photo.`;
+
+    return await generateImage(prompt, [initId]);
+}
+
+module.exports = { HAGGADAH_PROMPTS, INVITATION_STYLES, generateImage, generatePersonalizedPage,
+    generateInvitationImage, generateInvitationOptions, uploadInitImage, generateExodusCard };

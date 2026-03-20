@@ -371,6 +371,8 @@ function init() {
     });
 
     safeAddListener('btn-create-room', 'click', onCreateRoom);
+    safeAddListener('btn-create-room-returning', 'click', onCreateRoomReturning);
+    safeAddListener('btn-switch-user', 'click', onSignOut);
     safeAddListener('btn-take-selfie', 'click', onTakeSelfie);
     safeAddListener('btn-retake', 'click', onRetake);
     safeAddListener('btn-guest-login', 'click', () => {
@@ -634,10 +636,14 @@ function init() {
         showScreen('lobby');
         if (me) {
             $$('lobby-auth-section').classList.add('hidden');
-            $$('lobby-actions-section').classList.remove('hidden');
+            const actSec = $$('lobby-actions-section');
+            if (actSec) actSec.classList.remove('hidden');
+            const nameEl = $$('lobby-user-name');
+            if (nameEl) nameEl.textContent = me.name || '';
         } else {
             $$('lobby-auth-section').classList.remove('hidden');
-            $$('lobby-actions-section').classList.add('hidden');
+            const actSec = $$('lobby-actions-section');
+            if (actSec) actSec.classList.add('hidden');
         }
     }
 
@@ -701,6 +707,8 @@ async function setupSocket() {
     });
 
     socket.on('room-updated', (data) => {
+        window._lastRoomData = Object.assign(window._lastRoomData || {}, data);
+        checkForNewParticipants(data.participants || []);
         renderParticipants(data.participants);
         renderLobbyParticipants(data.participants);
         leaderId = data.leaderId;
@@ -721,11 +729,9 @@ async function setupSocket() {
         currentPage = data.currentPage || 0;
         renderPage();
         showToast('🍷 הסדר מתחיל! חג שמח!');
-        confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 }
-        });
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        // Prompt DND mode + activate NoSleep
+        setTimeout(() => showDNDPrompt(), 1800);
     });
 
     socket.on('leader-updated', (data) => {
@@ -785,6 +791,11 @@ async function setupSocket() {
         showGallery();
     });
 
+    socket.on('reactions-updated', (data) => onReactionsUpdated(data));
+
+    socket.on('mi-yodea-updated', (data) => onMiYodeaUpdated(data));
+    socket.on('mi-yodea-image-ready', (data) => onMiYodeaImageReady(data));
+
     socket.on('page-changed', (data) => {
         leaderPage = data.currentPage;
         if (isFollowingLeader) {
@@ -819,6 +830,10 @@ async function setupSocket() {
         } else {
             highlightedSegmentIndex = -1;
         }
+    });
+
+    socket.on('paragraphs-updated', ({ pageIndex, taps }) => {
+        if (pageIndex === currentPage) renderParagraphAvatars(taps);
     });
 
     socket.on('readers-updated', ({ readers }) => {
@@ -972,25 +987,44 @@ function triggerPageGeneration(pageIndex) {
 }
 
 // --- Wake Lock ---
+let _noSleep = null;
+
 async function requestWakeLock() {
+    // Try NoSleep.js first (works on HTTP too — uses hidden video trick)
+    if (typeof NoSleep !== 'undefined') {
+        try {
+            if (!_noSleep) _noSleep = new NoSleep();
+            await _noSleep.enable();
+            console.log('NoSleep enabled');
+            return;
+        } catch (e) { /* needs user gesture — will retry on first interaction */ }
+    }
+    // Fallback: native Wake Lock API (HTTPS only)
     if ('wakeLock' in navigator) {
         try {
             wakeLock = await navigator.wakeLock.request('screen');
-            console.log('Wake Lock is active');
             wakeLock.addEventListener('release', () => {
-                console.log('Wake Lock was released');
+                if (document.visibilityState === 'visible') requestWakeLock();
             });
-        } catch (err) {
-            console.error(`${err.name}, ${err.message}`);
-        }
+        } catch (err) { /* silently fail */ }
     }
 }
 
-// Re-request wake lock when page becomes visible again
-document.addEventListener('visibilitychange', async () => {
-    if (wakeLock !== null && document.visibilityState === 'visible') {
-        requestWakeLock();
+// Enable NoSleep on first user touch (required by browsers for video autoplay)
+function _enableNoSleepOnGesture() {
+    if (typeof NoSleep !== 'undefined') {
+        if (!_noSleep) _noSleep = new NoSleep();
+        _noSleep.enable().catch(() => {});
     }
+    document.removeEventListener('touchstart', _enableNoSleepOnGesture);
+    document.removeEventListener('click', _enableNoSleepOnGesture);
+}
+document.addEventListener('touchstart', _enableNoSleepOnGesture, { once: true });
+document.addEventListener('click', _enableNoSleepOnGesture, { once: true });
+
+// Re-request on visibility change
+document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible') requestWakeLock();
 });
 
 function setupTasks() {
@@ -1152,6 +1186,14 @@ function onCreateRoom() {
     });
 }
 
+function onCreateRoomReturning() {
+    if (!me || !me.name) { showToast('נא להזין שם 😊'); return; }
+    socket.emit('create-room', { name: me.name }, (response) => {
+        pendingRoomId = response.roomId;
+        rsvpFlow.show();
+    });
+}
+
 function onJoinWithPhoto() {
     if (!pendingRoomId) return;
     stopCamera();
@@ -1175,6 +1217,7 @@ function joinRoomAndShowFinish(roomId, rsvpData) {
         currentPage = response.currentPage;
         if (response.images) Object.assign(pageImages, response.images);
         if (response.tasks) roomTasks = response.tasks;
+        window._lastRoomData = Object.assign(window._lastRoomData || {}, response);
 
         updateUrlParam('room', currentRoomId);
         startHeartbeat(currentRoomId);
@@ -1706,6 +1749,19 @@ function renderPage() {
         // --- Remaining text after image (long pages only) ---
         if (hasAfterText) el.appendChild(textAfter);
 
+        // --- מי יודע button (shown on Nirtzah pages, index 26-31) ---
+        if (index >= 26) {
+            const myBtn = document.createElement('button');
+            myBtn.className = 'btn outline small';
+            myBtn.style.cssText = 'width:100%;margin-top:1.5rem;font-size:var(--fs-sm);';
+            myBtn.textContent = '🎵 מִי יוֹדֵעַ? — צרו תמונות עם כולם';
+            myBtn.onclick = openMiYodea;
+            el.appendChild(myBtn);
+        }
+
+        // Reactions rendered in global fixed bar (see renderReactionsBar)
+        renderReactionsBar(index);
+
         $$('current-page-num').textContent = currentPage + 1;
         $$('total-pages').textContent = HAGGADAH.length;
         $$('btn-prev').disabled = currentPage === 0;
@@ -1819,6 +1875,7 @@ function triggerLocalEffect(type) {
     if (!container) return;
 
     console.log(`[Effect] Triggering local effect: ${type}`);
+    showPlagueContext(type);
     container.innerHTML = '';
     container.classList.remove('hidden');
     container.className = 'effects-container ' + type;
@@ -1947,6 +2004,24 @@ function kickParticipant(targetSocketId, name) {
     showToast(`${name || 'האורח'} הוצא מהחדר`);
 }
 
+function showDNDPrompt() {
+    const existing = document.getElementById('dnd-prompt');
+    if (existing) return;
+    const el = document.createElement('div');
+    el.id = 'dnd-prompt';
+    el.className = 'dnd-prompt';
+    el.innerHTML = `
+        <div class="dnd-prompt-inner">
+            <span class="dnd-icon">🔕</span>
+            <span class="dnd-text">הפעל <strong>מצב שקט</strong> כדי להתרכז בסדר</span>
+            <button class="dnd-close" onclick="this.closest('#dnd-prompt').remove()">✕</button>
+        </div>
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 8000);
+}
+window.showDNDPrompt = showDNDPrompt;
+
 function onEndSeder() {
     if (!confirm('לסיים את הסדר ולעבור לגלריה?')) return;
     socket.emit('end-seder', { roomId: currentRoomId });
@@ -1954,20 +2029,69 @@ function onEndSeder() {
 
 function showGallery() {
     showScreen('gallery');
+
+    // ── Participants portrait wall ──────────────────────────────────
+    const participantsEl = $$('gallery-participants');
+    if (participantsEl) {
+        participantsEl.innerHTML = '';
+        const room = window._lastRoomData;
+        const parts = room?.participants || [];
+        if (parts.length === 0) {
+            participantsEl.innerHTML = '<p class="gallery-empty">אין משתתפים</p>';
+        } else {
+            const SHOW_INITIAL = 8;
+            const renderTiles = (list) => list.map((p, i) => {
+                const tile = document.createElement('div');
+                tile.className = 'gallery-person-tile';
+                tile.style.setProperty('--delay', `${i * 50}ms`);
+                const photo = p.photo || '';
+                tile.innerHTML = `
+                    <div class="gallery-person-frame">
+                        ${photo
+                            ? `<img src="${photo}" alt="${p.name}" class="gallery-person-img">`
+                            : `<div class="gallery-person-placeholder">${(p.name || '?')[0]}</div>`
+                        }
+                        ${p.id === (room?.leaderId) ? '<div class="gallery-person-crown">👑</div>' : ''}
+                    </div>
+                    <div class="gallery-person-name">${p.name || '?'}</div>
+                `;
+                return tile;
+            });
+
+            renderTiles(parts.slice(0, SHOW_INITIAL)).forEach(t => participantsEl.appendChild(t));
+
+            if (parts.length > SHOW_INITIAL) {
+                const remaining = parts.length - SHOW_INITIAL;
+                const showBtn = document.createElement('button');
+                showBtn.className = 'gallery-show-all-btn';
+                showBtn.textContent = `+ עוד ${remaining} אורחים`;
+                showBtn.onclick = () => {
+                    showBtn.remove();
+                    renderTiles(parts.slice(SHOW_INITIAL)).forEach(t => participantsEl.appendChild(t));
+                };
+                participantsEl.appendChild(showBtn);
+            }
+        }
+    }
+
+    // ── AI story images ─────────────────────────────────────────────
     const grid = $$('gallery-grid');
+    const noImages = $$('gallery-no-images');
     if (!grid) return;
     grid.innerHTML = '';
 
     const entries = Object.entries(pageImages);
     if (entries.length === 0) {
-        grid.innerHTML = '<p style="text-align:center;opacity:0.6;">אין תמונות AI בסדר זה עדיין</p>';
+        noImages?.classList.remove('hidden');
     } else {
-        entries.sort((a, b) => Number(a[0]) - Number(b[0])).forEach(([idx, imageData]) => {
+        noImages?.classList.add('hidden');
+        entries.sort((a, b) => Number(a[0]) - Number(b[0])).forEach(([idx, imageData], cardIdx) => {
             const url = typeof imageData === 'string' ? imageData : imageData?.url;
             if (!url) return;
             const page = HAGGADAH[Number(idx)];
             const card = document.createElement('div');
             card.className = 'gallery-card';
+            card.style.setProperty('--delay', `${cardIdx * 80}ms`);
             card.innerHTML = `
                 <img src="${url}" alt="עמוד ${Number(idx)+1}" loading="lazy" onclick="openPhotoZoom('${url}')">
                 <div class="gallery-card-title">${page?.title || 'עמוד ' + (Number(idx)+1)}</div>
@@ -2178,12 +2302,14 @@ function generatePlaceholderPhoto() {
 
 window.onload = init;
 function onSegmentClick(sIdx) {
-    highlightedSegmentIndex = sIdx;
-    applyHighlight(sIdx);
+    // Toggle off if tapping same segment
+    const next = highlightedSegmentIndex === sIdx ? -1 : sIdx;
+    highlightedSegmentIndex = next;
+    applyHighlight(next);
     socket.emit('set-highlight', {
         roomId: currentRoomId,
         pageIndex: currentPage,
-        segmentIndex: sIdx
+        segmentIndex: next
     });
 }
 
@@ -2194,6 +2320,49 @@ function applyHighlight(sIdx) {
         target.classList.add('highlighted');
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+}
+
+function renderParagraphAvatars(taps) {
+    // Clear all existing avatar clusters
+    document.querySelectorAll('.para-avatars').forEach(el => el.remove());
+
+    // Group taps by segmentIndex
+    const bySegment = {};
+    Object.values(taps || {}).forEach(tap => {
+        if (tap.pageIndex !== currentPage) return;
+        if (!bySegment[tap.segmentIndex]) bySegment[tap.segmentIndex] = [];
+        bySegment[tap.segmentIndex].push(tap);
+    });
+
+    Object.entries(bySegment).forEach(([sIdx, users]) => {
+        const seg = document.getElementById(`seg-${currentPage}-${sIdx}`);
+        if (!seg) return;
+
+        const cluster = document.createElement('div');
+        cluster.className = 'para-avatars';
+
+        users.slice(0, 5).forEach(u => {
+            const av = document.createElement('div');
+            av.className = 'para-avatar';
+            av.title = u.name;
+            if (u.photo && !u.photo.startsWith('data:') && !u.photo.startsWith('http')) {
+                // Emoji avatar
+                av.textContent = u.photo;
+                av.style.fontSize = '14px';
+                av.style.background = 'rgba(30,15,0,0.85)';
+            } else if (u.photo) {
+                const img = document.createElement('img');
+                img.src = u.photo;
+                img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+                av.appendChild(img);
+            } else {
+                av.textContent = (u.name || '?')[0];
+            }
+            cluster.appendChild(av);
+        });
+
+        seg.appendChild(cluster);
+    });
 }
 
 function toggleLanguage() {
@@ -2243,3 +2412,302 @@ function updateReadersStrip() {
 }
 
 // Google Auth removed — PIN-based host login is used instead
+
+// ─────────────────────────────────────────────────────────────────────
+// PLAGUE CONTEXT — modern parallels for each effect
+// ─────────────────────────────────────────────────────────────────────
+const PLAGUE_CONTEXT = {
+    blood: {
+        emoji: '🩸',
+        ancient: 'דָּם — המים הפכו לדם',
+        today: 'כיום: 2 מיליארד אנשים חסרי גישה למי שתייה נקיים.\nנהרות מזוהמים בפסולת תעשייתית — אתגר הדור.'
+    },
+    frogs: {
+        emoji: '🐸',
+        ancient: 'צְפַרְדֵּעַ — פלישת צפרדעים',
+        today: 'כיום: פלישת מינים זרים הורסת אקוסיסטמות — \\n40% ממיני הדו-חיים בסכנת הכחדה.'
+    },
+    lice: {
+        emoji: '🦟',
+        ancient: 'כִּנִּים — חרקים בכל מקום',
+        today: 'כיום: מחלות שמועברות על ידי חרקים (מלריה, דנגי) הורגות מעל 700,000 איש בשנה.'
+    },
+    darkness: {
+        emoji: '🌑',
+        ancient: 'חוֹשֶׁךְ — חושך מצרי שלוש ימים',
+        today: 'כיום: 80% מהאנושות לא יכולים לראות את שביל החלב. זיהום אור מכסה את שמיינו.'
+    },
+    dayenu: {
+        emoji: '🎉',
+        ancient: 'דַּיֵּנוּ — היה לנו די!',
+        today: 'על כל ברכה — על הבית, על המשפחה, על החרות — דַּיֵּנוּ!'
+    },
+    sea: {
+        emoji: '🌊',
+        ancient: 'קְרִיעַת יַם סוּף — הים נפרד',
+        today: 'כיום: כל עם השואף לחרות זוכר את הים הנפרד — מסמל שהבלתי-אפשרי אפשרי.'
+    }
+};
+
+function showPlagueContext(type) {
+    const ctx = PLAGUE_CONTEXT[type];
+    if (!ctx) return;
+    const overlay = $$('plague-context-overlay');
+    if (!overlay) return;
+    $$('plague-ctx-emoji').textContent = ctx.emoji;
+    $$('plague-ctx-ancient').textContent = ctx.ancient;
+    $$('plague-ctx-today').textContent = ctx.today;
+    overlay.classList.remove('hidden');
+    clearTimeout(window._plagueCtxTimer);
+    window._plagueCtxTimer = setTimeout(() => overlay.classList.add('hidden'), 6000);
+}
+
+// (plague context is called from within triggerLocalEffect below)
+
+// ─────────────────────────────────────────────────────────────────────
+// ENTRANCE ANIMATION — when a new participant joins the room
+// ─────────────────────────────────────────────────────────────────────
+let _prevParticipantIds = new Set();
+
+function checkForNewParticipants(participants) {
+    const currentIds = new Set(participants.map(p => p.id));
+    participants.forEach(p => {
+        if (!_prevParticipantIds.has(p.id) && p.id !== socket?.id) {
+            showEntranceNotif(p);
+        }
+    });
+    _prevParticipantIds = currentIds;
+}
+
+function showEntranceNotif(participant) {
+    const el = $$('entrance-notif');
+    if (!el) return;
+    const photoHtml = participant.photo
+        ? `<img src="${participant.photo}" class="entrance-notif-avatar" alt="">`
+        : `<span class="entrance-notif-avatar" style="background:#722f37;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;">🙂</span>`;
+    el.innerHTML = `${photoHtml}<span><span class="entrance-notif-name">${participant.name || 'אורח'}</span> הצטרף/ה לסדר 🍷</span>`;
+    el.classList.remove('hidden');
+    clearTimeout(window._entranceTimer);
+    window._entranceTimer = setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// EMOJI REACTIONS — per-page emoji reactions with avatars
+// ─────────────────────────────────────────────────────────────────────
+const REACTION_EMOJIS = ['🙏', '😢', '🎉', '🤯', '❤️'];
+let pageReactions = {}; // { pageIndex: { userId: emoji, ... } }
+
+function renderReactionsBar(pageIndex) {
+    const container = document.getElementById('reactions-bar-global');
+    if (!container) return;
+    const reactions = pageReactions[pageIndex] || {};
+    const myReaction = reactions[socket?.id];
+
+    // Count per emoji + collect avatars
+    const counts = {};
+    REACTION_EMOJIS.forEach(e => counts[e] = { count: 0, users: [] });
+    Object.entries(reactions).forEach(([uid, emoji]) => {
+        if (counts[emoji]) {
+            counts[emoji].count++;
+            const participant = Object.values(window._cachedParticipants || {}).find ? null : null;
+            counts[emoji].users.push(uid);
+        }
+    });
+
+    container.innerHTML = '';
+    REACTION_EMOJIS.forEach(emoji => {
+        const { count } = counts[emoji];
+        const btn = document.createElement('button');
+        btn.className = 'reaction-btn' + (myReaction === emoji ? ' mine' : '');
+        btn.title = count > 0 ? `${count} אנשים` : '';
+        btn.innerHTML = `${emoji}${count > 0 ? `<span class="reaction-count">${count}</span>` : ''}`;
+        btn.onclick = () => sendReaction(pageIndex, emoji);
+        container.appendChild(btn);
+    });
+}
+
+function sendReaction(pageIndex, emoji) {
+    if (!socket || !currentRoomId) return;
+    socket.emit('page-react', { roomId: currentRoomId, pageIndex, emoji });
+}
+
+// Called from setupSocket() reactions-updated handler
+function onReactionsUpdated({ pageIndex, reactions }) {
+    pageReactions[pageIndex] = reactions;
+    if (pageIndex === currentPage) renderReactionsBar(pageIndex);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// GALLERY DOWNLOAD
+// ─────────────────────────────────────────────────────────────────────
+async function downloadGallery() {
+    const entries = Object.entries(pageImages).sort((a, b) => Number(a[0]) - Number(b[0]));
+    if (entries.length === 0) { showToast('אין תמונות להורדה'); return; }
+    showToast(`מוריד ${entries.length} תמונות... 📥`);
+    for (const [idx, imageData] of entries) {
+        const url = typeof imageData === 'string' ? imageData : imageData?.url;
+        if (!url) continue;
+        try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            const objUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = objUrl;
+            a.download = `pesach-seder-${Number(idx) + 1}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(objUrl);
+            await new Promise(r => setTimeout(r, 400));
+        } catch {
+            // CORS may block direct fetch — open in new tab as fallback
+            window.open(url, '_blank');
+            await new Promise(r => setTimeout(r, 600));
+        }
+    }
+    showToast('הורדה הסתיימה! 🎉');
+}
+window.downloadGallery = downloadGallery;
+
+// ─────────────────────────────────────────────────────────────────────
+// מי יודע — interactive AI image generator
+// ─────────────────────────────────────────────────────────────────────
+const MI_YODEA_NUMS_HE = ['','אֶחָד','שְׁנַיִם','שְׁלֹשָׁה','אַרְבָּעָה','חֲמִשָּׁה',
+    'שִׁשָּׁה','שִׁבְעָה','שְׁמֹנָה','תִּשְׁעָה','עֲשָׂרָה','אַחַד עָשָׂר','שְׁנֵים עָשָׂר','שְׁלֹשָׁה עָשָׂר'];
+let miYodeaSlots = {}; // { slotNum: [{ id, name, photo }, ...] }
+let miYodeaImages = {}; // { slotNum: imageUrl }
+
+function openMiYodea() {
+    const modal = $$('mi-yodea-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    renderMiYodeaGrid();
+}
+function closeMiYodea() {
+    const modal = $$('mi-yodea-modal');
+    if (modal) modal.classList.add('hidden');
+}
+window.closeMiYodea = closeMiYodea;
+window.openMiYodea = openMiYodea;
+
+function renderMiYodeaGrid() {
+    const grid = $$('mi-yodea-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    for (let n = 1; n <= 13; n++) {
+        grid.appendChild(buildMiYodeaSlot(n));
+    }
+}
+
+function buildMiYodeaSlot(n) {
+    const participants = miYodeaSlots[n] || [];
+    const imageUrl = miYodeaImages[n];
+    const iAmIn = participants.some(p => p.id === socket?.id);
+    const isFull = participants.length >= 6;
+    const isLeader = amIAllowedLeader();
+
+    const slot = document.createElement('div');
+    slot.className = 'mi-yodea-slot' + (imageUrl ? ' has-image' : '') + (iAmIn ? ' i-am-in' : '');
+    slot.id = `mi-slot-${n}`;
+
+    // Image thumbnail (if generated)
+    if (imageUrl) {
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.className = 'mi-yodea-thumb';
+        img.onclick = () => openPhotoZoom(imageUrl);
+        slot.appendChild(img);
+    }
+
+    // Number
+    const numEl = document.createElement('div');
+    numEl.className = 'mi-yodea-num';
+    numEl.textContent = n;
+    slot.appendChild(numEl);
+
+    const hebEl = document.createElement('div');
+    hebEl.className = 'mi-yodea-heb';
+    hebEl.textContent = MI_YODEA_NUMS_HE[n];
+    slot.appendChild(hebEl);
+
+    // Avatars
+    const avDiv = document.createElement('div');
+    avDiv.className = 'mi-yodea-avatars';
+    participants.forEach(p => {
+        if (p.photo) {
+            const img = document.createElement('img');
+            img.src = p.photo;
+            img.title = p.name || '';
+            avDiv.appendChild(img);
+        } else {
+            const sp = document.createElement('span');
+            sp.textContent = (p.name || '?')[0];
+            sp.title = p.name || '';
+            avDiv.appendChild(sp);
+        }
+    });
+    if (participants.length === 0) {
+        const ph = document.createElement('span');
+        ph.style.opacity = '0.3';
+        ph.textContent = '—';
+        avDiv.appendChild(ph);
+    }
+    slot.appendChild(avDiv);
+
+    // Volunteer button
+    const volBtn = document.createElement('button');
+    volBtn.className = 'mi-yodea-volunteer-btn' + (iAmIn ? ' active' : '');
+    volBtn.textContent = iAmIn ? '✓ אני בפנים!' : (isFull ? '6/6 מלא' : '+ אני רוצה!');
+    volBtn.disabled = !iAmIn && isFull;
+    volBtn.onclick = () => toggleMiYodeaVolunteer(n, iAmIn);
+    slot.appendChild(volBtn);
+
+    // Generate button (leader only)
+    if (isLeader && participants.length > 0) {
+        const genBtn = document.createElement('button');
+        genBtn.className = 'mi-yodea-generate-btn';
+        genBtn.textContent = imageUrl ? '🔄 עדכן תמונה' : '✨ צור תמונה';
+        genBtn.onclick = () => triggerMiYodeaGenerate(n);
+        slot.appendChild(genBtn);
+    }
+
+    return slot;
+}
+
+function toggleMiYodeaVolunteer(slotNum, isCurrentlyIn) {
+    if (!socket || !currentRoomId || !me) return;
+    const event = isCurrentlyIn ? 'mi-yodea-leave' : 'mi-yodea-join';
+    socket.emit(event, { roomId: currentRoomId, slotNum, participant: { id: socket.id, name: me.name, photo: me.photo || null } });
+}
+
+function triggerMiYodeaGenerate(slotNum) {
+    if (!socket || !currentRoomId) return;
+    socket.emit('mi-yodea-generate', { roomId: currentRoomId, slotNum });
+    showToast(`✨ מייצר תמונה ל-${slotNum}...`);
+    const slot = $$(`mi-slot-${slotNum}`);
+    if (slot) {
+        const genBtn = slot.querySelector('.mi-yodea-generate-btn');
+        if (genBtn) { genBtn.textContent = '⏳ מייצר...'; genBtn.disabled = true; }
+    }
+}
+
+function onMiYodeaUpdated({ slotNum, participants }) {
+    miYodeaSlots[slotNum] = participants;
+    const slotEl = $$(`mi-slot-${slotNum}`);
+    if (slotEl) {
+        const newSlot = buildMiYodeaSlot(slotNum);
+        slotEl.replaceWith(newSlot);
+    }
+}
+
+function onMiYodeaImageReady({ slotNum, imageUrl }) {
+    miYodeaImages[slotNum] = imageUrl;
+    // Also add to gallery
+    pageImages[`mi-yodea-${slotNum}`] = { url: imageUrl, featuredPhotos: miYodeaSlots[slotNum]?.map(p => p.photo) };
+    const slotEl = $$(`mi-slot-${slotNum}`);
+    if (slotEl) {
+        const newSlot = buildMiYodeaSlot(slotNum);
+        slotEl.replaceWith(newSlot);
+    }
+    showToast(`✨ תמונה ${slotNum} מוכנה!`);
+}

@@ -15,7 +15,7 @@ class RSVPFlow {
         };
         
         this.currentStep = 0;
-        this.steps = ['welcome', 'guests', 'look', 'avatar', 'selfie'];
+        this.steps = ['welcome', 'guests', 'look', 'avatar', 'selfie', 'exodus-card'];
         
         this.init();
     }
@@ -91,11 +91,30 @@ class RSVPFlow {
         // Step Selfie
         this.safeClick('btn-rsvp-take', () => this.takeRSVPSelfie());
         this.safeClick('btn-rsvp-retake', () => this.retakeRSVPSelfie());
-        this.safeClick('btn-finish-selfie', () => this.complete());
+        this.safeClick('btn-finish-selfie', () => {
+            // Go to exodus-card step instead of completing immediately
+            this.stopRSVPCamera();
+            this.goToStep('exodus-card');
+            this._startExodusCard();
+        });
         this.safeClick('btn-rsvp-back-selfie', () => {
             this.stopRSVPCamera();
             this.data.photo = null;
             this.goToStep('look');
+        });
+
+        // Step Exodus Card
+        this.safeClick('btn-exodus-continue', () => this.complete());
+        this.safeClick('btn-exodus-share', () => {
+            const url = $$('exodus-card-img')?.src;
+            if (url) window.open('https://wa.me/?text=' + encodeURIComponent('הנה אני ביציאת מצרים 😂🌊\n' + url), '_blank');
+        });
+        this.safeClick('btn-exodus-download', () => {
+            const url = $$('exodus-card-img')?.src;
+            if (!url) return;
+            const a = document.createElement('a');
+            a.href = url; a.download = 'exodus-' + (this.data.name || 'seder') + '.jpg';
+            a.click();
         });
     }
 
@@ -121,15 +140,61 @@ class RSVPFlow {
 
     startRSVPCamera() {
         const video = $$('rsvp-video');
-        navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'user', width: 400, height: 400 }, 
-            audio: false 
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            this._showUploadFallback();
+            return;
+        }
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: 400, height: 400 },
+            audio: false
         }).then(stream => {
             video.srcObject = stream;
         }).catch(err => {
             console.error('Camera error:', err);
-            showToast('לא ניתן להפעיל מצלמה');
+            this._showUploadFallback();
         });
+    }
+
+    _showUploadFallback() {
+        $$('rsvp-camera-blocked')?.classList.remove('hidden');
+        $$('btn-rsvp-take')?.classList.add('hidden');
+        $$('btn-rsvp-upload')?.classList.remove('hidden');
+        $$('rsvp-video')?.classList.add('hidden');
+
+        const input = $$('rsvp-upload-input');
+        const btn = $$('btn-rsvp-upload');
+        if (btn && !btn._wired) {
+            btn._wired = true;
+            btn.addEventListener('click', () => input.click());
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const canvas = $$('rsvp-canvas');
+                    const img = new Image();
+                    img.onload = () => {
+                        canvas.width = 400;
+                        canvas.height = 400;
+                        const ctx = canvas.getContext('2d');
+                        const size = Math.min(img.width, img.height);
+                        const sx = (img.width - size) / 2;
+                        const sy = (img.height - size) / 2;
+                        ctx.drawImage(img, sx, sy, size, size, 0, 0, 400, 400);
+                        this.data.photo = canvas.toDataURL('image/jpeg', 0.8);
+                        const previewImg = $$('rsvp-preview-img');
+                        if (previewImg) {
+                            previewImg.src = this.data.photo;
+                            $$('rsvp-preview-wrap').classList.remove('hidden');
+                            $$('rsvp-post-selfie').classList.remove('hidden');
+                            $$('btn-rsvp-upload').classList.add('hidden');
+                        }
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
     }
 
     takeRSVPSelfie() {
@@ -248,6 +313,74 @@ class RSVPFlow {
         });
 
         pickerWrap.classList.remove('hidden');
+    }
+
+    async _startExodusCard() {
+        const cachedUrl = localStorage.getItem('haggadah_exodus_card');
+        if (cachedUrl) {
+            this._showExodusResult(cachedUrl);
+            return;
+        }
+
+        const tips = [
+            'מעלה את הסלפי שלך... 🌊',
+            'שולח אותך לים סוף... 🐠',
+            'מתפרת לך חלוק מדברי... 👘',
+            'אוסף את שש מאות האלף... 🚶',
+            'מכין עמוד ענן ועמוד אש... ☁️🔥',
+            'עוד רגע אתה יוצא ממצרים!'
+        ];
+        let tipIdx = 0;
+        const tipEl = $$('exodus-loading-tip');
+        const tipInterval = setInterval(() => {
+            tipIdx = (tipIdx + 1) % tips.length;
+            if (tipEl) tipEl.textContent = tips[tipIdx];
+        }, 3500);
+
+        try {
+            const res = await fetch('/api/generate-exodus-card', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ photo: this.data.photo, name: this.data.name || 'חברי' })
+            });
+
+            clearInterval(tipInterval);
+
+            if (res.status === 429) {
+                // Already generated — skip straight to seder
+                const status = $$('exodus-card-status');
+                if (status) status.textContent = 'כבר יצרת תמונה קודם! המשך לסדר 🎨';
+                $$('exodus-card-loading')?.classList.add('hidden');
+                $$('btn-exodus-continue')?.classList.remove('hidden');
+                return;
+            }
+
+            const data = await res.json();
+            if (data.imageUrl) {
+                localStorage.setItem('haggadah_exodus_card', data.imageUrl);
+                this._showExodusResult(data.imageUrl);
+            } else {
+                throw new Error(data.error || 'שגיאה');
+            }
+        } catch (err) {
+            clearInterval(tipInterval);
+            console.error('[ExodusCard]', err);
+            const status = $$('exodus-card-status');
+            if (status) status.textContent = 'משהו השתבש, ממשיכים לסדר 😅';
+            $$('exodus-card-loading')?.classList.add('hidden');
+            $$('btn-exodus-continue')?.classList.remove('hidden');
+        }
+    }
+
+    _showExodusResult(imageUrl) {
+        $$('exodus-card-loading')?.classList.add('hidden');
+        $$('exodus-card-status')?.classList.add('hidden');
+        const img = $$('exodus-card-img');
+        if (img) {
+            img.src = imageUrl;
+            img.onload = () => $$('exodus-card-result')?.classList.remove('hidden');
+        }
+        $$('btn-exodus-continue')?.classList.remove('hidden');
     }
 
     complete() {

@@ -59,31 +59,46 @@ class ExodusMap {
     }
 
     calculateStageFromPage(pageIndex) {
-        if (!window.HAGGADAH || !window.HAGGADAH[pageIndex]) return this.currentStageIndex;
-        
-        const pageTitle = window.HAGGADAH[pageIndex].title.toLowerCase();
-        
-        // Find the matching stage index
-        // We look for partial matches in the stage IDs or names
-        const stageIndex = SEDER_STAGES.findIndex(s => {
-            const stageName = s.name.replace(/[ְִֵֶַָֹֻּֿ]/g, ''); // Remove Hebrew vowels for easier matching
-            const simpleTitle = pageTitle.replace(/[ְִֵֶַָֹֻּֿ]/g, '');
-            return simpleTitle.includes(stageName.toLowerCase()) || 
-                   pageTitle.includes(s.label.toLowerCase()) ||
-                   pageTitle.includes(s.id.replace('-', ' '));
-        });
-
-        if (stageIndex !== -1) return stageIndex;
-
-        // Fallback: If we are in "Magid" (which is long), stay there until the next stop
-        if (pageIndex > 4 && this.currentStageIndex === 4) {
-            // Check if we hit Rachtzah yet
-            const rachtzahIdx = SEDER_STAGES.findIndex(s => s.id === 'rachtzah');
-            if (pageIndex < HAGGADAH.findIndex(p => p.title.includes('רחצה'))) {
-                return 4; // Still in Magid
-            }
+        // Direct page-index → stage-index map (based on haggadah_data.js page titles)
+        // 0:Intro(Kadesh) 1:Urchatz 2:Karpas 3:Yachatz 4-12:Magid 13:Rachtzah
+        // 14:Maror 15:Korech 16:ShulchanOrech 17:Tzafun 18-22:Barech 23-25:Hallel 26-31:Nirtzah
+        const PAGE_TO_STAGE = [
+            0,  // 0  Introduction (Kadesh)
+            1,  // 1  וּרְחַץ
+            2,  // 2  כַּרְפַּס
+            3,  // 3  יַחַץ
+            4,  // 4  מַגִּיד (א)
+            4,  // 5  מַגִּיד (ב)
+            4,  // 6  מַגִּיד (ג)
+            4,  // 7  מַגִּיד (ד)
+            4,  // 8  מַגִּיד (ה)
+            4,  // 9  מַגִּיד (ו)
+            4,  // 10 מַגִּיד (ז)
+            4,  // 11 מַגִּיד (ח)
+            4,  // 12 מַגִּיד (ט)
+            5,  // 13 רָחְצָה (includes מוֹצִיא מַצָּה)
+            7,  // 14 מָרוֹר
+            8,  // 15 כּוֹרֵךְ
+            9,  // 16 שֻׁלְחָן עוֹרֵךְ  ← meal
+            10, // 17 צָפוּן
+            11, // 18 בָּרֵךְ (א)
+            11, // 19 בָּרֵךְ (ב)
+            11, // 20 בָּרֵךְ (ג)
+            11, // 21 בָּרֵךְ (ד)
+            11, // 22 בָּרֵךְ (ה)
+            12, // 23 הַלֵּל (א)
+            12, // 24 הַלֵּל (ב)
+            12, // 25 הַלֵּל (ג)
+            13, // 26 נִרְצָה (א)
+            13, // 27 נִרְצָה (ב)
+            13, // 28 נִרְצָה (ג)
+            13, // 29 נִרְצָה (ד)
+            13, // 30 נִרְצָה (ה)
+            13, // 31 נִרְצָה (ו)
+        ];
+        if (pageIndex >= 0 && pageIndex < PAGE_TO_STAGE.length) {
+            return PAGE_TO_STAGE[pageIndex];
         }
-
         return this.currentStageIndex;
     }
 }

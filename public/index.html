@@ -145,6 +145,18 @@
                 </a>
                 <button id="btn-sign-out-global" class="lobby-link-muted">איפוס</button>
             </div>
+
+            <!-- Returning user section — shown when me is already set -->
+            <div id="lobby-actions-section" class="lobby-auth hidden">
+                <p class="lobby-welcome">שלום, <strong id="lobby-user-name"></strong>! 👋</p>
+                <button id="btn-create-room-returning" class="btn primary lobby-btn">פתח סדר חדש 🍷</button>
+                <a href="/invitation-picker.html" target="_blank"
+                   class="btn outline lobby-btn"
+                   style="font-size:0.82rem;opacity:0.8;display:block;text-align:center;text-decoration:none;padding:0.65rem;">
+                    🎨 בחר תמונת הזמנה (8 סגנונות)
+                </a>
+                <button id="btn-switch-user" class="lobby-link-muted">החלף משתמש / איפוס</button>
+            </div>
         </div>
     </div>
 
@@ -220,8 +232,13 @@
                         </div>
                     </div>
                 </div>
+                <div id="rsvp-camera-blocked" class="hidden" style="text-align:center; padding:1rem; opacity:0.8; font-size:0.85rem;">
+                    📵 המצלמה חסומה (HTTP). העלו תמונה מהגלריה:
+                </div>
                 <div class="rsvp-actions">
                     <button id="btn-rsvp-take" class="btn primary">📸 צלם עכשיו</button>
+                    <input type="file" id="rsvp-upload-input" accept="image/*" class="hidden">
+                    <button id="btn-rsvp-upload" class="btn outline small hidden">🖼️ העלה מהגלריה</button>
                     <button id="btn-rsvp-back-selfie" class="btn-rsvp-back">→ חזרה לבחירה</button>
                     <div id="rsvp-post-selfie" class="rsvp-actions hidden">
                         <button id="btn-finish-selfie" class="btn primary" style="width: 100%;">זהו, סיימנו! ←</button>
@@ -230,7 +247,30 @@
                 </div>
             </div>
 
-            <!-- Step 4: removed — user goes directly to lobby after selfie -->
+            <!-- Step 4: Exodus Character Card (selfie users only) -->
+            <div id="rsvp-step-exodus-card" class="rsvp-step hidden">
+                <div class="rsvp-icon">🌊</div>
+                <h2>הופכים אותך לדמות מיציאת מצרים</h2>
+                <p id="exodus-card-status" class="rsvp-sub">מכין את התמונה שלך... (~30 שניות)</p>
+
+                <div id="exodus-card-loading" class="exodus-loading">
+                    <div class="exodus-spinner"></div>
+                    <p id="exodus-loading-tip" class="exodus-tip">מעלה את הסלפי שלך... 🌊</p>
+                </div>
+
+                <div id="exodus-card-result" class="exodus-result hidden">
+                    <img id="exodus-card-img" class="exodus-img" alt="יציאת מצרים שלך">
+                    <p class="exodus-share-cta">שתף בקבוצה — כולם ירצו להצטרף! 🔥</p>
+                    <div class="exodus-actions">
+                        <button id="btn-exodus-download" class="btn outline small">📥 הורד</button>
+                        <button id="btn-exodus-share" class="btn primary">📤 שתף בווטסאפ</button>
+                    </div>
+                </div>
+
+                <button id="btn-exodus-continue" class="btn-rsvp-back hidden">המשך לסדר ←</button>
+            </div>
+
+            <!-- Step 5: user goes to lobby -->
         </div>
     </div>
 
@@ -309,6 +349,14 @@
 
     <div id="room-screen" class="screen hidden">
         <div id="effects-container" class="effects-container hidden"></div>
+        <!-- Plague context overlay — modern parallel for each plague effect -->
+        <div id="plague-context-overlay" class="plague-context-overlay hidden">
+            <div class="plague-context-card">
+                <div id="plague-ctx-emoji" class="plague-ctx-emoji"></div>
+                <div id="plague-ctx-ancient" class="plague-ctx-ancient"></div>
+                <div id="plague-ctx-today" class="plague-ctx-today"></div>
+            </div>
+        </div>
 
         <!-- Header -->
         <header class="room-header glass">
@@ -443,6 +491,9 @@
             </div>
         </main>
 
+        <!-- Reactions bar — fixed above footer, always visible -->
+        <div id="reactions-bar-global" class="reactions-bar-global"></div>
+
         <!-- Navigation — clean: prev | progress | next only -->
         <footer class="room-footer">
             <button id="btn-prev" class="btn nav-btn" disabled>הקודם →</button>
@@ -451,6 +502,7 @@
                 <span id="current-page-num">1</span> / <span id="total-pages">1</span>
                 <button id="btn-sync" class="btn-sync hidden" title="חזור לסנכרון עם המנחה">🔄</button>
             </div>
+            <span id="meal-footer-indicator" class="meal-footer-indicator hidden" title="עמודים עד האוכל"></span>
 
             <button id="btn-next" class="btn nav-btn primary">← הבא</button>
         </footer>
@@ -458,25 +510,43 @@
 
     <!-- ======== SEDER ENDED / GALLERY SCREEN ======== -->
     <div id="gallery-screen" class="screen hidden">
+
+        <!-- Hero -->
         <div class="gallery-hero">
             <div class="gallery-fireworks" id="gallery-fireworks"></div>
-            <h1 class="gallery-title">חַג פֶּסַח שָׂמֵחַ! 🍷</h1>
-            <p class="gallery-subtitle">לְשָׁנָה הַבָּאָה בִּירוּשָׁלַיִם</p>
+            <div class="gallery-hero-text">
+                <div class="gallery-badge">תשפ״ו · Pesach 2026</div>
+                <h1 class="gallery-title">וַיֵּצְאוּ מִמִּצְרַיִם 🌊</h1>
+                <p class="gallery-subtitle">לְשָׁנָה הַבָּאָה בִּירוּשָׁלַיִם</p>
+            </div>
             <div class="gallery-actions">
-                <button id="btn-gallery-whatsapp" class="btn primary" onclick="shareOnWhatsApp()">
-                    📲 שתף בווטסאפ
-                </button>
-                <button id="btn-gallery-new" class="btn outline" onclick="window.location.href='/'">
-                    🏠 חזור לדף הבית
-                </button>
+                <button class="btn primary" onclick="shareOnWhatsApp()">📲 שתף בווטסאפ</button>
+                <button class="btn outline" onclick="downloadGallery()">⬇️ הורד גלריה</button>
+                <button class="btn outline" onclick="window.location.href='/'">🏠 חזור לדף הבית</button>
             </div>
         </div>
-        <div class="gallery-grid-wrap">
-            <h2 class="gallery-grid-title">🎨 גלריית הסדר שלנו</h2>
+
+        <!-- AI story images — first so it's visible without scrolling -->
+        <section class="story-section">
+            <h2 class="story-section-title">📖 ספר ההגדה שלנו</h2>
+            <p class="story-section-sub">תמונות שנוצרו ב-AI במהלך הסדר</p>
             <div id="gallery-grid" class="gallery-grid">
                 <!-- Filled by JS -->
             </div>
-        </div>
+            <p id="gallery-no-images" class="gallery-empty hidden">
+                אין תמונות AI עדיין — המנחה יכול ליצור אותן בכל עמוד
+            </p>
+        </section>
+
+        <!-- Participants portrait wall — at bottom, collapsed -->
+        <section class="story-section">
+            <h2 class="story-section-title">👥 יוצאי מצרים הלילה</h2>
+            <p class="story-section-sub">כולנו יצאנו ממצרים</p>
+            <div id="gallery-participants" class="gallery-participants">
+                <!-- Filled by JS -->
+            </div>
+        </section>
+
     </div>
 
     <!-- ======== FEEDBACK MODAL ======== -->
@@ -502,8 +572,24 @@
     </div>
 
     <div id="toast" class="toast hidden"></div>
+    <div id="entrance-notif" class="entrance-notif hidden"></div>
+
+    <!-- ======== מי יודע INTERACTIVE MODAL ======== -->
+    <div id="mi-yodea-modal" class="mi-yodea-modal hidden" onclick="if(event.target===this)closeMiYodea()">
+        <div class="mi-yodea-inner">
+            <div class="mi-yodea-header">
+                <h2 class="mi-yodea-title">מִי יוֹדֵעַ? 🎵</h2>
+                <p class="mi-yodea-subtitle">בחרו מספר — ותופיעו בתמונת ה-AI שלו (עד 6 לכל מספר)</p>
+                <button class="mi-yodea-close" onclick="closeMiYodea()">✕</button>
+            </div>
+            <div id="mi-yodea-grid" class="mi-yodea-grid">
+                <!-- 13 slots injected by JS -->
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nosleep.js@0.12.0/dist/NoSleep.min.js"></script>
 
     <script src="haggadah_data.js?v=1.2.5"></script>
     <script src="ExodusMap.js?v=1.2.5"></script>
