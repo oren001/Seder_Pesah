@@ -227,7 +227,6 @@ app.get('/api/all-selfies', (req, res) => {
         (room.participants || []).forEach(p => {
             if (!p.photo || !p.photo.startsWith('data:image')) return;
             if (!p.name || p.name.startsWith('fake-') || p.id?.startsWith('fake-')) return;
-            // Deduplicate by photo (first 100 chars as fingerprint)
             const fp = p.photo.substring(0, 100);
             if (seen.has(fp)) return;
             seen.add(fp);
@@ -235,6 +234,30 @@ app.get('/api/all-selfies', (req, res) => {
         });
     });
     res.json({ participants: result });
+});
+
+// ── Copy participants from any previous room into current room ─────────────
+app.post('/api/copy-from-room', express.json(), (req, res) => {
+    const { targetRoomId, sourceRoomId } = req.body || {};
+    const target = rooms[targetRoomId];
+    const source = rooms[sourceRoomId];
+    if (!target) return res.status(404).json({ error: 'target room not found' });
+    if (!source) return res.status(404).json({ error: 'source room not found' });
+
+    const seen = new Set(target.participants.map(p => p.photo?.substring(0, 100)).filter(Boolean));
+    let added = 0;
+    (source.participants || []).forEach(p => {
+        if (!p.photo || !p.photo.startsWith('data:image')) return;
+        if (!p.name || p.id?.startsWith('fake-')) return;
+        const fp = p.photo.substring(0, 100);
+        if (seen.has(fp)) return;
+        seen.add(fp);
+        target.participants.push({ id: `prereg-${Date.now()}-${added}`, name: p.name, photo: p.photo, online: false, preRegistered: true });
+        added++;
+    });
+    saveRooms();
+    io.to(targetRoomId).emit('room-updated', { participants: target.participants });
+    res.json({ success: true, added, participants: target.participants });
 });
 
 // ── Remove a participant from a room (host action) ─────────────────────────

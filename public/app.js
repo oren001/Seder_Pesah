@@ -440,17 +440,20 @@ function init() {
         if (!currentRoomId) { showToast('אין חדר פעיל'); return; }
         showToast('טוען תמונות...');
         try {
-            const res = await fetch('/api/all-selfies');
-            const { participants } = await res.json();
-            if (!participants?.length) { showToast('לא נמצאו תמונות בהיסטוריה'); return; }
+            // First try bulk copy from previous rooms (server-side, efficient)
+            const allRes = await fetch('/api/all-selfies');
+            const { participants } = await allRes.json();
+
+            if (!participants?.length) {
+                showToast('לא נמצאו תמונות בהיסטוריה');
+                return;
+            }
 
             let added = 0;
             for (const p of participants) {
-                // Skip if already in room
                 const inRoom = currentParticipants?.find(cp =>
                     cp.photo && cp.photo.substring(0,100) === p.photo.substring(0,100));
                 if (inRoom) continue;
-
                 await fetch('/api/pre-register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -459,12 +462,12 @@ function init() {
                 added++;
             }
             showToast(`✓ נטענו ${added} משתתפים`);
-            // Refresh pre-reg list
             const r2 = await fetch(`/api/pre-register?roomId=${currentRoomId}`);
             const d2 = await r2.json();
             renderPreregList(d2.participants || []);
         } catch(e) {
-            showToast('שגיאה בטעינה');
+            console.error('[loadAllSelfies]', e);
+            showToast('שגיאה בטעינה: ' + e.message);
         }
     };
 
