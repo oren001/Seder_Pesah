@@ -219,6 +219,36 @@ app.post('/api/set-invitation-bg', express.json(), (req, res) => {
     res.json({ ok: true, message: `Option ${id} is now the active invitation background!` });
 });
 
+// ── Collect all real selfies across all rooms ──────────────────────────────
+app.get('/api/all-selfies', (req, res) => {
+    const seen = new Set();
+    const result = [];
+    Object.values(rooms).forEach(room => {
+        (room.participants || []).forEach(p => {
+            if (!p.photo || !p.photo.startsWith('data:image')) return;
+            if (!p.name || p.name.startsWith('fake-') || p.id?.startsWith('fake-')) return;
+            // Deduplicate by photo (first 100 chars as fingerprint)
+            const fp = p.photo.substring(0, 100);
+            if (seen.has(fp)) return;
+            seen.add(fp);
+            result.push({ name: p.name, photo: p.photo });
+        });
+    });
+    res.json({ participants: result });
+});
+
+// ── Remove a participant from a room (host action) ─────────────────────────
+app.delete('/api/room-participant', express.json(), (req, res) => {
+    const { roomId, participantId } = req.body || {};
+    if (!roomId || !participantId) return res.status(400).json({ error: 'roomId and participantId required' });
+    const room = rooms[roomId];
+    if (!room) return res.status(404).json({ error: 'room not found' });
+    room.participants = room.participants.filter(p => p.id !== participantId);
+    saveRooms();
+    io.to(roomId).emit('room-updated', { participants: room.participants });
+    res.json({ success: true, participants: room.participants });
+});
+
 // ── Pre-register participants (host uploads photos before seder) ───────────
 app.post('/api/pre-register', express.json({ limit: '2mb' }), (req, res) => {
     const { roomId, name, photo } = req.body || {};

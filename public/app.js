@@ -436,6 +436,38 @@ function init() {
         reader.readAsDataURL(file);
     };
 
+    window.loadAllSelfies = async function() {
+        if (!currentRoomId) { showToast('אין חדר פעיל'); return; }
+        showToast('טוען תמונות...');
+        try {
+            const res = await fetch('/api/all-selfies');
+            const { participants } = await res.json();
+            if (!participants?.length) { showToast('לא נמצאו תמונות בהיסטוריה'); return; }
+
+            let added = 0;
+            for (const p of participants) {
+                // Skip if already in room
+                const inRoom = currentParticipants?.find(cp =>
+                    cp.photo && cp.photo.substring(0,100) === p.photo.substring(0,100));
+                if (inRoom) continue;
+
+                await fetch('/api/pre-register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roomId: currentRoomId, name: p.name, photo: p.photo })
+                });
+                added++;
+            }
+            showToast(`✓ נטענו ${added} משתתפים`);
+            // Refresh pre-reg list
+            const r2 = await fetch(`/api/pre-register?roomId=${currentRoomId}`);
+            const d2 = await r2.json();
+            renderPreregList(d2.participants || []);
+        } catch(e) {
+            showToast('שגיאה בטעינה');
+        }
+    };
+
     window.addPreregisteredParticipant = async function() {
         const nameEl = $$('prereg-name');
         const photoEl = $$('prereg-photo');
@@ -1646,6 +1678,24 @@ function renderLobbyParticipants(participants) {
             nameLabel.textContent = '👑 ' + (p.name || 'אורח');
         }
         wrapper.appendChild(nameLabel);
+
+        // ✕ Remove participant button — host only, not self
+        if (amIAllowedLeader() && !isMe) {
+            const removeBtn = document.createElement('button');
+            removeBtn.style.cssText = 'position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:50%;background:#8b1a1a;border:none;color:white;font-size:0.65rem;cursor:pointer;z-index:5;line-height:1;';
+            removeBtn.textContent = '✕';
+            removeBtn.title = `הסר ${p.name || 'אורח'}`;
+            removeBtn.onclick = async (e) => {
+                e.stopPropagation();
+                await fetch('/api/room-participant', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roomId: currentRoomId, participantId: p.id })
+                });
+            };
+            wrapper.style.position = 'relative';
+            wrapper.appendChild(removeBtn);
+        }
 
         // "Promote to Leader" button — only visible to co-leaders, not for self
         if (amIAllowedLeader() && !isMe && p.id !== leaderId) {
