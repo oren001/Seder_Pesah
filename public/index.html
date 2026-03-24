@@ -500,23 +500,24 @@
         <div id="reactions-bar-global" class="reactions-bar-global"></div>
 
         <!-- Font size controls -->
-        <div class="font-size-bar">
-            <button class="font-size-btn" onclick="changeFontSize(-1)" title="הקטן טקסט">א-</button>
-            <span id="font-size-label" class="font-size-label">105%</span>
-            <button class="font-size-btn" onclick="changeFontSize(1)" title="הגדל טקסט">א+</button>
-        </div>
-
-        <!-- Navigation — clean: prev | progress | next only -->
+        <!-- Navigation footer with font size controls -->
         <footer class="room-footer">
-            <button id="btn-prev" class="btn nav-btn" disabled>הקודם →</button>
-
-            <div class="progress-pill">
-                <span id="current-page-num">1</span> / <span id="total-pages">1</span>
-                <button id="btn-sync" class="btn-sync hidden" title="חזור לסנכרון עם המנחה">🔄</button>
+            <div class="font-size-bar">
+                <button class="font-size-btn" onclick="changeFontSize(-1)" title="הקטן טקסט">א-</button>
+                <span id="font-size-label" class="font-size-label">105%</span>
+                <button class="font-size-btn" onclick="changeFontSize(1)" title="הגדל טקסט">א+</button>
             </div>
-            <span id="meal-footer-indicator" class="meal-footer-indicator hidden" title="עמודים עד האוכל"></span>
+            <div class="footer-nav-row">
+                <button id="btn-prev" class="btn nav-btn" disabled>הקודם →</button>
 
-            <button id="btn-next" class="btn nav-btn primary">← הבא</button>
+                <div class="progress-pill">
+                    <span id="current-page-num">1</span> / <span id="total-pages">1</span>
+                    <button id="btn-sync" class="btn-sync hidden" title="חזור לסנכרון עם המנחה">🔄</button>
+                </div>
+                <span id="meal-footer-indicator" class="meal-footer-indicator hidden" title="עמודים עד האוכל"></span>
+
+                <button id="btn-next" class="btn nav-btn primary">← הבא</button>
+            </div>
         </footer>
     </div>
 

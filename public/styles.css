@@ -1006,13 +1006,29 @@ body {
     background: rgba(20, 8, 14, 0.97);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    padding: clamp(0.4rem, 0.3rem + 0.4vw, 0.7rem) clamp(0.5rem, 0.3rem + 0.7vw, 1rem);
+    padding: 0.25rem clamp(0.5rem, 0.3rem + 0.7vw, 1rem) clamp(0.4rem, 0.3rem + 0.4vw, 0.7rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+    border-top: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+.footer-nav-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
     gap: 0.5rem;
-    border-top: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+/* Font size bar inside footer */
+.font-size-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0;
+    opacity: 0.65;
 }
 
 .progress-center {
@@ -1803,15 +1819,7 @@ body {
     color: white;
 }
 
-/* Font size controls */
-.font-size-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0;
-    opacity: 0.7;
-}
+/* Font size controls (defined in .room-footer block above) */
 
 .font-size-btn {
     background: rgba(212, 175, 55, 0.15);
