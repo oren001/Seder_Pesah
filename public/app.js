@@ -420,6 +420,80 @@ function init() {
         });
     });
 
+    // Pre-register participant functions (exposed globally for inline onclick)
+    window.previewPreregPhoto = function(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const preview = $$('prereg-photo-preview');
+            const img = $$('prereg-preview-img');
+            if (preview && img) {
+                img.src = e.target.result;
+                preview.style.display = 'block';
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.addPreregisteredParticipant = async function() {
+        const nameEl = $$('prereg-name');
+        const photoEl = $$('prereg-photo');
+        const name = nameEl?.value?.trim();
+        if (!name) { showToast('הכנס שם לאורח'); return; }
+        if (!currentRoomId) { showToast('אין חדר פעיל'); return; }
+
+        // Resize photo to ~200px for efficiency
+        let photoData = null;
+        const file = photoEl?.files[0];
+        if (file) {
+            photoData = await new Promise(resolve => {
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const size = Math.min(img.width, img.height, 200);
+                    canvas.width = size; canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+                    const sx = (img.width - size) / 2, sy = (img.height - size) / 2;
+                    ctx.drawImage(img, sx, sy, size, size, 0, 0, size, size);
+                    URL.revokeObjectURL(url);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+                img.src = url;
+            });
+        }
+
+        const res = await fetch('/api/pre-register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId: currentRoomId, name, photo: photoData })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(`✓ ${name} נוסף/ה לסדר`);
+            renderPreregList(data.participants);
+            if (nameEl) nameEl.value = '';
+            if (photoEl) photoEl.value = '';
+            const preview = $$('prereg-photo-preview');
+            if (preview) preview.style.display = 'none';
+        } else {
+            showToast('שגיאה: ' + (data.error || 'נסה שוב'));
+        }
+    };
+
+    window.removePreregisteredParticipant = async function(name) {
+        if (!currentRoomId) return;
+        await fetch('/api/pre-register', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId: currentRoomId, name })
+        });
+        const r = await fetch(`/api/pre-register?roomId=${currentRoomId}`);
+        const d = await r.json();
+        renderPreregList(d.participants || []);
+    };
+
     safeAddListener('btn-claim-lead-pin', 'click', () => {
         const pin = $$('leader-pin-input')?.value?.trim();
         if (!pin) { showToast('נא להזין קוד מנחה 🔑'); return; }
@@ -1478,6 +1552,38 @@ function renderParticipants(participants) {
 }
 
 let _lobbyFingerprint = '';
+function renderPreregList(participants) {
+    const list = $$('prereg-list');
+    if (!list) return;
+    list.innerHTML = '';
+    (participants || []).filter(p => p.preRegistered).forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'gazebo-participant-card';
+        item.style.cssText = 'position:relative; cursor:default;';
+        if (p.photo) {
+            const img = document.createElement('img');
+            img.src = p.photo;
+            img.style.cssText = 'width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);';
+            item.appendChild(img);
+        } else {
+            const av = document.createElement('div');
+            av.style.cssText = 'width:48px;height:48px;border-radius:50%;background:rgba(212,175,55,0.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;';
+            av.textContent = (p.name || '?')[0];
+            item.appendChild(av);
+        }
+        const name = document.createElement('div');
+        name.className = 'lobby-participant-name';
+        name.textContent = p.name;
+        item.appendChild(name);
+        const del = document.createElement('button');
+        del.style.cssText = 'position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:#8b1a1a;border:none;color:white;font-size:0.6rem;cursor:pointer;line-height:1;';
+        del.textContent = '✕';
+        del.onclick = () => window.removePreregisteredParticipant(p.name);
+        item.appendChild(del);
+        list.appendChild(item);
+    });
+}
+
 function renderLobbyParticipants(participants) {
     const grid = $$('room-lobby-participants');
     if (!grid) return;

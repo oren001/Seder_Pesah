@@ -324,6 +324,26 @@
                     </button>
                 </details>
 
+                <!-- Pre-load participants with selfies -->
+                <details id="preload-participants-details" style="margin-bottom: 0.75rem;">
+                    <summary style="cursor:pointer; font-size:0.85rem; color:var(--gold); font-weight:600; padding: 0.4rem 0;">
+                        📸 הכנס תמונות מראש לאורחים
+                    </summary>
+                    <p style="font-size:0.75rem; opacity:0.6; margin: 0.3rem 0 0.5rem;">הוסף שם ותמונה עבור כל אורח — הם יצטרפו בלי צורך בסלפי</p>
+                    <div style="display:flex; gap:0.4rem; margin-bottom:0.5rem;">
+                        <input type="text" id="prereg-name" placeholder="שם האורח..." class="lobby-input" style="flex:1; font-size:0.85rem; padding:0.4rem 0.6rem;">
+                        <label class="btn outline small" style="cursor:pointer; padding:0.4rem 0.6rem; white-space:nowrap;" title="בחר תמונה">
+                            📷
+                            <input type="file" id="prereg-photo" accept="image/*" style="display:none" onchange="previewPreregPhoto(this)">
+                        </label>
+                        <button class="btn outline small" onclick="addPreregisteredParticipant()" style="white-space:nowrap;">הוסף ✓</button>
+                    </div>
+                    <div id="prereg-photo-preview" style="display:none; margin-bottom:0.5rem; text-align:center;">
+                        <img id="prereg-preview-img" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);">
+                    </div>
+                    <div id="prereg-list" class="gazebo-grid" style="min-height:0; gap:0.4rem;"></div>
+                </details>
+
                 <button id="btn-start-seder" class="btn primary" style="width: 100%;">התחל את ההגדה 📖🚀</button>
             </div>
 

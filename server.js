@@ -219,6 +219,48 @@ app.post('/api/set-invitation-bg', express.json(), (req, res) => {
     res.json({ ok: true, message: `Option ${id} is now the active invitation background!` });
 });
 
+// ── Pre-register participants (host uploads photos before seder) ───────────
+app.post('/api/pre-register', express.json({ limit: '2mb' }), (req, res) => {
+    const { roomId, name, photo } = req.body || {};
+    if (!roomId || !name) return res.status(400).json({ error: 'roomId and name required' });
+    const room = rooms[roomId];
+    if (!room) return res.status(404).json({ error: 'room not found' });
+
+    // Check if already pre-registered
+    const existing = room.participants.find(p => p.preRegistered && p.name.trim().toLowerCase() === name.trim().toLowerCase());
+    if (existing) {
+        if (photo) existing.photo = photo;
+    } else {
+        room.participants.push({
+            id: `prereg-${Date.now()}`,
+            name: name.trim(),
+            photo: photo || null,
+            online: false,
+            preRegistered: true
+        });
+    }
+    saveRooms();
+    res.json({ success: true, participants: room.participants });
+});
+
+app.delete('/api/pre-register', express.json(), (req, res) => {
+    const { roomId, name } = req.body || {};
+    if (!roomId || !name) return res.status(400).json({ error: 'roomId and name required' });
+    const room = rooms[roomId];
+    if (!room) return res.status(404).json({ error: 'room not found' });
+    room.participants = room.participants.filter(p => !(p.preRegistered && p.name.trim().toLowerCase() === name.trim().toLowerCase()));
+    saveRooms();
+    res.json({ success: true });
+});
+
+app.get('/api/pre-register', (req, res) => {
+    const { roomId } = req.query;
+    if (!roomId) return res.status(400).json({ error: 'roomId required' });
+    const room = rooms[roomId];
+    if (!room) return res.status(404).json({ error: 'room not found' });
+    res.json({ participants: room.participants });
+});
+
 // ── Exodus Character Card — one-per-person, token-protected ──────────────
 const _exodusCardUsed = new Set(); // IP-based rate limit (reset on server restart)
 
@@ -540,12 +582,28 @@ io.on('connection', (socket) => {
             lastSeen: Date.now()
         };
 
-        const existing = room.participants.find(p => p.photo && p.photo === resolvedPhoto);
-        if (existing) {
-            existing.id = socket.id;
-            existing.online = true;
-            existing.lastSeen = Date.now();
-            if (socket.userName) existing.name = socket.userName;
+        // Match by photo first, then by pre-registered name
+        const existingByPhoto = resolvedPhoto && room.participants.find(p => p.photo && p.photo === resolvedPhoto);
+        const preRegByName = !existingByPhoto && socket.userName && room.participants.find(p =>
+            p.preRegistered && p.name.trim().toLowerCase() === socket.userName.trim().toLowerCase()
+        );
+
+        if (existingByPhoto) {
+            existingByPhoto.id = socket.id;
+            existingByPhoto.online = true;
+            existingByPhoto.lastSeen = Date.now();
+            if (socket.userName) existingByPhoto.name = socket.userName;
+            // Sync resolved participant for callback
+            Object.assign(participant, existingByPhoto);
+        } else if (preRegByName) {
+            // Merge into pre-registered slot — use their pre-loaded photo if they didn't upload one
+            preRegByName.id = socket.id;
+            preRegByName.online = true;
+            preRegByName.preRegistered = false;
+            preRegByName.lastSeen = Date.now();
+            if (resolvedPhoto) preRegByName.photo = resolvedPhoto;
+            if (!preRegByName.photo) preRegByName.photo = null;
+            Object.assign(participant, preRegByName);
         } else {
             room.participants.push(participant);
         }
