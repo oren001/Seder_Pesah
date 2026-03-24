@@ -10,7 +10,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800;900&family=Assistant:wght@300;400;600&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.2.5">
+    <link rel="stylesheet" href="styles.css?v=1.3.0">
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -499,6 +499,13 @@
         <!-- Reactions bar — fixed above footer, always visible -->
         <div id="reactions-bar-global" class="reactions-bar-global"></div>
 
+        <!-- Font size controls -->
+        <div class="font-size-bar">
+            <button class="font-size-btn" onclick="changeFontSize(-1)" title="הקטן טקסט">א-</button>
+            <span id="font-size-label" class="font-size-label">105%</span>
+            <button class="font-size-btn" onclick="changeFontSize(1)" title="הגדל טקסט">א+</button>
+        </div>
+
         <!-- Navigation — clean: prev | progress | next only -->
         <footer class="room-footer">
             <button id="btn-prev" class="btn nav-btn" disabled>הקודם →</button>
@@ -573,7 +580,12 @@
     </div>
 
     <div id="photo-viewer" class="photo-viewer hidden" onclick="closePhotoZoom()">
-        <img id="zoomed-photo" src="" alt="Zooma">
+        <button class="photo-viewer-close" onclick="closePhotoZoom()">✕</button>
+        <img id="zoomed-photo" src="" alt="Zoom" onclick="event.stopPropagation()">
+        <div class="photo-viewer-actions" onclick="event.stopPropagation()">
+            <button class="btn outline" id="btn-zoom-download" onclick="downloadZoomedImage()">📥 הורדה</button>
+            <button class="btn outline" id="btn-zoom-share" onclick="shareZoomedImage()">📲 שתף</button>
+        </div>
     </div>
 
     <div id="toast" class="toast hidden"></div>
@@ -595,18 +607,17 @@
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     <script>
-    // On HTTP, Wake Lock API always rejects and NoSleep.js logs every rejection.
-    // Remove it so NoSleep falls straight to the video-element fallback (which works on HTTP).
     if (location.protocol !== 'https:' && 'wakeLock' in navigator) {
         delete Navigator.prototype.wakeLock;
     }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/nosleep.js@0.12.0/dist/NoSleep.min.js"></script>
 
-    <script src="haggadah_data.js?v=1.2.5"></script>
-    <script src="ExodusMap.js?v=1.2.5"></script>
-    <script src="RSVPFlow.js?v=1.2.5"></script>
-    <script src="app.js?v=1.2.5"></script>
+    <script src="haggadah_data.js?v=1.3.0"></script>
+    <script src="haggadah_en.js?v=1.3.0"></script>
+    <script src="ExodusMap.js?v=1.3.0"></script>
+    <script src="RSVPFlow.js?v=1.3.0"></script>
+    <script src="app.js?v=1.3.0"></script>
 </body>
 
 </html>

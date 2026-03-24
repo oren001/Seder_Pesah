@@ -16,7 +16,7 @@ const HAGGADAH_PROMPTS = [
     { id: 3, title: 'Yachatz', prompt: 'A matzah being broken precisely in half, the whole family leaning in watching as if witnessing surgery, one half being wrapped in a napkin with the secrecy of a heist, everyone pretending not to notice where it goes, dramatic warm candlelight, photorealistic' },
     { id: 4, title: 'Ha Lachma Anya', prompt: 'A warm ancient doorway thrown open to the street at night, inviting golden light pouring out, family gesturing welcomingly, matzah visible on the table behind them, an actual neighbor showing up with their coat on looking delighted and slightly confused, photorealistic cinematic' },
     { id: 5, title: 'Ma Nishtana', prompt: 'A child standing on their chair at the ancient seder table, gesturing at the seder plate with the confidence of a prosecutor presenting evidence, four questions clearly serious business, the entire family watching with genuine delight and barely-controlled smiles, candlelight, photorealistic documentary' },
-    { id: 6, title: 'Avadim Hayinu', prompt: 'Ancient Hebrews walking away from Egyptian pyramids at dawn, exhausted but free, one person in the group has clearly modern sneakers visible under their robe, someone trying to document it on a scroll held exactly like a phone. Epic wide shot, golden sunrise, photorealistic cinematic' },
+    { id: 6, title: 'Avadim Hayinu', prompt: 'Ancient Hebrews walking away from Egyptian pyramids at dawn, exhausted but free, someone trying to document it on a scroll held exactly like a phone, a small piece of matzah wrapped in cloth peeking from behind a rock. Epic wide shot, golden sunrise, photorealistic cinematic' },
     { id: 7, title: 'Story of Rabbis', prompt: 'Five wise rabbis in robes having an intensely animated all-night discussion, table covered in ancient scrolls and at least six empty espresso-sized cups, one asleep face-down in his notes, sunrise just beginning through the window, warm lamp light, photorealistic bookish chaos' },
     { id: 8, title: 'Four Sons', prompt: 'Four distinctly different people at one seder table: one reading the Haggadah with reading glasses and margin notes, one with arms crossed and clear teenager energy, one looking genuinely sweet and confused, one somehow wearing sunglasses indoors at night, candlelight, photorealistic candid portrait' },
     { id: 9, title: 'Vehi Sheamda', prompt: 'A sweeping multigenerational family portrait, same pose same expression across four generations, ancient decor around them, youngest in modern pajamas oldest in ancient robes, warm rich golden lighting, photorealistic, deeply moving and slightly absurd' },
@@ -263,10 +263,10 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms, options = 
             finalPrompt = section.prompt;
         }
         if (initImageIds.length > 0) {
-            finalPrompt += `. Include the people from the reference images realistically in the scene — they look like themselves but in period-appropriate clothing, with genuine amused expressions, as if they accidentally ended up at the Exodus. One subtle modern detail on each of them (a watch, sneakers, an earring)`;
+            finalPrompt += `. Include the people from the reference images realistically in the scene — they look like themselves but in period-appropriate clothing, with genuine amused expressions, as if they accidentally ended up at the Exodus. One subtle modern detail on each of them (a watch, earrings, reading glasses)`;
         }
         // Global style suffix — photorealistic, cinematic, with wit
-        finalPrompt += '. Cinematic photorealistic photography, rich warm saturated colors, golden hour light. Real people with genuine emotions. Humor comes from subtle anachronistic modern details hidden in ancient scenes. NOT cartoon, NOT Pixar, NOT illustration — real photography feel, like a BBC documentary that has a sense of humor';
+        finalPrompt += '. Hidden somewhere in the scene is a small piece of matzah wrapped in a white cloth (the afikoman) — partially concealed behind an object, under a cushion, or tucked in a corner — a fun find-the-afikoman easter egg. Cinematic photorealistic photography, rich warm saturated colors, golden hour light. Real people with genuine emotions. Humor comes from subtle anachronistic modern details hidden in ancient scenes. NOT cartoon, NOT Pixar, NOT illustration — real photography feel, like a BBC documentary that has a sense of humor';
 
         io.to(roomId).emit('ai-status', { message: 'שולח את הפקודה לפרעה... 📜', pageIndex });
 
@@ -432,7 +432,7 @@ async function generateExodusCard(photoBase64, name) {
         `Epic Hollywood biblical movie poster, photorealistic cinematic photography. ` +
         `The EXACT person from the reference photo is the undisputed star of the Exodus — ` +
         `their face preserved perfectly, front and centre. ` +
-        `They wear ancient Hebrew robes and worn sandals, one arm raised dramatically ` +
+        `They wear ancient Hebrew robes, one arm raised dramatically ` +
         `toward a parting Red Sea, the other gripping a gnarled wooden staff. ` +
         `Expression: determined, inspired, and just slightly bewildered — ` +
         `like they suddenly remembered they left the oven on back in Egypt. ` +

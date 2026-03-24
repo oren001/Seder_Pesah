@@ -2,7 +2,7 @@
 // שולחן עורך is at page index: 16
 const HAGGADAH = [
   {
-    "title": "Introduction",
+    "title": "הקדמה",
     "segments": [
       {
         "he": "<br />",

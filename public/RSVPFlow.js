@@ -386,11 +386,8 @@ class RSVPFlow {
         } catch (err) {
             clearInterval(tipInterval);
             console.error('[ExodusCard]', err);
-            // Auto-continue to seder on failure — don't leave user stuck
-            const status = $$('exodus-card-status');
-            if (status) status.textContent = 'ממשיכים לסדר! 🍷';
-            $$('exodus-card-loading')?.classList.add('hidden');
-            setTimeout(() => this.complete(), 1500);
+            // Skip silently — go straight to seder
+            this.complete();
         }
     }
 

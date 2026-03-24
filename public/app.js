@@ -1627,11 +1627,11 @@ function buildImageZone(imageData, index) {
         img.alt = 'איור AI';
         imgZone.onclick = (e) => {
             e.stopPropagation();
-            downloadImage(currentImgUrl, `Haggadah_Page_${index + 1}.png`);
+            openPhotoZoom(currentImgUrl);
         };
         const hint = document.createElement('div');
         hint.className = 'download-hint';
-        hint.innerHTML = '📥 לחץ להורדה';
+        hint.innerHTML = '🔍 לחץ להגדלה';
         imgZone.appendChild(hint);
         imgZone.appendChild(img);
         if (imageData.featuredPhotos && imageData.featuredPhotos.length > 0) {
@@ -1679,12 +1679,15 @@ function renderPage() {
         el.innerHTML = '';
 
         const isTranslit = currentLanguage === 'translit';
+        const isEnglish = currentLanguage === 'en';
+        const isLtr = isTranslit || isEnglish;
+        const enPage = (typeof HAGGADAH_EN !== 'undefined') ? HAGGADAH_EN[currentPage] : null;
 
         // --- Title ---
         const titleDiv = document.createElement('div');
         titleDiv.className = 'page-title';
         titleDiv.textContent = isTranslit ? transliterate(page.title) : page.title;
-        if (isTranslit) titleDiv.classList.add('translit-text');
+        if (isLtr) titleDiv.classList.add('translit-text');
         el.appendChild(titleDiv);
 
         // --- Readers strip (who is reading along) ---
@@ -1708,11 +1711,11 @@ function renderPage() {
 
         // --- Text (before image) ---
         const textBefore = document.createElement('div');
-        textBefore.className = 'page-text' + (isTranslit ? ' ltr-mode' : '');
+        textBefore.className = 'page-text' + (isLtr ? ' ltr-mode' : '');
 
         // --- Text (after image, only for long pages) ---
         const textAfter = document.createElement('div');
-        textAfter.className = 'page-text page-text-after' + (isTranslit ? ' ltr-mode' : '');
+        textAfter.className = 'page-text page-text-after' + (isLtr ? ' ltr-mode' : '');
         let hasAfterText = false;
 
         if (segments.length > 0) {
@@ -1720,9 +1723,11 @@ function renderPage() {
                 const p = document.createElement('p');
                 p.className = 'text-segment';
                 p.id = `seg-${index}-${sIdx}`;
-                if (isTranslit) {
+                if (isEnglish && enPage && enPage[sIdx]) {
+                    p.textContent = enPage[sIdx];
+                    p.classList.add('ltr', 'translit-text');
+                } else if (isTranslit) {
                     const transText = transliterate(seg.he);
-                    // Giggle easter egg in translit mode too
                     p.innerHTML = transText.replace(/shadayim/gi,
                         '<span class="giggle-word" onclick="playGiggle(event)">$&</span>');
                     p.classList.add('ltr', 'translit-text');
@@ -1741,7 +1746,10 @@ function renderPage() {
         } else if (page.text) {
             const p = document.createElement('p');
             p.className = 'text-segment';
-            if (isTranslit) {
+            if (isEnglish && enPage && enPage[0]) {
+                p.textContent = enPage[0];
+                p.classList.add('ltr', 'translit-text');
+            } else if (isTranslit) {
                 const transText = transliterate(page.text);
                 p.innerHTML = transText.replace(/shadayim/gi,
                     '<span class="giggle-word" onclick="playGiggle(event)">$&</span>');
@@ -1790,6 +1798,7 @@ function renderPage() {
         }
 
         el.style.opacity = '1';
+        applyFontSize();
 
         // Scroll page content to top on page change
         const container = document.querySelector('.haggadah-container');
@@ -2228,8 +2237,49 @@ function closePhotoZoom() {
     $$('photo-viewer').classList.add('hidden');
 }
 
+function downloadZoomedImage() {
+    const img = $$('zoomed-photo');
+    if (!img?.src) return;
+    const a = document.createElement('a');
+    a.href = img.src;
+    a.download = 'haggadah-image.png';
+    a.click();
+}
+
+function shareZoomedImage() {
+    const img = $$('zoomed-photo');
+    if (!img?.src) return;
+    if (navigator.share) {
+        navigator.share({ title: 'תמונת הגדה', url: img.src }).catch(() => {});
+    } else {
+        window.open('https://wa.me/?text=' + encodeURIComponent('תמונה מהסדר שלנו 🌊\n' + img.src), '_blank');
+    }
+}
+
+// --- Font Size Controls ---
+const FONT_SIZES = [0.85, 0.95, 1.05, 1.15, 1.3, 1.5];
+let fontSizeIdx = parseInt(localStorage.getItem('haggadah_font_idx') || '2'); // default 1.05rem
+
+function changeFontSize(delta) {
+    fontSizeIdx = Math.max(0, Math.min(FONT_SIZES.length - 1, fontSizeIdx + delta));
+    localStorage.setItem('haggadah_font_idx', fontSizeIdx);
+    applyFontSize();
+}
+
+function applyFontSize() {
+    const size = FONT_SIZES[fontSizeIdx];
+    document.querySelectorAll('.page-text').forEach(el => {
+        el.style.fontSize = size + 'rem';
+    });
+    const label = $$('font-size-label');
+    if (label) label.textContent = Math.round(size * 100) + '%';
+}
+
 // Global exposure for onclick
 window.closePhotoZoom = closePhotoZoom;
+window.downloadZoomedImage = downloadZoomedImage;
+window.shareZoomedImage = shareZoomedImage;
+window.changeFontSize = changeFontSize;
 window.toggleLanguage = toggleLanguage;
 window.onSegmentClick = onSegmentClick;
 
@@ -2385,14 +2435,20 @@ function renderParagraphAvatars(taps) {
 }
 
 function toggleLanguage() {
-    currentLanguage = currentLanguage === 'he' ? 'translit' : 'he';
-    // Update all language buttons
+    // Cycle: he → en → translit → he
+    if (currentLanguage === 'he') currentLanguage = 'en';
+    else if (currentLanguage === 'en') currentLanguage = 'translit';
+    else currentLanguage = 'he';
+
+    const labels = { he: 'EN', en: 'Aa', translit: 'עב' };
+    const sidebarLabels = { he: 'English', en: 'Transliteration', translit: 'עברית' };
+
     const sidebarBtn = $$('btn-toggle-lang');
-    if (sidebarBtn) sidebarBtn.innerText = currentLanguage === 'he' ? 'English' : 'עברית';
+    if (sidebarBtn) sidebarBtn.innerText = sidebarLabels[currentLanguage];
     const footerBtn = $$('btn-lang-toggle');
     if (footerBtn) {
-        footerBtn.textContent = currentLanguage === 'he' ? 'EN' : 'עב';
-        footerBtn.classList.toggle('active', currentLanguage === 'translit');
+        footerBtn.textContent = labels[currentLanguage];
+        footerBtn.classList.toggle('active', currentLanguage !== 'he');
     }
     renderPage();
 }

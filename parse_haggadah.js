@@ -26,7 +26,7 @@ const contentEnd = html.indexOf('<!-- \nNewPP limit report', contentStart) || ht
 const content = html.substring(contentStart, contentEnd);
 
 const results = [];
-let currentSection = { title: "Introduction", segments: [] };
+let currentSection = { title: "הקדמה", segments: [] };
 const sims = ["קַדֵּשׁ", "וּרְחַץ", "כַּרְפַּס", "יַחַץ", "מַגִּיד", "רָחְצָה", "מוֹצִיא", "מַצָּה", "מָרוֹר", "כּוֹרֵךְ", "שֻׁלְחָן עוֹרֵךְ", "צָפוּן", "בָּרֵךְ", "הַלֵּל", "נִרְצָה"];
 
 // Split by tags: headers <h2>/<h3>, paragraphs <p>, or center-aligned divs

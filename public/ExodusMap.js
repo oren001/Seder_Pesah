@@ -63,7 +63,7 @@ class ExodusMap {
         // 0:Intro(Kadesh) 1:Urchatz 2:Karpas 3:Yachatz 4-12:Magid 13:Rachtzah
         // 14:Maror 15:Korech 16:ShulchanOrech 17:Tzafun 18-22:Barech 23-25:Hallel 26-31:Nirtzah
         const PAGE_TO_STAGE = [
-            0,  // 0  Introduction (Kadesh)
+            0,  // 0  הקדמה (Kadesh)
             1,  // 1  וּרְחַץ
             2,  // 2  כַּרְפַּס
             3,  // 3  יַחַץ
