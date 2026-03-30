@@ -735,9 +735,28 @@ function init() {
         pendingRoomId = roomFromUrl;
         const savedSelfieForRoom = localStorage.getItem('haggadah_selfie');
         if (me && me.name && savedSelfieForRoom) {
-            // Returning user — skip invitation + RSVP, join directly
-            console.log('[Init] Returning user, auto-joining...');
+            // Returning user with selfie — skip invitation + RSVP, join directly
+            console.log('[Init] Returning user with selfie, auto-joining...');
             joinRoom(pendingRoomId);
+        } else if (me && me.name) {
+            // Has a name but no local selfie — check if pre-registered on server
+            console.log('[Init] Has name, checking pre-registration...');
+            fetch(`/api/pre-register?roomId=${pendingRoomId}`)
+                .then(r => r.json())
+                .then(data => {
+                    const preReg = (data.participants || []).find(p =>
+                        p.preRegistered && p.name && p.photo &&
+                        p.name.trim().toLowerCase() === (me.name || '').trim().toLowerCase()
+                    );
+                    if (preReg) {
+                        // Pre-registered with photo — join directly, no selfie needed
+                        console.log('[Init] Pre-registered with photo, auto-joining...');
+                        joinRoom(pendingRoomId);
+                    } else {
+                        showInvitationScreen();
+                    }
+                })
+                .catch(() => showInvitationScreen());
         } else {
             // New user — show beautiful invitation screen first
             showInvitationScreen();
@@ -1832,6 +1851,73 @@ function buildImageZone(imageData, index) {
     return imgZone;
 }
 
+// ── Character role cards ─────────────────────────────────────────────────────
+// Each entry: match (substring of participant name), role label, pages[] (0-based)
+const CHARACTER_ROLES = [
+    { match: 'מורן',   role: 'פרעה 👑',              pages: [4]      },
+    { match: 'דני',    role: 'הרשע 😈',               pages: [5]      },
+    { match: 'איתי',   role: 'הבן החכם 🤓',           pages: [5]      },
+    { match: 'אלעד',   role: 'הבן התם 🙂',            pages: [5]      },
+    { match: 'ערן',    role: 'שאינו יודע לשאול 🤷',   pages: [5]      },
+    { match: 'אורן',   role: 'משה רבנו 🧙',            pages: [7]      },
+    { match: 'מיכל',  role: 'אליהו הנביא 🍷',         pages: [21]     },
+    { match: 'אפרת',  role: 'מרים הנביאה 🪘',         pages: [26]     },
+    { match: 'יעלי',  role: 'המספרת ✨',              pages: [0]      },
+    { match: 'דרור',  role: 'אהרון הכהן ✡️',           pages: [13]     },
+    { match: 'יעל-ק', role: 'בת פרעה 👸',             pages: [6]      },
+    { match: 'יעל-ד', role: 'בת חורין 🌸',            pages: [24]     },
+    { match: 'אוהד',  role: 'עבד שנגאל ⛓️',           pages: [4]      },
+    { match: 'Ailey', role: 'גרת צדק 🌍',             pages: [8]      },
+    { match: 'מאיה',  role: 'קריעת ים סוף 🌊',        pages: [11]     },
+    { match: 'נטע',   role: 'בשדה הגאולה 🌿',         pages: [27]     },
+];
+
+function buildCharacterCards(pageIndex) {
+    // Find roles relevant to this page
+    const relevant = CHARACTER_ROLES.filter(r => r.pages.includes(pageIndex));
+    if (relevant.length === 0) return null;
+
+    // Match each role to a participant by name substring (case-insensitive)
+    const cards = relevant.map(r => {
+        const p = participants.find(p =>
+            p.name && p.name.toLowerCase().includes(r.match.toLowerCase())
+        );
+        return { role: r.role, match: r.match, photo: p?.photo || null, name: p?.name || r.match };
+    });
+
+    const strip = document.createElement('div');
+    strip.className = 'char-card-strip';
+
+    cards.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'char-card';
+        card.title = c.name;
+
+        const photoEl = document.createElement('div');
+        photoEl.className = 'char-card-photo';
+        if (c.photo) {
+            const img = document.createElement('img');
+            img.src = c.photo;
+            img.alt = c.name;
+            img.onclick = () => openPhotoZoom(c.photo);
+            photoEl.appendChild(img);
+        } else {
+            photoEl.textContent = c.role.split(' ').pop(); // emoji fallback
+            photoEl.classList.add('char-card-emoji');
+        }
+        card.appendChild(photoEl);
+
+        const roleEl = document.createElement('div');
+        roleEl.className = 'char-card-role';
+        roleEl.textContent = c.role;
+        card.appendChild(roleEl);
+
+        strip.appendChild(card);
+    });
+
+    return strip;
+}
+
 function renderPage() {
     const page = HAGGADAH[currentPage];
     if (!page) return;
@@ -1864,6 +1950,10 @@ function renderPage() {
         titleDiv.textContent = isTranslit ? transliterate(page.title) : page.title;
         if (isLtr) titleDiv.classList.add('translit-text');
         el.appendChild(titleDiv);
+
+        // --- Character cards (Haggadah roles) ---
+        const charCards = buildCharacterCards(currentPage);
+        if (charCards) el.appendChild(charCards);
 
         // --- Readers strip (who is reading along) ---
         if (activeReaders.length > 0) {
@@ -2063,9 +2153,38 @@ function updateLeadershipUI() {
     const hostControls = $$('menu-host-controls');
     if (hostControls) hostControls.classList.toggle('hidden', !amILeader);
 
+    // Hide "Be the Host" button when already leader
+    const claimHostDiv = $$('menu-claim-host');
+    if (claimHostDiv) claimHostDiv.style.display = amILeader ? 'none' : '';
+
     // Crucial: Also update Lobby if we are in it
     updateLobbyUI(false);
 }
+
+function toggleMenuPinInput() {
+    const wrap = $$('menu-pin-input-wrap');
+    if (!wrap) return;
+    const visible = wrap.style.display !== 'none';
+    wrap.style.display = visible ? 'none' : 'block';
+    if (!visible) { const inp = $$('menu-pin-input'); if (inp) inp.focus(); }
+}
+window.toggleMenuPinInput = toggleMenuPinInput;
+
+function claimLeadFromMenu() {
+    const pin = $$('menu-pin-input')?.value?.trim();
+    if (!pin) { showToast('Enter the host code 🔑'); return; }
+    socket.emit('claim-lead-with-pin', { roomId: currentRoomId, pin }, (res) => {
+        if (res?.success) {
+            showToast('Welcome, Host! 👑');
+            const wrap = $$('menu-pin-input-wrap');
+            if (wrap) wrap.style.display = 'none';
+            toggleMenu();
+        } else {
+            showToast('Wrong code ❌');
+        }
+    });
+}
+window.claimLeadFromMenu = claimLeadFromMenu;
 
 function handlePageEffects(pageIndex) {
     const pageText = HAGGADAH[pageIndex]?.he || "";
@@ -2934,14 +3053,7 @@ function buildMiYodeaSlot(n) {
     volBtn.onclick = () => toggleMiYodeaVolunteer(n, iAmIn);
     slot.appendChild(volBtn);
 
-    // Generate button (leader only)
-    if (isLeader && participants.length > 0) {
-        const genBtn = document.createElement('button');
-        genBtn.className = 'mi-yodea-generate-btn';
-        genBtn.textContent = imageUrl ? '🔄 עדכן תמונה' : '✨ צור תמונה';
-        genBtn.onclick = () => triggerMiYodeaGenerate(n);
-        slot.appendChild(genBtn);
-    }
+    // Generate button — disabled to save tokens
 
     return slot;
 }

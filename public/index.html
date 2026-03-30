@@ -416,8 +416,18 @@
             <div class="menu-section">
                 <div class="menu-label">שליטה וניהול</div>
                 <div id="leadership-status" class="leadership-badge">🛡️ מחפש מנהל...</div>
-                <!-- lead-mode checkbox removed — leadership requires PIN -->
-                <button id="btn-sync-menu" class="btn small glass hidden" style="width: 100%;">לחזור לסנכרון</button>
+                <button id="btn-sync-menu" class="btn small glass hidden" style="width: 100%;">📍 Join Host</button>
+                <!-- Be the host inline flow (hidden when already leader) -->
+                <div id="menu-claim-host" style="margin-top:0.6rem;">
+                    <button class="btn-be-host" onclick="toggleMenuPinInput()">🎙️ Be the Host</button>
+                    <div id="menu-pin-input-wrap" style="display:none; margin-top:0.4rem;">
+                        <input type="password" id="menu-pin-input" class="lobby-input"
+                               placeholder="Enter code..." maxlength="8"
+                               style="text-align:center; letter-spacing:4px; font-size:1.1rem; margin-bottom:0.4rem;"
+                               onkeydown="if(event.key==='Enter') claimLeadFromMenu()">
+                        <button class="btn outline small" style="width:100%;" onclick="claimLeadFromMenu()">👑 Confirm</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Host Controls — visible only to leader -->
@@ -537,7 +547,7 @@
 
                 <div class="progress-pill">
                     <span id="current-page-num">1</span> / <span id="total-pages">1</span>
-                    <button id="btn-sync" class="btn-sync hidden" title="חזור לסנכרון עם המנחה">🔄</button>
+                    <button id="btn-sync" class="btn-sync hidden" title="חזור לסנכרון עם המנחה">📍 Join Host</button>
                 </div>
                 <span id="meal-footer-indicator" class="meal-footer-indicator hidden" title="עמודים עד האוכל"></span>
 

@@ -560,8 +560,6 @@ io.on('connection', (socket) => {
             id: roomId,
             participants: [],
             currentPage: 0,
-            leaderId: socket.id,
-            leaderName: socket.userName || name || 'מנחה',
             guestList: [],       // Pre-set expected guests (names only)
             sederLabel: '',
             tasks: persistedTasks[roomId] || [
