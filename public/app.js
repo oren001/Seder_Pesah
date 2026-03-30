@@ -404,6 +404,7 @@ function init() {
     safeAddListener('btn-close-tasks', 'click', toggleTasks);
     safeAddListener('btn-add-task', 'click', addTask);
     safeAddListener('btn-start-seder', 'click', onStartSeder);
+    safeAddListener('btn-start-seder-top', 'click', onStartSeder);
     safeAddListener('seder-label-input', 'input', (e) => {
         const label = e.target.value;
         sederLabel = label;
