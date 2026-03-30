@@ -734,32 +734,12 @@ function init() {
         showInvitationScreen();
     } else if (roomFromUrl) {
         pendingRoomId = roomFromUrl;
-        const savedSelfieForRoom = localStorage.getItem('haggadah_selfie');
-        if (me && me.name && savedSelfieForRoom) {
-            // Returning user with selfie — skip invitation + RSVP, join directly
-            console.log('[Init] Returning user with selfie, auto-joining...');
+        if (me && me.name) {
+            // Returning user — has a name, join directly (server has their photo)
+            console.log('[Init] Returning user, auto-joining...');
             joinRoom(pendingRoomId);
-        } else if (me && me.name) {
-            // Has a name but no local selfie — check if pre-registered on server
-            console.log('[Init] Has name, checking pre-registration...');
-            fetch(`/api/pre-register?roomId=${pendingRoomId}`)
-                .then(r => r.json())
-                .then(data => {
-                    const preReg = (data.participants || []).find(p =>
-                        p.preRegistered && p.name && p.photo &&
-                        p.name.trim().toLowerCase() === (me.name || '').trim().toLowerCase()
-                    );
-                    if (preReg) {
-                        // Pre-registered with photo — join directly, no selfie needed
-                        console.log('[Init] Pre-registered with photo, auto-joining...');
-                        joinRoom(pendingRoomId);
-                    } else {
-                        showInvitationScreen();
-                    }
-                })
-                .catch(() => showInvitationScreen());
         } else {
-            // New user — show beautiful invitation screen first
+            // Brand new user — show invitation screen
             showInvitationScreen();
         }
     } else {

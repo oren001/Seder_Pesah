@@ -305,54 +305,45 @@
 
             <!-- Leader controls: only visible to the leader -->
             <div id="lobby-leader-actions" class="hidden">
-                <button id="btn-start-seder-top" class="btn primary" style="width:100%; font-size:1.15rem; padding:0.85rem; margin-bottom:1rem;">
-                    🚀 התחל את ההגדה
-                </button>
-                <p style="font-weight: 600;">מנהל הסדר, כשיש מניין - אפשר להתחיל!</p>
-                <input type="text" id="seder-label-input" class="lobby-input"
-                    placeholder="שם הסדר (לדוגמה: בביתם של יעלי ודני קריו)"
-                    maxlength="60" style="font-size: 0.9rem; margin-bottom: 0.75rem;">
 
-                <!-- Guest list — names appear in RSVP picker for guests to select -->
-                <details id="guest-list-details" style="margin-bottom: 0.75rem;">
-                    <summary style="cursor:pointer; font-size:0.85rem; color:var(--gold); font-weight:600; padding: 0.4rem 0;">
-                        📋 רשימת אורחים צפויים
-                    </summary>
-                    <p style="font-size:0.75rem; opacity:0.6; margin: 0.3rem 0 0.5rem;">שם לכל שורה — יופיעו בבחירת שם לאורחים:</p>
-                    <textarea id="guest-list-ta" rows="9" class="lobby-input"
-                        style="width:100%; min-height:150px; font-family:inherit; font-size:0.9rem; resize:vertical; box-sizing:border-box; line-height:1.8;"
-                        placeholder="אמנון כרמל&#10;דרור דגן&#10;אפרת וולפסון&#10;אלעד&#10;ערן הורוביץ&#10;אבגני&#10;אייל&#10;איתי שולץ&#10;יוליה"></textarea>
-                    <button id="btn-save-guest-list" class="btn outline small" style="width:100%; margin-top:0.4rem;">
-                        💾 שמור רשימה
-                    </button>
-                </details>
-
-                <!-- Load all selfies from history -->
-                <button class="btn outline small" style="width:100%; margin-bottom:0.5rem;" onclick="loadAllSelfies()">
-                    📸 טען תמונות של כל המשתתפים מהעבר
+                <!-- BIG START BUTTON — the only thing that matters -->
+                <button id="btn-start-seder" class="btn primary" style="width:100%; font-size:1.3rem; padding:1rem; margin-bottom:1.2rem; letter-spacing:0.03em;">
+                    📖 התחל את ההגדה
                 </button>
 
-                <!-- Pre-load participants with selfies -->
-                <details id="preload-participants-details" style="margin-bottom: 0.75rem;">
-                    <summary style="cursor:pointer; font-size:0.85rem; color:var(--gold); font-weight:600; padding: 0.4rem 0;">
-                        📸 הכנס תמונות מראש לאורחים
-                    </summary>
-                    <p style="font-size:0.75rem; opacity:0.6; margin: 0.3rem 0 0.5rem;">הוסף שם ותמונה עבור כל אורח — הם יצטרפו בלי צורך בסלפי</p>
-                    <div style="display:flex; gap:0.4rem; margin-bottom:0.5rem;">
-                        <input type="text" id="prereg-name" placeholder="שם האורח..." class="lobby-input" style="flex:1; font-size:0.85rem; padding:0.4rem 0.6rem;">
-                        <label class="btn outline small" style="cursor:pointer; padding:0.4rem 0.6rem; white-space:nowrap;" title="בחר תמונה">
-                            📷
-                            <input type="file" id="prereg-photo" accept="image/*" style="display:none" onchange="previewPreregPhoto(this)">
-                        </label>
-                        <button class="btn outline small" onclick="addPreregisteredParticipant()" style="white-space:nowrap;">הוסף ✓</button>
+                <!-- Advanced tools collapsed by default -->
+                <details style="margin-bottom: 0.5rem;">
+                    <summary style="cursor:pointer; font-size:0.8rem; color:rgba(255,255,255,0.4); padding:0.3rem 0;">⚙️ כלי מנחה מתקדמים</summary>
+                    <div style="margin-top:0.7rem;">
+                        <input type="text" id="seder-label-input" class="lobby-input"
+                            placeholder="שם הסדר (לדוגמה: בביתם של יעלי ודני קריו)"
+                            maxlength="60" style="font-size: 0.9rem; margin-bottom: 0.75rem;">
+                        <button class="btn outline small" style="width:100%; margin-bottom:0.5rem;" onclick="loadAllSelfies()">
+                            📸 טען תמונות של כל המשתתפים מהעבר
+                        </button>
+                        <details id="preload-participants-details" style="margin-bottom: 0.75rem;">
+                            <summary style="cursor:pointer; font-size:0.85rem; color:var(--gold); font-weight:600; padding: 0.4rem 0;">
+                                📸 הכנס תמונות מראש לאורחים
+                            </summary>
+                            <div style="display:flex; gap:0.4rem; margin-bottom:0.5rem;">
+                                <input type="text" id="prereg-name" placeholder="שם האורח..." class="lobby-input" style="flex:1; font-size:0.85rem; padding:0.4rem 0.6rem;">
+                                <label class="btn outline small" style="cursor:pointer; padding:0.4rem 0.6rem; white-space:nowrap;" title="בחר תמונה">
+                                    📷
+                                    <input type="file" id="prereg-photo" accept="image/*" style="display:none" onchange="previewPreregPhoto(this)">
+                                </label>
+                                <button class="btn outline small" onclick="addPreregisteredParticipant()" style="white-space:nowrap;">הוסף ✓</button>
+                            </div>
+                            <div id="prereg-photo-preview" style="display:none; margin-bottom:0.5rem; text-align:center;">
+                                <img id="prereg-preview-img" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);">
+                            </div>
+                            <div id="prereg-list" class="gazebo-grid" style="min-height:0; gap:0.4rem;"></div>
+                        </details>
                     </div>
-                    <div id="prereg-photo-preview" style="display:none; margin-bottom:0.5rem; text-align:center;">
-                        <img id="prereg-preview-img" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);">
-                    </div>
-                    <div id="prereg-list" class="gazebo-grid" style="min-height:0; gap:0.4rem;"></div>
                 </details>
 
-                <button id="btn-start-seder" class="btn primary" style="width: 100%;">התחל את ההגדה 📖🚀</button>
+                <!-- hidden inputs kept for JS compatibility -->
+                <input type="text" id="guest-list-ta" style="display:none">
+                <button id="btn-save-guest-list" style="display:none"></button>
             </div>
 
             <!-- Guest ready note -->
