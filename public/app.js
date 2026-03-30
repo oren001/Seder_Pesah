@@ -1552,6 +1552,14 @@ function renderParticipants(participants) {
             gName.textContent = p.name || '';
             gazWrap.appendChild(gName);
 
+            // Role badge (e.g. "הרשע")
+            if (p.role) {
+                const roleBadge = document.createElement('div');
+                roleBadge.className = 'participant-role-badge';
+                roleBadge.textContent = p.role;
+                gazWrap.appendChild(roleBadge);
+            }
+
             // Leader-only controls for other participants
             if (amIAllowedLeader() && !(me && p.id === me.id)) {
                 const ctrlRow = document.createElement('div');
@@ -1681,6 +1689,14 @@ function renderLobbyParticipants(participants) {
             nameLabel.textContent = '👑 ' + (p.name || 'אורח');
         }
         wrapper.appendChild(nameLabel);
+
+        // Role badge (e.g. "הרשע")
+        if (p.role) {
+            const roleBadge = document.createElement('div');
+            roleBadge.className = 'participant-role-badge';
+            roleBadge.textContent = p.role;
+            wrapper.appendChild(roleBadge);
+        }
 
         // ✕ Remove participant button — host only, not self
         if (amIAllowedLeader() && !isMe) {
@@ -1879,6 +1895,28 @@ function renderPage() {
 
         if (segments.length > 0) {
             segments.forEach((seg, sIdx) => {
+                // ── Video Break card ──────────────────────────────────
+                if (seg.type === 'video') {
+                    const card = document.createElement('div');
+                    card.className = 'video-break-card';
+                    card.id = `seg-${index}-${sIdx}`;
+                    card.innerHTML = `
+                        <div class="video-break-icon">📺</div>
+                        <div class="video-break-title">${seg.videoTitle || seg.he}</div>
+                        <div class="video-break-sub">עוצרים לרגע — מפעילים סרטון קצר על המקרן</div>
+                        <a class="video-break-btn" href="${seg.videoUrl}" target="_blank" rel="noopener">
+                            פתח סרטון ▶
+                        </a>`;
+                    if (highlightedSegmentIndex === sIdx) card.classList.add('highlighted');
+                    if (sIdx < splitIdx) {
+                        textBefore.appendChild(card);
+                    } else {
+                        textAfter.appendChild(card);
+                        hasAfterText = true;
+                    }
+                    return;
+                }
+
                 const p = document.createElement('p');
                 p.className = 'text-segment';
                 p.id = `seg-${index}-${sIdx}`;

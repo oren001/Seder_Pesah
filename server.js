@@ -273,8 +273,8 @@ app.delete('/api/room-participant', express.json(), (req, res) => {
 });
 
 // ── Pre-register participants (host uploads photos before seder) ───────────
-app.post('/api/pre-register', express.json({ limit: '2mb' }), (req, res) => {
-    const { roomId, name, photo } = req.body || {};
+app.post('/api/pre-register', express.json({ limit: '4mb' }), (req, res) => {
+    const { roomId, name, photo, role } = req.body || {};
     if (!roomId || !name) return res.status(400).json({ error: 'roomId and name required' });
     const room = rooms[roomId];
     if (!room) return res.status(404).json({ error: 'room not found' });
@@ -283,17 +283,34 @@ app.post('/api/pre-register', express.json({ limit: '2mb' }), (req, res) => {
     const existing = room.participants.find(p => p.preRegistered && p.name.trim().toLowerCase() === name.trim().toLowerCase());
     if (existing) {
         if (photo) existing.photo = photo;
+        if (role !== undefined) existing.role = role || null;
     } else {
         room.participants.push({
             id: `prereg-${Date.now()}`,
             name: name.trim(),
             photo: photo || null,
+            role: role || null,
             online: false,
             preRegistered: true
         });
     }
     saveRooms();
     res.json({ success: true, participants: room.participants });
+});
+
+// ── Admin: force-start seder for a room ──────────────────────────────────
+app.post('/api/admin/start-seder', express.json(), (req, res) => {
+    const { roomId, secret } = req.body || {};
+    if (secret !== (process.env.ADMIN_SECRET || 'pesach2026')) {
+        return res.status(403).json({ error: 'forbidden' });
+    }
+    const room = rooms[roomId];
+    if (!room) return res.status(404).json({ error: 'room not found' });
+    room.sederStarted = true;
+    room.currentPage = room.currentPage || 0;
+    saveRooms();
+    io.to(roomId).emit('seder-started', { currentPage: room.currentPage });
+    res.json({ success: true, roomId, participants: room.participants.length });
 });
 
 app.delete('/api/pre-register', express.json(), (req, res) => {
