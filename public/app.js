@@ -845,7 +845,7 @@ async function setupSocket() {
         updateLeadershipUI();
         updateLobbyUI(data.sederStarted);
 
-        if (isFollowingLeader && data.currentPage !== currentPage) {
+        if (isFollowingLeader && data.currentPage != null && data.currentPage !== currentPage) {
             currentPage = data.currentPage;
             renderPage();
         }
@@ -1343,8 +1343,8 @@ function joinRoomAndShowFinish(roomId, rsvpData) {
         me = { ...me, ...response.participant };
         leaderId = response.leaderId;
         leaderName = response.leaderName;
-        leaderPage = response.currentPage;
-        currentPage = response.currentPage;
+        leaderPage = response.currentPage ?? 0;
+        currentPage = response.currentPage ?? currentPage ?? 0;
         if (response.images) Object.assign(pageImages, response.images);
         if (response.tasks) roomTasks = response.tasks;
         window._lastRoomData = Object.assign(window._lastRoomData || {}, response);
@@ -1492,7 +1492,7 @@ function joinRoom(roomId, rsvpData = null) {
 // --- Socket events ---
 function onRoomUpdated({ participants, currentPage: pg }) {
     renderParticipants(participants);
-    if (pg !== currentPage) {
+    if (pg != null && pg !== currentPage) {
         currentPage = pg;
         renderPage();
     }
