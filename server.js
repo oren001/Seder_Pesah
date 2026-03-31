@@ -660,7 +660,7 @@ loadImagesFromFirebase().catch(() => {});
     const staticDir = path.join(__dirname, 'public', 'images', 'haggadah');
     if (!fs.existsSync(staticDir)) return;
     const STATIC_ROOM = '5drrkj';
-    if (!rooms[STATIC_ROOM]) return;
+    if (!rooms[STATIC_ROOM]) rooms[STATIC_ROOM] = { id: STATIC_ROOM, participants: [], images: {}, tasks: [], leaderId: null, leaderName: null, leaderPin: '1111', sederStarted: false, createdAt: new Date().toISOString() };
     if (!rooms[STATIC_ROOM].images) rooms[STATIC_ROOM].images = {};
 
     let loaded = 0;
