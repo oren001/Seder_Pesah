@@ -41,6 +41,10 @@ if (TEST_MODE) console.log('[TEST_MODE] ⚠️  Local dev only — auth disabled
 
 const app = express();
 
+// CORS — allow any origin (needed for two-app architecture)
+const cors = require('cors');
+app.use(cors());
+
 // Required by Google Identity Services to allow the popup to communicate with the main window
 app.use((req, res, next) => {
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
