@@ -2884,9 +2884,10 @@ function checkForNewParticipants(participants) {
 function showEntranceNotif(participant) {
     const el = $$('entrance-notif');
     if (!el) return;
-    const photoHtml = participant.photo
+    const isRealPhoto = participant.photo && (participant.photo.startsWith('data:') || participant.photo.startsWith('http'));
+    const photoHtml = isRealPhoto
         ? `<img src="${participant.photo}" class="entrance-notif-avatar" alt="">`
-        : `<span class="entrance-notif-avatar" style="background:#722f37;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;">🙂</span>`;
+        : `<span class="entrance-notif-avatar" style="background:#722f37;display:inline-flex;align-items:center;justify-content:center;font-size:1.2rem;">${participant.photo || '🙂'}</span>`;
     el.innerHTML = `${photoHtml}<span><span class="entrance-notif-name">${participant.name || 'אורח'}</span> הצטרף/ה לסדר 🍷</span>`;
     el.classList.remove('hidden');
     clearTimeout(window._entranceTimer);

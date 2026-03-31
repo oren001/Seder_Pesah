@@ -335,28 +335,28 @@ app.post('/api/admin/generate-all-pages', express.json(), async (req, res) => {
 
     res.json({ started: true, totalPages: pageList.length, roomId });
 
-    // Run chunked parallel generation in background (4 at a time)
+    // Run strictly sequential — one page at a time to avoid OOM and rate limits
     (async () => {
-        console.log(`[Admin] Starting bulk generation for room ${roomId}: ${pageList.length} pages in batches`);
-        const CONCURRENCY_LIMIT = 2;
-        
-        for (let i = 0; i < pageList.length; i += CONCURRENCY_LIMIT) {
-            const batch = pageList.slice(i, i + CONCURRENCY_LIMIT);
-            console.log(`[Admin] Processing batch ${Math.floor(i/CONCURRENCY_LIMIT)+1} (pages ${batch.join(', ')})`);
-            
-            await Promise.all(batch.map(async (pageIndex) => {
-                // Skip pages that already have images (unless force flag set)
-                if (req.body.force !== true && room.images && room.images[pageIndex]) {
-                    console.log(`[Admin] Page ${pageIndex} already has image — skipping`);
-                    return;
-                }
-                console.log(`[Admin] Generating page ${pageIndex}/${totalPages - 1}...`);
+        console.log(`[Admin] Starting bulk generation for room ${roomId}: ${pageList.length} pages sequentially`);
+        for (const pageIndex of pageList) {
+            if (req.body.force !== true && room.images && room.images[pageIndex]) {
+                console.log(`[Admin] Page ${pageIndex} already has image — skipping`);
+                continue;
+            }
+            console.log(`[Admin] Generating page ${pageIndex}/${totalPages - 1}...`);
+            try {
                 await generatePersonalizedPage(roomId, pageIndex, io, rooms, { saveToFirebase: saveImageToFirebase });
-            }));
-            
-            saveImageCache(); // Save once per batch
+            } catch (err) {
+                console.warn(`[Admin] Page ${pageIndex} failed (${err.message}), retrying once...`);
+                await sleep(5000);
+                try {
+                    await generatePersonalizedPage(roomId, pageIndex, io, rooms, { saveToFirebase: saveImageToFirebase });
+                } catch (err2) {
+                    console.error(`[Admin] Page ${pageIndex} retry also failed: ${err2.message}`);
+                }
+            }
+            saveImageCache();
         }
-        
         console.log(`[Admin] Bulk generation complete for room ${roomId}`);
         io.to(roomId).emit('ai-status', { message: '🎉 כל תמונות ההגדה מוכנות!', pageIndex: -1 });
     })();
@@ -520,6 +520,7 @@ const rooms = {};
 function generateId() {
     return Math.random().toString(36).substring(2, 8);
 }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);

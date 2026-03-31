@@ -171,7 +171,7 @@ const FUNNY_STATUSES = [
 ];
 
 async function pollForImage(generationId, onStatus = null) {
-    const MAX_ATTEMPTS = 40;
+    const MAX_ATTEMPTS = 80; // 4 minutes max (80 × 3s)
     for (let i = 0; i < MAX_ATTEMPTS; i++) {
         await sleep(3000);
         if (onStatus) onStatus(FUNNY_STATUSES[i % FUNNY_STATUSES.length]);
