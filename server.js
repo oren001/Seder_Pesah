@@ -338,7 +338,7 @@ app.post('/api/admin/generate-all-pages', express.json(), async (req, res) => {
     // Run chunked parallel generation in background (4 at a time)
     (async () => {
         console.log(`[Admin] Starting bulk generation for room ${roomId}: ${pageList.length} pages in batches`);
-        const CONCURRENCY_LIMIT = 1;
+        const CONCURRENCY_LIMIT = 2;
         
         for (let i = 0; i < pageList.length; i += CONCURRENCY_LIMIT) {
             const batch = pageList.slice(i, i + CONCURRENCY_LIMIT);
@@ -585,14 +585,95 @@ function saveImageCache() {
             if (rooms[roomId].images && Object.keys(rooms[roomId].images).length > 0) {
                 cache[roomId] = {};
                 for (const [k, v] of Object.entries(rooms[roomId].images)) {
-                    // Store only URL (not base64 featured photos) to keep file small
                     cache[roomId][k] = typeof v === 'string' ? v : { url: v.url };
                 }
             }
         }
         fs.writeFileSync(IMAGES_FILE, JSON.stringify(cache, null, 2));
     } catch (e) { console.error('Failed to save images cache:', e); }
+    // Also persist to GitHub so images survive redeploys
+    saveImagesToGitHub().catch(e => console.error('[GitHub] Background save error:', e.message));
 }
+
+// ── GitHub-backed image persistence ─────────────────────────────────────────
+// Image URLs are committed to the repo as data/page_images.json via GitHub API.
+// This survives ALL Render restarts and redeploys — the file lives in git forever.
+//
+// Required env vars on Render:
+//   GITHUB_TOKEN  — fine-grained PAT with "Contents: read+write" on oren001/Seder_Pesah
+//   GITHUB_REPO   — defaults to "oren001/Seder_Pesah"
+const GITHUB_REPO        = process.env.GITHUB_REPO  || 'oren001/Seder_Pesah';
+const GITHUB_FILE_PATH   = 'data/page_images.json';
+const GITHUB_API_BASE    = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`;
+let   _ghFileSha         = null;   // needed for update commits
+let   _ghSaveInProgress  = false;  // debounce concurrent saves
+let   _ghPendingSave     = false;  // queue one save if another is in flight
+
+async function loadImagesFromGitHub() {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) { console.log('[GitHub] No GITHUB_TOKEN — skipping GitHub image load'); return; }
+    try {
+        const res = await fetch(GITHUB_API_BASE, {
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
+        });
+        if (res.status === 404) { console.log('[GitHub] page_images.json not in repo yet'); return; }
+        if (!res.ok) { console.error('[GitHub] Load failed:', res.status); return; }
+        const meta = await res.json();
+        _ghFileSha = meta.sha;
+        const content = JSON.parse(Buffer.from(meta.content, 'base64').toString('utf8'));
+        // Merge into rooms
+        for (const roomId in content) {
+            if (!rooms[roomId]) rooms[roomId] = { id: roomId, participants: [], images: {}, tasks: [], leaderId: null, leaderName: null, leaderPin: '1111', sederStarted: false, createdAt: new Date().toISOString() };
+            if (!rooms[roomId].images) rooms[roomId].images = {};
+            for (const pageIdx in content[roomId]) {
+                rooms[roomId].images[pageIdx] = content[roomId][pageIdx];
+            }
+        }
+        const total = Object.values(content).reduce((s, r) => s + Object.keys(r).length, 0);
+        console.log(`[GitHub] Loaded ${total} image URLs from repo`);
+    } catch (e) { console.error('[GitHub] Load error:', e.message); }
+}
+
+async function saveImagesToGitHub() {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) return;
+    if (_ghSaveInProgress) { _ghPendingSave = true; return; }
+    _ghSaveInProgress = true;
+    try {
+        const cache = {};
+        for (const roomId in rooms) {
+            if (!rooms[roomId].images || !Object.keys(rooms[roomId].images).length) continue;
+            cache[roomId] = {};
+            for (const [k, v] of Object.entries(rooms[roomId].images)) {
+                cache[roomId][k] = typeof v === 'string' ? v : { url: v.url };
+            }
+        }
+        const content = Buffer.from(JSON.stringify(cache, null, 2)).toString('base64');
+        const body = { message: 'chore: update page images cache', content, committer: { name: 'Seder Bot', email: 'bot@seder.app' } };
+        if (_ghFileSha) body.sha = _ghFileSha;
+        const res = await fetch(GITHUB_API_BASE, {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (res.ok) {
+            const d = await res.json();
+            _ghFileSha = d.content?.sha;
+            const total = Object.values(cache).reduce((s, r) => s + Object.keys(r).length, 0);
+            console.log(`[GitHub] Saved ${total} image URLs to repo`);
+        } else {
+            const err = await res.text();
+            console.error('[GitHub] Save failed:', res.status, err.substring(0, 200));
+        }
+    } catch (e) { console.error('[GitHub] Save error:', e.message); }
+    finally {
+        _ghSaveInProgress = false;
+        if (_ghPendingSave) { _ghPendingSave = false; saveImagesToGitHub(); }
+    }
+}
+
+// Load images from GitHub on startup (after rooms are loaded so we can merge)
+loadImagesFromGitHub().catch(() => {});
 
 // --- Selfie persistence ---
 const SELFIES_FILE = path.join(DATA_DIR, 'selfies.json');
