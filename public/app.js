@@ -1461,7 +1461,7 @@ function joinRoom(roomId, rsvpData = null) {
                 showScreen('room');
                 renderPage();
                 // Restore page lock state
-                if (response.pageLocked && !amIAllowedLeader()) {
+                if (response.pageLocked && !amIAllowedLeader() && !window._directHaggadahMode && leaderId) {
                     const prevBtn = $$('btn-prev');
                     const nextBtn = $$('btn-next');
                     if (prevBtn) prevBtn.disabled = true;
