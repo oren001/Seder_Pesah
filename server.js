@@ -335,19 +335,28 @@ app.post('/api/admin/generate-all-pages', express.json(), async (req, res) => {
 
     res.json({ started: true, totalPages: pageList.length, roomId });
 
-    // Run generation sequentially in background
+    // Run chunked parallel generation in background (4 at a time)
     (async () => {
-        console.log(`[Admin] Starting bulk generation for room ${roomId}: ${pageList.length} pages`);
-        for (const pageIndex of pageList) {
-            // Skip pages that already have images (unless force flag set)
-            if (req.body.force !== true && room.images && room.images[pageIndex]) {
-                console.log(`[Admin] Page ${pageIndex} already has image — skipping`);
-                continue;
-            }
-            console.log(`[Admin] Generating page ${pageIndex}/${totalPages - 1}...`);
-            await generatePersonalizedPage(roomId, pageIndex, io, rooms);
-            saveImageCache();
+        console.log(`[Admin] Starting bulk generation for room ${roomId}: ${pageList.length} pages in batches`);
+        const CONCURRENCY_LIMIT = 4;
+        
+        for (let i = 0; i < pageList.length; i += CONCURRENCY_LIMIT) {
+            const batch = pageList.slice(i, i + CONCURRENCY_LIMIT);
+            console.log(`[Admin] Processing batch ${Math.floor(i/CONCURRENCY_LIMIT)+1} (pages ${batch.join(', ')})`);
+            
+            await Promise.all(batch.map(async (pageIndex) => {
+                // Skip pages that already have images (unless force flag set)
+                if (req.body.force !== true && room.images && room.images[pageIndex]) {
+                    console.log(`[Admin] Page ${pageIndex} already has image — skipping`);
+                    return;
+                }
+                console.log(`[Admin] Generating page ${pageIndex}/${totalPages - 1}...`);
+                await generatePersonalizedPage(roomId, pageIndex, io, rooms);
+            }));
+            
+            saveImageCache(); // Save once per batch
         }
+        
         console.log(`[Admin] Bulk generation complete for room ${roomId}`);
         io.to(roomId).emit('ai-status', { message: '🎉 כל תמונות ההגדה מוכנות!', pageIndex: -1 });
     })();
@@ -367,6 +376,30 @@ app.get('/api/admin/export-images', (req, res) => {
         images[k] = typeof v === 'string' ? v : { url: v.url };
     }
     res.json({ roomId, count: Object.keys(images).length, images });
+});
+
+// POST /api/admin/import-images
+// Push a massive object of generated images into the active server instance
+app.post('/api/admin/import-images', express.json({ limit: '10mb' }), (req, res) => {
+    const { roomId, secret, images } = req.body || {};
+    if (secret !== (process.env.ADMIN_SECRET || 'pesach2026')) {
+        return res.status(403).json({ error: 'forbidden' });
+    }
+    const room = rooms[roomId];
+    if (!room) return res.status(404).json({ error: 'room not found' });
+    if (!images || typeof images !== 'object') return res.status(400).json({ error: 'invalid images object' });
+    
+    room.images = room.images || {};
+    let imported = 0;
+    for (const [pageIndex, imgData] of Object.entries(images)) {
+        room.images[pageIndex] = typeof imgData === 'string' ? imgData : imgData.url;
+        imported++;
+        // Inform connected users of the new images
+        io.to(roomId).emit('image-ready', { pageIndex: parseInt(pageIndex), url: room.images[pageIndex] });
+    }
+    saveImageCache();
+    console.log(`[Admin] Imported ${imported} images to room ${roomId}`);
+    res.json({ success: true, imported, roomId });
 });
 
 app.delete('/api/pre-register', express.json(), (req, res) => {
