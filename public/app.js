@@ -778,9 +778,7 @@ function init() {
 }
 
 async function setupSocket() {
-    // Connect to the shared backend (supports cross-origin for the two-app split)
-    const BACKEND_URL = 'https://pesach-invitation-app.onrender.com';
-    socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+    socket = io();
 
     // Show cold-start note after 8 seconds if still loading
     const coldNoteTimer = setTimeout(() => {

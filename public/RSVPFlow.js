@@ -329,6 +329,14 @@ class RSVPFlow {
                     }
                     this.goToStep('selfie');
                     this.startRSVPCamera();
+                } else {
+                    // Existing registered user — skip selfie, join immediately
+                    this.data.name = name;
+                    if (!me || me.isGuest) {
+                        me = { name, isGuest: true };
+                        localStorage.setItem('haggadah-user', JSON.stringify(me));
+                    }
+                    this.complete();
                 }
             });
         });
