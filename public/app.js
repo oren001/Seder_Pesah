@@ -1874,8 +1874,9 @@ function buildCharacterCards(pageIndex) {
     if (relevant.length === 0) return null;
 
     // Match each role to a participant by name substring (case-insensitive)
+    const participantsList = (window._lastRoomData && window._lastRoomData.participants) || [];
     const cards = relevant.map(r => {
-        const p = participants.find(p =>
+        const p = participantsList.find(p =>
             p.name && p.name.toLowerCase().includes(r.match.toLowerCase())
         );
         return { role: r.role, match: r.match, photo: p?.photo || null, name: p?.name || r.match };
