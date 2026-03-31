@@ -346,7 +346,6 @@ app.post('/api/admin/generate-all-pages', express.json(), async (req, res) => {
             }
             console.log(`[Admin] Generating page ${pageIndex}/${totalPages - 1}...`);
             await generatePersonalizedPage(roomId, pageIndex, io, rooms);
-            saveRooms();
             saveImageCache();
         }
         console.log(`[Admin] Bulk generation complete for room ${roomId}`);
@@ -521,8 +520,12 @@ try {
 
 function saveRooms() {
     try {
-        fs.writeFileSync(ROOMS_FILE, JSON.stringify(rooms, null, 2));
-    } catch (e) { console.error('Failed to save rooms:', e); }
+        if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+        // Stringify without formatting to save memory and reduce OOM spikes
+        fs.writeFileSync(ROOMS_FILE, JSON.stringify(rooms));
+    } catch (e) {
+        console.error('Failed to save rooms:', e.message);
+    }
 }
 
 // Load image URL cache and merge into rooms (survives rooms.json resets)
