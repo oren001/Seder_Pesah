@@ -734,14 +734,28 @@ function init() {
         showInvitationScreen();
     } else if (roomFromUrl) {
         pendingRoomId = roomFromUrl;
-        if (me && me.name) {
-            // Returning user — has a name, join directly (server has their photo)
-            console.log('[Init] Returning user, auto-joining...');
-            joinRoom(pendingRoomId);
-        } else {
-            // Brand new user — show invitation screen
-            showInvitationScreen();
+        // Skip everything — join silently and show first haggadah page immediately
+        if (!me || !me.name) {
+            me = { name: 'אורח', isGuest: true };
+            localStorage.setItem('haggadah-user', JSON.stringify(me));
         }
+        currentRoomId = roomFromUrl;
+        currentPage = 0;
+        showScreen('room');
+        renderPage();
+        // Join in background so sync works
+        socket.emit('join-room', { roomId: roomFromUrl, name: me.name, photo: null }, (res) => {
+            if (res && res.success) {
+                currentRoomId = res.roomId;
+                leaderId = res.leaderId;
+                if (res.sederStarted && res.currentPage != null) {
+                    currentPage = res.currentPage;
+                    renderPage();
+                }
+                startHeartbeat(currentRoomId);
+                updateLeadershipUI();
+            }
+        });
     } else {
         showScreen('lobby');
         if (me) {
