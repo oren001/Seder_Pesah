@@ -1491,6 +1491,7 @@ function joinRoom(roomId, rsvpData = null) {
 
 // --- Socket events ---
 function onRoomUpdated({ participants, currentPage: pg }) {
+    console.log('[NAV] onRoomUpdated — pg:', pg, 'currentPage before:', currentPage);
     renderParticipants(participants);
     if (pg != null && pg !== currentPage) {
         currentPage = pg;
