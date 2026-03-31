@@ -4,7 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
-const { generatePersonalizedPage, generateInvitationImage, generateInvitationOptions, INVITATION_STYLES, generateExodusCard } = require('./leonardo');
+const { generatePersonalizedPage, generateInvitationImage, generateInvitationOptions, INVITATION_STYLES, generateExodusCard, HAGGADAH_PROMPTS } = require('./leonardo');
 const { OAuth2Client } = require('google-auth-library');
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '256326772055-e29p61798pa9npj533mb08i05en55956.apps.googleusercontent.com';
@@ -315,6 +315,42 @@ app.post('/api/admin/start-seder', express.json(), (req, res) => {
     saveRooms();
     io.to(roomId).emit('seder-started', { currentPage: room.currentPage });
     res.json({ success: true, roomId, participants: room.participants.length });
+});
+
+// POST /api/admin/generate-all-pages
+// Pre-generates all Haggadah page images with curated participant assignments.
+// Runs sequentially in the background — ~30s per page, ~16 min total for 33 pages.
+app.post('/api/admin/generate-all-pages', express.json(), async (req, res) => {
+    const { roomId, secret, pages } = req.body || {};
+    if (secret !== (process.env.ADMIN_SECRET || 'pesach2026')) {
+        return res.status(403).json({ error: 'forbidden' });
+    }
+    const room = rooms[roomId];
+    if (!room) return res.status(404).json({ error: 'room not found' });
+
+    const totalPages = HAGGADAH_PROMPTS.length; // 33
+    const pageList = Array.isArray(pages)
+        ? pages.filter(p => p >= 0 && p < totalPages)
+        : Array.from({ length: totalPages }, (_, i) => i);
+
+    res.json({ started: true, totalPages: pageList.length, roomId });
+
+    // Run generation sequentially in background
+    (async () => {
+        console.log(`[Admin] Starting bulk generation for room ${roomId}: ${pageList.length} pages`);
+        for (const pageIndex of pageList) {
+            // Skip pages that already have images (unless force flag set)
+            if (req.body.force !== true && room.images && room.images[pageIndex]) {
+                console.log(`[Admin] Page ${pageIndex} already has image — skipping`);
+                continue;
+            }
+            console.log(`[Admin] Generating page ${pageIndex}/${totalPages - 1}...`);
+            await generatePersonalizedPage(roomId, pageIndex, io, rooms);
+            saveRooms();
+        }
+        console.log(`[Admin] Bulk generation complete for room ${roomId}`);
+        io.to(roomId).emit('ai-status', { message: '🎉 כל תמונות ההגדה מוכנות!', pageIndex: -1 });
+    })();
 });
 
 app.delete('/api/pre-register', express.json(), (req, res) => {

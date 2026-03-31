@@ -46,6 +46,56 @@ const HAGGADAH_PROMPTS = [
 ];
 
 
+// ── Curated participant assignments for each Haggadah page ───────────────────
+// Each entry maps a page index to:
+//   participants: name substrings to match against room participants (up to 3)
+//   promptPrefix: optional extra instruction prepended to the page prompt
+const PAGE_ASSIGNMENTS = {
+    0:  { participants: ['יעלי', 'דני', 'מורן'] },
+    1:  { participants: ['אפרת', 'מיכל', 'נטע'] },
+    2:  { participants: ['Ailey', 'יעל-ד', 'אלעד'] },
+    3:  { participants: ['איתי', 'ערן', 'אוהד'] },
+    4:  { participants: ['מורן', 'אוהד', 'יעל-ק'],
+          promptPrefix: 'One person in the reference images plays Pharaoh — imperious, gold-adorned crown, commanding presence on a throne. Another plays a newly-freed slave, eyes wide with wonder and amazed freedom. The third is a delighted neighbor arriving at the open door.' },
+    5:  { participants: ['דני', 'איתי', 'אלעד'],
+          promptPrefix: 'The three people from the reference images play the Four Sons: one with arms crossed and clear "this is completely pointless" energy (the Wicked Son, הרשע), one reading the Haggadah with excited margin notes and genuine enthusiasm (the Wise Son, החכם), one looking genuinely sweet and pleasantly confused (the Simple Son, התם). They are seated at the seder table debating.' },
+    6:  { participants: ['יעל-ק', 'מאיה', 'Ailey'] },
+    7:  { participants: ['אורן', 'דרור', 'אפרת'],
+          promptPrefix: 'One person from the reference images plays Moses (משה רבנו) — long staff, weathered ancient robes, calm authoritative presence. Another plays Aaron (אהרון הכהן) beside him. They are among the five rabbis in animated all-night discussion.' },
+    8:  { participants: ['Ailey', 'ערן', 'נטע'] },
+    9:  { participants: ['יעלי', 'אורן', 'מיכל'] },
+    10: { participants: ['דני', 'מורן', 'אוהד'],
+          promptPrefix: 'One person plays a Pharaoh (מורן as פרעה) reacting with increasing alarm to each plague. The others are his bewildered courtiers. Show them dealing comically with frogs, darkness, and hail while trying to maintain dignity.' },
+    11: { participants: ['מאיה', 'יעל-ד', 'Ailey'],
+          promptPrefix: 'One person (מאיה) plays the triumphant moment at the Red Sea crossing — arms raised in joy, free at last. All three are on their feet mid-Dayenu song.' },
+    12: { participants: ['אפרת', 'נטע', 'איתי'] },
+    13: { participants: ['דרור', 'אלעד', 'ערן'],
+          promptPrefix: 'One person (דרור) plays Aaron the High Priest (אהרון הכהן) — priestly garments, officiating the ritual handwashing with ceremonial dignity.' },
+    14: { participants: ['יעלי', 'מיכל', 'יעל-ק'] },
+    15: { participants: ['אורן', 'דני', 'מורן'] },
+    16: { participants: ['יעלי', 'אורן', 'אפרת'] },
+    17: { participants: ['נטע', 'Ailey', 'אלעד'] },
+    18: { participants: ['מיכל', 'יעל-ד', 'דרור'] },
+    19: { participants: ['איתי', 'ערן', 'אוהד'] },
+    20: { participants: ['יעלי', 'מורן', 'מאיה'] },
+    21: { participants: ['מיכל', 'אורן', 'יעלי'],
+          promptPrefix: 'One person (מיכל) plays the role of Elijah the Prophet (אליהו הנביא) — appearing mysteriously as the door cracks open, the gleaming wine cup before her. The others stare at the cup with complete conviction that the wine level just moved.' },
+    22: { participants: ['אפרת', 'דני', 'יעל-ק'] },
+    23: { participants: ['מאיה', 'נטע', 'Ailey'] },
+    24: { participants: ['יעל-ד', 'מיכל', 'אלעד'],
+          promptPrefix: 'One person (יעל-ד) plays the free woman (בת חורין) — joyful, liberated, singing with total abandon in three different keys at once.' },
+    25: { participants: ['ערן', 'דרור', 'אוהד'] },
+    26: { participants: ['אפרת', 'יעלי', 'מורן'],
+          promptPrefix: 'One person (אפרת) plays Miriam the Prophetess (מרים הנביאה) — tambourine in hand, leading the women in joyful song and dance at the Jerusalem window, robes flowing.' },
+    27: { participants: ['נטע', 'דני', 'Ailey'],
+          promptPrefix: 'One person (נטע) is in the field of redemption (בשדה הגאולה) — playful, noticing the small goat on the edge of the table before anyone else does, trying not to laugh.' },
+    28: { participants: ['איתי', 'אלעד', 'ערן'] },
+    29: { participants: ['אורן', 'מאיה', 'יעל-ק'] },
+    30: { participants: ['אוהד', 'דרור', 'יעל-ד'] },
+    31: { participants: ['יעלי', 'מיכל', 'נטע'] },
+    32: { participants: ['אורן', 'אפרת', 'דני'] },
+};
+
 async function generateImage(prompt, initImageIds = null, onStatus = null) {
     if (!LEONARDO_API_KEY) throw new Error('LEONARDO_API_KEY environment variable is not set');
     const body = {
@@ -234,11 +284,31 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms, options = 
                 if (id) initImageIds.push(id);
             }
         } else {
-            // Default: prioritize active readers
-            const readers = rooms[roomId].participants.filter(p => p.isReading && p.online && isRealPhoto(p.photo));
+            // Use PAGE_ASSIGNMENTS if available for this page, else fall back to active readers / random
+            const assignment = PAGE_ASSIGNMENTS[pageIndex];
             const allWithPhotos = rooms[roomId].participants.filter(p => isRealPhoto(p.photo));
-            const pool = readers.length > 0 ? readers : allWithPhotos;
-            selected = pickRandom(pool, 3); // API limit: max 3 reference images
+
+            if (assignment && assignment.participants && allWithPhotos.length > 0) {
+                // Pick participants by name pattern match, in assignment order
+                for (const pattern of assignment.participants) {
+                    const match = allWithPhotos.find(p =>
+                        p.name && p.name.toLowerCase().includes(pattern.toLowerCase()) &&
+                        !selected.includes(p)
+                    );
+                    if (match) selected.push(match);
+                    if (selected.length >= 3) break;
+                }
+                // If we didn't find enough assigned participants, fill from available pool
+                if (selected.length < 2) {
+                    const remaining = allWithPhotos.filter(p => !selected.includes(p));
+                    selected.push(...pickRandom(remaining, 3 - selected.length));
+                }
+            } else {
+                // Default: prioritize active readers
+                const readers = rooms[roomId].participants.filter(p => p.isReading && p.online && isRealPhoto(p.photo));
+                const pool = readers.length > 0 ? readers : allWithPhotos;
+                selected = pickRandom(pool, 3);
+            }
 
             if (selected.length === 0) {
                 io.to(roomId).emit('ai-status', { message: 'אין משתתפים עם תמונה — מייצר סצנה כללית... 📜', pageIndex });
@@ -260,7 +330,10 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms, options = 
         } else {
             const section = HAGGADAH_PROMPTS[pageIndex];
             if (!section) throw new Error('Invalid page index');
-            finalPrompt = section.prompt;
+            const assignment = PAGE_ASSIGNMENTS[pageIndex];
+            finalPrompt = assignment && assignment.promptPrefix
+                ? assignment.promptPrefix + '. ' + section.prompt
+                : section.prompt;
         }
         if (initImageIds.length > 0) {
             finalPrompt += `. Include the people from the reference images realistically in the scene — they look like themselves but in period-appropriate clothing, with genuine amused expressions, as if they accidentally ended up at the Exodus. One subtle modern detail on each of them (a watch, earrings, reading glasses)`;
@@ -448,5 +521,6 @@ async function generateExodusCard(photoBase64, name) {
     return await generateImage(prompt, [initId]);
 }
 
-module.exports = { HAGGADAH_PROMPTS, INVITATION_STYLES, generateImage, generatePersonalizedPage,
-    generateInvitationImage, generateInvitationOptions, uploadInitImage, generateExodusCard };
+module.exports = { HAGGADAH_PROMPTS, PAGE_ASSIGNMENTS, INVITATION_STYLES, generateImage,
+    generatePersonalizedPage, generateInvitationImage, generateInvitationOptions,
+    uploadInitImage, generateExodusCard };

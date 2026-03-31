@@ -1850,22 +1850,22 @@ function buildImageZone(imageData, index) {
 // ── Character role cards ─────────────────────────────────────────────────────
 // Each entry: match (substring of participant name), role label, pages[] (0-based)
 const CHARACTER_ROLES = [
-    { match: 'מורן',   role: 'פרעה 👑',              pages: [4]      },
-    { match: 'דני',    role: 'הרשע 😈',               pages: [5]      },
-    { match: 'איתי',   role: 'הבן החכם 🤓',           pages: [5]      },
-    { match: 'אלעד',   role: 'הבן התם 🙂',            pages: [5]      },
-    { match: 'ערן',    role: 'שאינו יודע לשאול 🤷',   pages: [5]      },
-    { match: 'אורן',   role: 'משה רבנו 🧙',            pages: [7]      },
-    { match: 'מיכל',  role: 'אליהו הנביא 🍷',         pages: [21]     },
-    { match: 'אפרת',  role: 'מרים הנביאה 🪘',         pages: [26]     },
-    { match: 'יעלי',  role: 'המספרת ✨',              pages: [0]      },
-    { match: 'דרור',  role: 'אהרון הכהן ✡️',           pages: [13]     },
-    { match: 'יעל-ק', role: 'בת פרעה 👸',             pages: [6]      },
-    { match: 'יעל-ד', role: 'בת חורין 🌸',            pages: [24]     },
-    { match: 'אוהד',  role: 'עבד שנגאל ⛓️',           pages: [4]      },
-    { match: 'Ailey', role: 'גרת צדק 🌍',             pages: [8]      },
-    { match: 'מאיה',  role: 'קריעת ים סוף 🌊',        pages: [11]     },
-    { match: 'נטע',   role: 'בשדה הגאולה 🌿',         pages: [27]     },
+    { match: 'יעלי',  role: 'המספרת ✨',              pages: [0, 9, 14, 16, 20, 21, 26, 31] },
+    { match: 'מורן',  role: 'פרעה 👑',                pages: [4, 10, 15, 20, 26]            },
+    { match: 'אוהד',  role: 'עבד שנגאל ⛓️',           pages: [4, 3, 10, 19, 25, 30]         },
+    { match: 'דני',   role: 'הרשע 😈',                pages: [5, 0, 15, 22, 27, 32]         },
+    { match: 'איתי',  role: 'הבן החכם 🤓',            pages: [5, 3, 12, 19, 28]             },
+    { match: 'אלעד',  role: 'הבן התם 🙂',             pages: [5, 2, 13, 17, 24, 28]         },
+    { match: 'ערן',   role: 'שאינו יודע לשאול 🤷',    pages: [5, 3, 8, 13, 19, 25, 28]      },
+    { match: 'יעל-ק', role: 'בת פרעה 👸',             pages: [6, 4, 14, 22, 29]             },
+    { match: 'אורן',  role: 'משה רבנו 🧙',             pages: [7, 9, 15, 16, 21, 29, 32]    },
+    { match: 'Ailey', role: 'גרת צדק 🌍',             pages: [8, 2, 6, 11, 17, 23]          },
+    { match: 'מאיה',  role: 'קריעת ים סוף 🌊',        pages: [11, 6, 20, 23, 29]            },
+    { match: 'דרור',  role: 'אהרון הכהן ✡️',           pages: [13, 7, 18, 25, 30]            },
+    { match: 'מיכל',  role: 'אליהו הנביא 🍷',          pages: [21, 1, 9, 14, 18, 24, 31]    },
+    { match: 'אפרת',  role: 'מרים הנביאה 🪘',          pages: [26, 1, 7, 12, 16, 22, 32]    },
+    { match: 'יעל-ד', role: 'בת חורין 🌸',             pages: [24, 2, 11, 18, 25, 30]       },
+    { match: 'נטע',   role: 'בשדה הגאולה 🌿',          pages: [27, 1, 8, 12, 17, 23, 31]    },
 ];
 
 function buildCharacterCards(pageIndex) {
