@@ -347,10 +347,27 @@ app.post('/api/admin/generate-all-pages', express.json(), async (req, res) => {
             console.log(`[Admin] Generating page ${pageIndex}/${totalPages - 1}...`);
             await generatePersonalizedPage(roomId, pageIndex, io, rooms);
             saveRooms();
+            saveImageCache();
         }
         console.log(`[Admin] Bulk generation complete for room ${roomId}`);
         io.to(roomId).emit('ai-status', { message: '🎉 כל תמונות ההגדה מוכנות!', pageIndex: -1 });
     })();
+});
+
+// GET /api/admin/export-images?roomId=...&secret=...
+// Returns all generated image URLs as JSON — save this output to commit to git
+app.get('/api/admin/export-images', (req, res) => {
+    const { roomId, secret } = req.query;
+    if (secret !== (process.env.ADMIN_SECRET || 'pesach2026')) {
+        return res.status(403).json({ error: 'forbidden' });
+    }
+    const room = rooms[roomId];
+    if (!room) return res.status(404).json({ error: 'room not found' });
+    const images = {};
+    for (const [k, v] of Object.entries(room.images || {})) {
+        images[k] = typeof v === 'string' ? v : { url: v.url };
+    }
+    res.json({ roomId, count: Object.keys(images).length, images });
 });
 
 app.delete('/api/pre-register', express.json(), (req, res) => {
@@ -474,8 +491,9 @@ function generateId() {
 
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
-const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
-const ROOMS_FILE = path.join(DATA_DIR, 'rooms.json');
+const TASKS_FILE  = path.join(DATA_DIR, 'tasks.json');
+const ROOMS_FILE  = path.join(DATA_DIR, 'rooms.json');
+const IMAGES_FILE = path.join(DATA_DIR, 'images_cache.json'); // Separate image URL cache
 
 // Load persisted tasks
 let persistedTasks = {};
@@ -505,6 +523,39 @@ function saveRooms() {
     try {
         fs.writeFileSync(ROOMS_FILE, JSON.stringify(rooms, null, 2));
     } catch (e) { console.error('Failed to save rooms:', e); }
+}
+
+// Load image URL cache and merge into rooms (survives rooms.json resets)
+try {
+    if (fs.existsSync(IMAGES_FILE)) {
+        const cache = JSON.parse(fs.readFileSync(IMAGES_FILE, 'utf8'));
+        for (const roomId in cache) {
+            if (!rooms[roomId]) continue;
+            if (!rooms[roomId].images) rooms[roomId].images = {};
+            for (const pageIndex in cache[roomId]) {
+                if (!rooms[roomId].images[pageIndex]) {
+                    rooms[roomId].images[pageIndex] = cache[roomId][pageIndex];
+                }
+            }
+        }
+        console.log('[Persistence] Restored image cache from images_cache.json');
+    }
+} catch (e) { console.error('Failed to load images cache:', e); }
+
+function saveImageCache() {
+    try {
+        const cache = {};
+        for (const roomId in rooms) {
+            if (rooms[roomId].images && Object.keys(rooms[roomId].images).length > 0) {
+                cache[roomId] = {};
+                for (const [k, v] of Object.entries(rooms[roomId].images)) {
+                    // Store only URL (not base64 featured photos) to keep file small
+                    cache[roomId][k] = typeof v === 'string' ? v : { url: v.url };
+                }
+            }
+        }
+        fs.writeFileSync(IMAGES_FILE, JSON.stringify(cache, null, 2));
+    } catch (e) { console.error('Failed to save images cache:', e); }
 }
 
 // --- Selfie persistence ---
@@ -938,9 +989,11 @@ io.on('connection', (socket) => {
             socket.emit('ai-error', { message: 'רק עורך הסדר יכול להתחיל יצירת תמונה!', pageIndex });
             return;
         }
-        generatePersonalizedPage(roomId, pageIndex, io, rooms).catch(err => {
-            io.to(roomId).emit('ai-error', { message: 'שגיאת מערכת: ' + err.message, pageIndex });
-        });
+        generatePersonalizedPage(roomId, pageIndex, io, rooms)
+            .then(() => saveImageCache())
+            .catch(err => {
+                io.to(roomId).emit('ai-error', { message: 'שגיאת מערכת: ' + err.message, pageIndex });
+            });
     });
 
     socket.on('start-seder', ({ roomId }) => {

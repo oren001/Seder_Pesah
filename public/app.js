@@ -1824,6 +1824,18 @@ function buildImageZone(imageData, index) {
         hint.innerHTML = '🔍 לחץ להגדלה';
         imgZone.appendChild(hint);
         imgZone.appendChild(img);
+        // Host-only regenerate button
+        if (amIAllowedLeader()) {
+            const regenBtn = document.createElement('button');
+            regenBtn.className = 'btn-regen-image';
+            regenBtn.title = 'צור תמונה חדשה';
+            regenBtn.innerHTML = '🔄';
+            regenBtn.onclick = (e) => {
+                e.stopPropagation();
+                triggerPageGeneration(index);
+            };
+            imgZone.appendChild(regenBtn);
+        }
         if (imageData.featuredPhotos && imageData.featuredPhotos.length > 0) {
             const bubblesContainer = document.createElement('div');
             bubblesContainer.className = 'featured-bubbles';
