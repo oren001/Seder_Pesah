@@ -58,19 +58,19 @@ const PAGE_ASSIGNMENTS = {
     4:  { participants: ['מורן', 'אוהד', 'יעל-ק'],
           promptPrefix: 'One person in the reference images plays Pharaoh — imperious, gold-adorned crown, commanding presence on a throne. Another plays a newly-freed slave, eyes wide with wonder and amazed freedom. The third is a delighted neighbor arriving at the open door.' },
     5:  { participants: ['דני', 'איתי', 'אלעד'],
-          promptPrefix: 'The three people from the reference images play the Four Sons: one with arms crossed and clear "this is completely pointless" energy (the Wicked Son, הרשע), one reading the Haggadah with excited margin notes and genuine enthusiasm (the Wise Son, החכם), one looking genuinely sweet and pleasantly confused (the Simple Son, התם). They are seated at the seder table debating.' },
+          promptPrefix: 'The three people from the reference images play the Four Sons: one with arms crossed and clear "this is completely pointless" energy (the Wicked Son), one reading the Haggadah with excited margin notes and genuine enthusiasm (the Wise Son), one looking genuinely sweet and pleasantly confused (the Simple Son). They are seated at the seder table debating.' },
     6:  { participants: ['יעל-ק', 'מאיה', 'Ailey'] },
     7:  { participants: ['אורן', 'דרור', 'אפרת'],
-          promptPrefix: 'One person from the reference images plays Moses (משה רבנו) — long staff, weathered ancient robes, calm authoritative presence. Another plays Aaron (אהרון הכהן) beside him. They are among the five rabbis in animated all-night discussion.' },
+          promptPrefix: 'One person from the reference images plays Moses — long staff, weathered ancient robes, calm authoritative presence. Another plays Aaron beside him. They are among the five rabbis in animated all-night discussion.' },
     8:  { participants: ['Ailey', 'ערן', 'נטע'] },
     9:  { participants: ['יעלי', 'אורן', 'מיכל'] },
     10: { participants: ['דני', 'מורן', 'אוהד'],
-          promptPrefix: 'One person plays a Pharaoh (מורן as פרעה) reacting with increasing alarm to each plague. The others are his bewildered courtiers. Show them dealing comically with frogs, darkness, and hail while trying to maintain dignity.' },
+          promptPrefix: 'One person plays a Pharaoh reacting with increasing alarm to each plague. The others are his bewildered courtiers. Show them dealing comically with frogs, darkness, and hail while trying to maintain dignity.' },
     11: { participants: ['מאיה', 'יעל-ד', 'Ailey'],
-          promptPrefix: 'One person (מאיה) plays the triumphant moment at the Red Sea crossing — arms raised in joy, free at last. All three are on their feet mid-Dayenu song.' },
+          promptPrefix: 'One person plays the triumphant moment at the Red Sea crossing — arms raised in joy, free at last. All three are on their feet mid-Dayenu song.' },
     12: { participants: ['אפרת', 'נטע', 'איתי'] },
     13: { participants: ['דרור', 'אלעד', 'ערן'],
-          promptPrefix: 'One person (דרור) plays Aaron the High Priest (אהרון הכהן) — priestly garments, officiating the ritual handwashing with ceremonial dignity.' },
+          promptPrefix: 'One person plays Aaron the High Priest — priestly garments, officiating the ritual handwashing with ceremonial dignity.' },
     14: { participants: ['יעלי', 'מיכל', 'יעל-ק'] },
     15: { participants: ['אורן', 'דני', 'מורן'] },
     16: { participants: ['יעלי', 'אורן', 'אפרת'] },
@@ -79,16 +79,16 @@ const PAGE_ASSIGNMENTS = {
     19: { participants: ['איתי', 'ערן', 'אוהד'] },
     20: { participants: ['יעלי', 'מורן', 'מאיה'] },
     21: { participants: ['מיכל', 'אורן', 'יעלי'],
-          promptPrefix: 'One person (מיכל) plays the role of Elijah the Prophet (אליהו הנביא) — appearing mysteriously as the door cracks open, the gleaming wine cup before her. The others stare at the cup with complete conviction that the wine level just moved.' },
+          promptPrefix: 'One person plays the role of Elijah the Prophet — appearing mysteriously as the door cracks open, the gleaming wine cup before her. The others stare at the cup with complete conviction that the wine level just moved.' },
     22: { participants: ['אפרת', 'דני', 'יעל-ק'] },
     23: { participants: ['מאיה', 'נטע', 'Ailey'] },
     24: { participants: ['יעל-ד', 'מיכל', 'אלעד'],
-          promptPrefix: 'One person (יעל-ד) plays the free woman (בת חורין) — joyful, liberated, singing with total abandon in three different keys at once.' },
+          promptPrefix: 'One person plays the free woman — joyful, liberated, singing with total abandon in three different keys at once.' },
     25: { participants: ['ערן', 'דרור', 'אוהד'] },
     26: { participants: ['אפרת', 'יעלי', 'מורן'],
-          promptPrefix: 'One person (אפרת) plays Miriam the Prophetess (מרים הנביאה) — tambourine in hand, leading the women in joyful song and dance at the Jerusalem window, robes flowing.' },
+          promptPrefix: 'One person plays Miriam the Prophetess — tambourine in hand, leading the women in joyful song and dance at the Jerusalem window, robes flowing.' },
     27: { participants: ['נטע', 'דני', 'Ailey'],
-          promptPrefix: 'One person (נטע) is in the field of redemption (בשדה הגאולה) — playful, noticing the small goat on the edge of the table before anyone else does, trying not to laugh.' },
+          promptPrefix: 'One person is in the field of redemption — playful, noticing the small goat on the edge of the table before anyone else does, trying not to laugh.' },
     28: { participants: ['איתי', 'אלעד', 'ערן'] },
     29: { participants: ['אורן', 'מאיה', 'יעל-ק'] },
     30: { participants: ['אוהד', 'דרור', 'יעל-ד'] },
@@ -145,7 +145,7 @@ async function generateImage(prompt, initImageIds = null, onStatus = null) {
 
     if (!generationId) {
         console.error('[Leonardo Error] Unexpected Response Structure:', JSON.stringify(data));
-        throw new Error('No generationId returned from Leonardo');
+        throw new Error('No generationId returned from Leonardo: ' + JSON.stringify(data));
     }
 
     if (onStatus) onStatus('הייצור החל, ממתין לתמונה...');
