@@ -356,7 +356,8 @@ async function generatePersonalizedPage(roomId, pageIndex, io, rooms, options = 
             rooms[roomId].images[pageIndex] = { url: imageUrl, featuredPhotos };
             io.to(roomId).emit('image-ready', { pageIndex, imageUrl, featuredPhotos });
             console.log(`[AI] Page ${pageIndex} ready for room ${roomId} (featuring ${featuredPhotos.length} participants)`);
-            // Status overlay will be cleared by app.js on image-ready
+            // Persist to Firebase immediately — survives all restarts/redeploys
+            if (options.saveToFirebase) options.saveToFirebase(roomId, pageIndex, { url: imageUrl });
         } else {
             throw new Error('לא התקבלה תמונה מ-Leonardo');
         }
