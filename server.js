@@ -338,7 +338,7 @@ app.post('/api/admin/generate-all-pages', express.json(), async (req, res) => {
     // Run chunked parallel generation in background (4 at a time)
     (async () => {
         console.log(`[Admin] Starting bulk generation for room ${roomId}: ${pageList.length} pages in batches`);
-        const CONCURRENCY_LIMIT = 4;
+        const CONCURRENCY_LIMIT = 1;
         
         for (let i = 0; i < pageList.length; i += CONCURRENCY_LIMIT) {
             const batch = pageList.slice(i, i + CONCURRENCY_LIMIT);
