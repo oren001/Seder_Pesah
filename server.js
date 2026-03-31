@@ -395,7 +395,9 @@ app.post('/api/admin/import-images', express.json({ limit: '10mb' }), (req, res)
         room.images[pageIndex] = typeof imgData === 'string' ? imgData : imgData.url;
         imported++;
         // Inform connected users of the new images
-        io.to(roomId).emit('image-ready', { pageIndex: parseInt(pageIndex), url: room.images[pageIndex] });
+        const imgData = room.images[pageIndex];
+        const imageUrl = typeof imgData === 'string' ? imgData : imgData.url;
+        io.to(roomId).emit('image-ready', { pageIndex: parseInt(pageIndex), imageUrl, featuredPhotos: [] });
     }
     saveImageCache();
     console.log(`[Admin] Imported ${imported} images to room ${roomId}`);
@@ -649,6 +651,29 @@ async function saveImageToFirebase(roomId, pageIndex, imageData) {
 
 // Load images from Firebase on startup (merges into rooms after rooms.json is loaded)
 loadImagesFromFirebase().catch(() => {});
+
+// ── Static image fallback ────────────────────────────────────────────────────
+// Load pre-generated images from public/images/haggadah/page-{N}.jpg into rooms.
+// These are committed to git and survive all Render restarts/redeploys.
+// Only fills in pages that don't already have an image (Firebase takes priority).
+(function loadStaticHaggadahImages() {
+    const staticDir = path.join(__dirname, 'public', 'images', 'haggadah');
+    if (!fs.existsSync(staticDir)) return;
+    const STATIC_ROOM = '5drrkj';
+    if (!rooms[STATIC_ROOM]) return;
+    if (!rooms[STATIC_ROOM].images) rooms[STATIC_ROOM].images = {};
+
+    let loaded = 0;
+    for (let i = 0; i <= 32; i++) {
+        const filePath = path.join(staticDir, `page-${i}.jpg`);
+        if (fs.existsSync(filePath) && !rooms[STATIC_ROOM].images[i]) {
+            rooms[STATIC_ROOM].images[i] = { url: `/images/haggadah/page-${i}.jpg`, featuredPhotos: [] };
+            loaded++;
+        }
+    }
+    // Also handle mi-yodea slots stored with string keys like "mi-yodea-1"
+    if (loaded > 0) console.log(`[Static] Loaded ${loaded} static haggadah images for room ${STATIC_ROOM}`);
+})();
 
 // --- Selfie persistence ---
 const SELFIES_FILE = path.join(DATA_DIR, 'selfies.json');
