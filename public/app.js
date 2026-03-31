@@ -734,6 +734,7 @@ function init() {
         showInvitationScreen();
     } else if (roomFromUrl) {
         pendingRoomId = roomFromUrl;
+        window._directHaggadahMode = true;
         // Skip everything — join silently and show first haggadah page immediately
         if (!me || !me.name) {
             me = { name: 'אורח', isGuest: true };
@@ -1368,7 +1369,7 @@ function joinRoomAndShowFinish(roomId, rsvpData) {
         } else if (response.sederStarted) {
             showScreen('room');
             renderPage();
-        } else {
+        } else if (!window._directHaggadahMode) {
             showScreen('roomLobby');
             renderLobbyParticipants(response.participants || [response.participant]);
             updateLobbyUI(false);
@@ -1464,7 +1465,7 @@ function joinRoom(roomId, rsvpData = null) {
                     if (prevBtn) prevBtn.disabled = true;
                     if (nextBtn) nextBtn.disabled = true;
                 }
-            } else {
+            } else if (!window._directHaggadahMode) {
                 showScreen('roomLobby');
                 renderLobbyParticipants(response.participants || [response.participant]);
                 updateLobbyUI(false);
