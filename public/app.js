@@ -121,7 +121,9 @@ const GIGGLE_RE = new RegExp(
 );
 
 function wrapGiggleWords(html) {
-    return html.replace(GIGGLE_RE, '<span class="giggle-word" onclick="playGiggle(event)">$&</span>');
+    // Convert \n\n (verse breaks, e.g. Dayenu) to visible line breaks before other processing
+    const withBreaks = html.replace(/\n\n+/g, '<br/><br/>').replace(/\n/g, '<br/>');
+    return withBreaks.replace(GIGGLE_RE, '<span class="giggle-word" onclick="playGiggle(event)">$&</span>');
 }
 
 const _giggleMessages = [
