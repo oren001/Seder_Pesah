@@ -664,16 +664,16 @@ loadImagesFromFirebase().catch(() => {});
         1: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12cd53-a81b-6030-9863-8ce73fa185a4/gemini-image-2_Ritual_handwashing_from_an_ancient_stone_pitcher_in_golden_light_one_person_has_-0.jpg',
         2: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12cd7a-671c-6260-9879-f7fc5dc86236/gemini-image-2_A_single_sprig_of_fresh_parsley_being_solemnly_dipped_into_a_small_bowl_of_salt_-0.jpg',
         3: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d019-7bab-6950-ae1c-b7dc07db3d3a/gemini-image-2_A_matzah_being_broken_precisely_in_half_the_whole_family_leaning_in_watching_as_-0.jpg',
-        4: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12cd84-ac83-6970-a280-7bc9cc7c7d1b/gemini-image-2_One_person_in_the_reference_images_plays_Pharaoh_—_imperious_gold-adorned_crow-0.jpg',
+        4: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12cd84-ac83-6970-a280-7bc9cc7c7d1b/gemini-image-2_One_person_in_the_reference_images_plays_Pharaoh_-_imperious_gold-adorned_crow-0.jpg',
         5: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d052-1cbb-6240-9330-53e365b7a5fc/gemini-image-2_The_three_people_from_the_reference_images_play_the_Four_Sons_one_with_arms_cros-0.jpg',
         6: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d055-3170-6520-b456-0064c217f88e/gemini-image-2_Ancient_Hebrews_walking_away_from_Egyptian_pyramids_at_dawn_exhausted_but_free_s-0.jpg',
-        7: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d058-787b-63e0-b340-c7661cc16932/gemini-image-2_One_person_from_the_reference_images_plays_Moses_—_long_staff_weathered_ancien-0.jpg',
+        7: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d058-787b-63e0-b340-c7661cc16932/gemini-image-2_One_person_from_the_reference_images_plays_Moses_-_long_staff_weathered_ancien-0.jpg',
         8: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d059-b109-6e40-8f02-4b87067c119a/gemini-image-2_Four_distinctly_different_people_at_one_seder_table_one_reading_the_Haggadah_wit-0.jpg',
         9: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d05b-45ba-6f70-9875-ce090de69860/gemini-image-2_A_sweeping_multigenerational_family_portrait_same_pose_same_expression_across_fo-0.jpg',
         10: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d05d-1b5b-6930-85a0-e5618c08c1f6/gemini-image-2_One_person_plays_a_Pharaoh_reacting_with_increasing_alarm_to_each_plague._The_ot-0.jpg',
-        11: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d05f-0601-60b0-be08-52dd9555ebd5/gemini-image-2_One_person_plays_the_triumphant_moment_at_the_Red_Sea_crossing_—_arms_raised_i-0.jpg',
+        11: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d05f-0601-60b0-be08-52dd9555ebd5/gemini-image-2_One_person_plays_the_triumphant_moment_at_the_Red_Sea_crossing_-_arms_raised_i-0.jpg',
         12: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d061-0b75-64e0-95de-7644e37c279a/gemini-image-2_An_elegantly_lit_seder_plate_photographed_as_if_it_were_a_Michelin-star_restaura-0.jpg',
-        13: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d062-be30-6cf0-83f9-90f2a2baddb3/gemini-image-2_One_person_plays_Aaron_the_High_Priest_—_priestly_garments_officiating_the_rit-0.jpg',
+        13: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d062-be30-6cf0-83f9-90f2a2baddb3/gemini-image-2_One_person_plays_Aaron_the_High_Priest_-_priestly_garments_officiating_the_rit-0.jpg',
         14: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d063-f69a-6d60-aaa6-d1ac1c75006a/gemini-image-2_Spontaneous_Passover_singing_around_the_seder_table_people_of_all_ages_genuinely-0.jpg',
         15: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d066-3237-6d80-b7c8-c72367ec2c55/gemini-image-2_Elegant_ritual_handwashing_with_an_ornate_ancient_silver_pitcher_beautiful_cerem-0.jpg',
         16: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d068-9568-6b00-a5db-a27be9b76db8/gemini-image-2_Two_hands_blessing_two_pieces_of_matzah_aloft_in_golden_candlelight_crumbs_alrea-0.jpg',
@@ -681,12 +681,12 @@ loadImagesFromFirebase().catch(() => {});
         18: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d06b-7e13-6740-8a06-47fd1b8241cf/gemini-image-2_An_enormous_Hillel_sandwich_being_assembled_with_engineering_precision_matzah_ma-0.jpg',
         19: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d06c-f2b4-6850-8901-50874c689599/gemini-image-2_The_Passover_feast_at_full_chaos_epic_long_table_with_every_dish_competing_for_s-0.jpg',
         20: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d06e-819e-61a0-9cde-27544d9cb4a7/gemini-image-2_Kids_in_full_heist_mode_searching_every_cushion_and_chair_for_the_hidden_afikoma-0.jpg',
-        21: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d073-d568-6f60-b6c7-63f81a716485/gemini-image-2_One_person_plays_the_role_of_Elijah_the_Prophet_—_appearing_mysteriously_as_th-0.jpg',
+        21: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d073-d568-6f60-b6c7-63f81a716485/gemini-image-2_One_person_plays_the_role_of_Elijah_the_Prophet_-_appearing_mysteriously_as_th-0.jpg',
         22: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d075-4966-6740-9f59-3077bd4176ff/gemini-image-2_Grand_finale_of_the_seder_everyone_singing_together_chairs_pushed_back_someone_s-0.jpg',
         23: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d07a-fbce-6810-a7a3-1b3385511720/gemini-image-2_Intense_passionate_Passover_singing_some_people_eyes_closed_really_feeling_every-0.jpg',
-        24: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d07c-3255-6220-b4cd-a7e5266a7b09/gemini-image-2_One_person_plays_the_free_woman_—_joyful_liberated_singing_with_total_abandon_-0.jpg',
+        24: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d07c-3255-6220-b4cd-a7e5266a7b09/gemini-image-2_One_person_plays_the_free_woman_-_joyful_liberated_singing_with_total_abandon_-0.jpg',
         25: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d07d-e566-6160-ae39-b775d763d04a/gemini-image-2_Spontaneous_dancing_in_the_living_room_after_the_seder_ends_ancient_song_on_clearly_m-0.jpg',
-        26: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d080-34ca-6920-abf4-501984744ec1/gemini-image-2_One_person_plays_Miriam_the_Prophetess_—_tambourine_in_hand_leading_the_women_-0.jpg',
+        26: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d080-34ca-6920-abf4-501984744ec1/gemini-image-2_One_person_plays_Miriam_the_Prophetess_-_tambourine_in_hand_leading_the_women_-0.jpg',
         27: '/images/haggadah/page-27.jpg',
         28: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d08a-f4f3-6cb0-9433-516af51e30b4/gemini-image-2_Family_counting_thirteen_things_on_their_fingers_running_out_of_fingers_and_movi-0.jpg',
         29: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d08f-5b34-61b0-8bd8-0638cd90a380/gemini-image-2_Small_group_sitting_outside_under_an_extraordinary_desert_night_sky_the_Milky_Wa-0.jpg',
@@ -697,12 +697,10 @@ loadImagesFromFirebase().catch(() => {});
 
     let loaded = 0;
     for (const [pageIndex, url] of Object.entries(hardcodedUrls)) {
-        if (!rooms[STATIC_ROOM].images[pageIndex] || typeof rooms[STATIC_ROOM].images[pageIndex] === 'string' || !rooms[STATIC_ROOM].images[pageIndex].url || rooms[STATIC_ROOM].images[pageIndex].url.indexOf('cdn.leonardo') === -1) {
-            rooms[STATIC_ROOM].images[pageIndex] = { url, featuredPhotos: [] };
-            loaded++;
-        }
+        rooms[STATIC_ROOM].images[pageIndex] = { url, featuredPhotos: [] };
+        loaded++;
     }
-    if (loaded > 0) console.log(`[Static] Loaded ${loaded} hardcoded Leonardo images for room ${STATIC_ROOM}`);
+    if (loaded > 0) console.log(`[Static] Force loaded ${loaded} hardcoded Leonardo images for room ${STATIC_ROOM}`);
 })();
 
 // --- Selfie persistence ---
