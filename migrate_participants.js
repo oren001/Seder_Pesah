@@ -54,7 +54,7 @@ async function main() {
 
     // 1. Fetch participants from source
     console.log('📥 Fetching participants from source...');
-    const res = await get(`${SOURCE}/api/rooms/${ROOM_ID}`);
+    const res = await get(`${SOURCE}/api/pre-register?roomId=${ROOM_ID}`);
     if (res.status !== 200 || !res.body.participants) {
         console.error('❌ Could not fetch room:', res.status, res.body);
         process.exit(1);
