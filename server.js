@@ -686,9 +686,9 @@ loadImagesFromFirebase().catch(() => {});
         22: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d075-4966-6740-9f59-3077bd4176ff/gemini-image-2_Grand_finale_of_the_seder_everyone_singing_together_chairs_pushed_back_someone_s-0.jpg',
         23: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d07a-fbce-6810-a7a3-1b3385511720/gemini-image-2_Intense_passionate_Passover_singing_some_people_eyes_closed_really_feeling_every-0.jpg',
         24: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d07c-3255-6220-b4cd-a7e5266a7b09/gemini-image-2_One_person_plays_the_free_woman_%E2%80%94_joyful_liberated_singing_with_total_abandon_-0.jpg',
-        25: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d07d-e566-6160-ae39-b775d763d04a/gemini-image-2_Spontaneous_dancing_in_the_living_room_after_the_seder_ends_ancient_song_on_clearly_m-0.jpg',
+        25: '/images/haggadah/page-25.jpg',
         26: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d080-34ca-6920-abf4-501984744ec1/gemini-image-2_One_person_plays_Miriam_the_Prophetess_%E2%80%94_tambourine_in_hand_leading_the_women_-0.jpg',
-        27: '/images/haggadah/page-27.jpg',
+        27: '/images/haggadah/page-26.jpg', // No generation for 27, reusing 26
         28: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d08a-f4f3-6cb0-9433-516af51e30b4/gemini-image-2_Family_counting_thirteen_things_on_their_fingers_running_out_of_fingers_and_movi-0.jpg',
         29: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d08f-5b34-61b0-8bd8-0638cd90a380/gemini-image-2_Small_group_sitting_outside_under_an_extraordinary_desert_night_sky_the_Milky_Wa-0.jpg',
         30: 'https://cdn.leonardo.ai/users/56496dd9-dbd5-4ef4-a8d9-421b8f552cd6/generations/1f12d092-7f63-6b00-a8fe-bbb1e5fe9fc0/gemini-image-2_Ancient_Israelites_crossing_the_desert_but_with_very_modern_energy_mismatched_ef-0.jpg',
