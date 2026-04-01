@@ -425,6 +425,55 @@ app.get('/api/pre-register', (req, res) => {
 // ── Exodus Character Card — one-per-person, token-protected ──────────────
 const _exodusCardUsed = new Set(); // IP-based rate limit (reset on server restart)
 
+// ── Memories page data ──────────────────────────────────────────────────────
+const memoriesEmojiCounts = { '❤️': 0, '🍷': 0, '🇮🇱': 0 };
+
+app.get('/api/memories-data', (req, res) => {
+    // Load participants from tmp_room.json (saved seder state)
+    let participants = [];
+    const tmpPath = path.join(__dirname, 'tmp_room.json');
+    if (fs.existsSync(tmpPath)) {
+        try {
+            const data = JSON.parse(fs.readFileSync(tmpPath, 'utf8'));
+            participants = (data.participants || []).map(p => ({
+                name: p.name,
+                photo: p.photo || null,
+                exodusCard: p.exodusCard || null,
+                lastSeen: p.lastSeen || null
+            }));
+        } catch (e) { console.error('[memories] failed to read tmp_room.json', e.message); }
+    }
+
+    // List real seder photos
+    const photosDir = path.join(__dirname, 'public', 'images', 'seder-photos');
+    let photos = [], videos = [];
+    if (fs.existsSync(photosDir)) {
+        fs.readdirSync(photosDir).forEach(f => {
+            if (/\.(jpg|jpeg)$/i.test(f)) photos.push('/images/seder-photos/' + f);
+            else if (/\.mp4$/i.test(f)) videos.push('/images/seder-photos/' + f);
+        });
+    }
+
+    // List AI haggadah images
+    const haggadahDir = path.join(__dirname, 'public', 'images', 'haggadah');
+    let aiImages = [];
+    if (fs.existsSync(haggadahDir)) {
+        aiImages = fs.readdirSync(haggadahDir)
+            .filter(f => /\.jpg$/i.test(f))
+            .sort((a, b) => {
+                const na = parseInt(a.replace('page-', '')), nb = parseInt(b.replace('page-', ''));
+                return na - nb;
+            })
+            .map(f => '/images/haggadah/' + f);
+    }
+
+    res.json({ participants, photos, videos, aiImages, emojiCounts: memoriesEmojiCounts });
+});
+
+app.get('/memories', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'memories.html'));
+});
+
 app.get('/api/exodus-card-enabled', async (req, res) => {
     // Force disabled to prevent RSVP hangs — no longer using this flow
     return res.json({ enabled: false });
@@ -735,6 +784,14 @@ function saveTasks(roomId, tasks) {
 
 io.on('connection', (socket) => {
     console.log(`+ Connected: ${socket.id}`);
+
+    // Memories emoji interaction
+    socket.on('memories-emoji', ({ emoji }) => {
+        if (memoriesEmojiCounts[emoji] !== undefined) {
+            memoriesEmojiCounts[emoji]++;
+            io.emit('memories-emoji-update', { emoji, counts: memoriesEmojiCounts });
+        }
+    });
 
     // Send current version immediately
     socket.emit('version-sync', { version: serverVersion });
@@ -1245,6 +1302,14 @@ io.on('connection', (socket) => {
                 leaderName: rooms[roomId].leaderName,
                 currentPage: rooms[roomId].currentPage
             });
+        }
+    });
+
+    // Memories page: live emoji reactions
+    socket.on('memories-emoji', ({ emoji }) => {
+        if (memoriesEmojiCounts.hasOwnProperty(emoji)) {
+            memoriesEmojiCounts[emoji]++;
+            io.emit('memories-emoji-update', { emoji, counts: memoriesEmojiCounts });
         }
     });
 
