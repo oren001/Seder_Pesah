@@ -256,17 +256,6 @@
 
   <div class="container">
     
-    <!-- GREETINGS FROM THE HEART -->
-    <div class="per-section" style="text-align:center;">
-       <h2 style="font-family:'Playfair Display', serif; color:var(--ynet-red); font-size:32px; margin-bottom:20px;">מילים מהלב... ❤️</h2>
-       <div style="background:white; padding:30px; border-radius:15px; border:1px solid #eee; position:relative; box-shadow:var(--card-shadow);">
-          <p style="font-size:18px; line-height:1.8; font-style:italic;">
-            "אני כל הזמן חושבת על זה שיש את הלוליין — ויש את הרשת שמחזיקה אותו. ואתם הייתם הרשת שלי, שאפשרה לי בכלל להעיז. והכי – דני ❤️ שזה הכי לא האזור הטבעי שלו… ועדיין זרם איתי לגמרי (ואפילו שרד חלקית כדי לספר 😜) אז תודה עליכם, באמת."
-          </p>
-          <div style="margin-top:15px; font-weight:bold; color:var(--ynet-red);">— יעלי קריו</div>
-       </div>
-    </div>
-
     <!-- HOSTS -->
     <div class="per-section" style="text-align:center;">
       <div class="section-header">🏆 המארחים המופלאים</div>
@@ -316,12 +305,16 @@
   <script>
     const socket = io();
     const guestQuotes = [
+      { author: 'מילה מהלב', text: 'עדיין לא לגמרי ערה… אבל עם חיוך ענק והתרגשות בלב ❤️' },
+      { author: 'יעלי קריו', text: 'אני כל הזמן חושבת על זה שיש את הלוליין — ויש את הרשת שמחזיקה אותו. ואתם הייתם הרשת שלי.' },
+      { author: 'דני ❤️', text: 'הכי לא האזור הטבעי שלו… ועדיין זרם איתי לגמרי (ואפילו שרד כדי לספר 😜)' },
       { author: 'אוהד', text: 'נעים וטעים וכיף לחגוג ככה. סחתיין עליכם! אגב, שכחתי את הכיסאות... 🤦🏼' },
-      { author: 'ערן הורוביץ', text: 'אחד מערבי הסדר המהנים והמוצלחים שיצא לי לחוות. תודה ענקית לכולם!' },
-      { author: 'אפרת וולפסון', text: 'היה ממש מהמם!! תודה יעל ודני על ההפקה המטורפת ❤️❤️' },
+      { author: 'ערן הורוביץ', text: 'אחד מערבי הסדר המהנים והמוצלחים שיצא לי לחוות.' },
+      { author: 'אפרת וולפסון', text: 'היה ממש מהמם!! תודה יעל ודני על ההפקה המטורפת אתם אלופים ❤️❤️' },
       { author: 'אייל', text: 'וואו היה ערב ממש מלבב! תודה לכולם היה טעים וכייף 😘' },
       { author: 'נטע', text: 'תודה על האפליקציה של ההגדה זה היה להיט ומיוחד ביותר! ♥️' },
-      { author: 'מורן', text: 'מאחלת לנו שנוכל להפסיק לשיר "אלא שבכל דור ודור עומדים עלינו לכלותינו"... אמן!' }
+      { author: 'מורן', text: 'מאחלת לנו שנוכל להפסיק לשיר "אלא שבכל דור ודור"... אמן!' },
+      { author: 'תודה רבה', text: 'תודה רבה על ההזמנה והלב הרחב והטוב ❤️' }
     ];
 
     // LIVE EMOJIS
@@ -408,7 +401,7 @@
       allReal.forEach((item, i) => {
         items.push(typeof item === 'string' ? { src: item } : item);
         if ((i + 1) % 5 === 0 && ai.length) items.push({ src: ai.pop(), isAI: true });
-        if ((i + 1) % 7 === 0 && quotes.length) items.push({ isQuote: true, ...quotes.pop() });
+        if ((i + 1) % 4 === 0 && quotes.length) items.push({ isQuote: true, ...quotes.pop() });
       });
       while(ai.length) items.push({ src: ai.pop(), isAI: true });
       while(quotes.length) items.push({ isQuote: true, ...quotes.pop() });
