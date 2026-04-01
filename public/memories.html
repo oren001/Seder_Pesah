@@ -578,9 +578,9 @@ function renderParticipants(participants) {
 
 // ── Hosts ────────────────────────────────────────────────
 function renderHosts(participants) {
-  const hostNames = ['יעל-ד', 'דני קריו', 'יעל קריו', 'Danny', 'Yael'];
+  const hostNames = ['יעל-ק', 'דני קריו'];
   const hosts = participants.filter(p =>
-    hostNames.some(n => p.name && p.name.includes(n.split(' ')[0]))
+    hostNames.some(n => p.name === n)
   );
   if (!hosts.length) return;
   const photosEl = document.getElementById('hosts-photos');
