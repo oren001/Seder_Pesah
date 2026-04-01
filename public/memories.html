@@ -442,13 +442,15 @@
     <div style="padding:20px;color:#888;font-size:13px;">טוען...</div>
   </div>
 
-  <!-- HOSTS -->
-  <div class="section-header">🏆 כבוד למארחים</div>
-  <div class="hosts-section" id="hosts-section">
-    <span class="crown">👑</span>
-    <div class="hosts-photos" id="hosts-photos"></div>
-    <h3>יעל ודני קריו</h3>
-    <p>תודה ליעל ולדני שפתחו את הבית ואת הלב.<br>הערב הזה קרה בזכותכם. 💛</p>
+  </div>
+
+  <!-- MUSIC PLAYER -->
+  <div class="hosts-section" style="margin-top:0; border-color:#cc0000; background:#fff0f0;">
+    <div style="font-size:32px; margin-bottom:8px;">🎸</div>
+    <h3>נגן ה-AI של הסדר</h3>
+    <p>לחצו כאן כדי להפעיל את המוזיקה ("קפוץ אתה" - מאיר אריאל) ולראות את הגלריה רוקדת לקצב!</p>
+    <button id="music-toggle" onclick="toggleMusic()" style="margin-top:12px; padding:12px 24px; background:#cc0000; color:white; border:none; border-radius:30px; font-weight:bold; font-size:16px; cursor:pointer; box-shadow:0 4px 12px rgba(204,0,0,0.3);">▶️ הפעל מוזיקה</button>
+    <audio id="seder-music" src="/music/kafotz_ata.mp3" loop></audio>
   </div>
 
   <!-- GALLERY -->
@@ -560,14 +562,18 @@ function renderParticipants(participants) {
 
   // Sort by lastSeen ascending
   const sorted = [...participants].sort((a, b) => (a.lastSeen || 0) - (b.lastSeen || 0));
-  grid.innerHTML = sorted.map(p => `
-    <div class="participant-card">
-      ${p.photo
-        ? `<img class="selfie-circle" src="${p.photo}" alt="${p.name}" loading="lazy">`
-        : `<div class="selfie-circle" style="display:flex;align-items:center;justify-content:center;font-size:28px;background:#f0f0f0;">👤</div>`}
-      <span class="participant-name">${p.name}</span>
-    </div>
-  `).join('');
+  grid.innerHTML = sorted.map(p => {
+    // FIX for Eyal: Use exodusCard (AI card) as fallback if photo is missing or invalid base64
+    const finalPhoto = (p.photo && p.photo.length > 50) ? p.photo : (p.exodusCard || null);
+    return `
+      <div class="participant-card">
+        ${finalPhoto
+          ? `<img class="selfie-circle" src="${finalPhoto}" alt="${p.name}" loading="lazy">`
+          : `<div class="selfie-circle" style="display:flex;align-items:center;justify-content:center;font-size:28px;background:#f0f0f0;">👤</div>`}
+        <span class="participant-name">${p.name}</span>
+      </div>
+    `;
+  }).join('');
 }
 
 // ── Hosts ────────────────────────────────────────────────
@@ -728,6 +734,71 @@ document.getElementById('lightbox').addEventListener('click', (e) => {
     }, { once: true });
   }
 })();
+// ── Music & Beat Visualizer ──────────────────────────────
+let audioCtx, analyser, dataArray;
+let isPlaying = false;
+
+function toggleMusic() {
+  const audio = document.getElementById('seder-music');
+  const btn = document.getElementById('music-toggle');
+  
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    const source = audioCtx.createMediaElementSource(audio);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    analyser.fftSize = 64;
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+    updateBeat();
+  }
+
+  if (isPlaying) {
+    audio.pause();
+    btn.textContent = '▶️ הפעל מוזיקה';
+  } else {
+    audioCtx.resume();
+    audio.play();
+    btn.textContent = '⏸️ השהה מוזיקה';
+  }
+  isPlaying = !isPlaying;
+}
+
+function updateBeat() {
+  if (isPlaying && analyser) {
+    analyser.getByteFrequencyData(dataArray);
+    // Get low-mid frequencies (the beat)
+    const bass = dataArray[0] + dataArray[1] + dataArray[2];
+    const mid = dataArray[4] + dataArray[5];
+    const avg = (bass + mid) / 5;
+    
+    // Convert to normalized beat factor (0 to 1)
+    const factor = Math.max(0, (avg - 80) / 150);
+    
+    // Apply to CSS variables
+    const scale = 1 + factor * 0.15;
+    const rotate = factor * 5;
+    const brightness = 1 + factor * 0.4;
+    
+    document.querySelectorAll('.gallery-item').forEach((item, i) => {
+      const stagger = (i % 3) * 0.2;
+      const finalScale = scale + stagger * factor;
+      item.style.transform = `scale(${finalScale}) rotate(${rotate * (i%2 ? 1 : -1)}deg)`;
+      item.style.filter = `brightness(${brightness})`;
+    });
+
+    // Also pulse the header logo
+    const logo = document.querySelector('.ynet-logo');
+    if (logo) logo.style.transform = `scale(${1 + factor * 0.2})`;
+  } else {
+    // Reset transforms when not playing
+    document.querySelectorAll('.gallery-item').forEach(item => {
+      item.style.transform = '';
+      item.style.filter = '';
+    });
+  }
+  requestAnimationFrame(updateBeat);
+}
 </script>
 </body>
 </html>
