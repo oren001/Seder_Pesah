@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אלבום זכרונות | פסח תשפ"ה</title>
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ynet-red: #cc0000;
+      --bg-cream: #fffcf5;
+      --card-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Assistant', sans-serif;
+      background-color: var(--bg-cream);
+      color: #333;
+      overflow-x: hidden;
+    }
+
+    /* ── ENTER OVERLAY ────────────────────────── */
+    #enter-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg-cream);
+      z-index: 5000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 20px;
+      transition: opacity 1.5s ease, visibility 1.5s;
+    }
+    #enter-overlay.hidden { opacity: 0; visibility: hidden; }
+    .enter-btn {
+      background: var(--ynet-red); color: white;
+      padding: 18px 40px; border-radius: 50px;
+      font-size: 20px; font-weight: bold; border: none;
+      cursor: pointer; box-shadow: 0 10px 40px rgba(204,0,0,0.3);
+      transition: transform 0.3s;
+      margin-top: 20px;
+    }
+    .enter-btn:hover { transform: scale(1.05); }
+
+    /* ── HEADER ───────────────────────────────── */
+    .top-bar {
+      background: #000;
+      color: white;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      padding: 0 15px;
+      position: fixed;
+      top: 0; width: 100%; z-index: 1000;
+      font-size: 14px;
+    }
+    .ynet-logo {
+      color: var(--ynet-red);
+      font-weight: 900;
+      font-size: 24px;
+      margin-left: 15px;
+      letter-spacing: -1px;
+      transition: transform 0.8s ease-out;
+    }
+    .ynet-live-dot {
+      width: 8px; height: 8px; background: var(--ynet-red);
+      border-radius: 50%; display: inline-block;
+      margin-left: 5px; animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+    /* ── HERO ─────────────────────────────────── */
+    .hero {
+      height: 70vh;
+      position: relative;
+      overflow: hidden;
+      margin-top: 40px;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hero-img {
+      position: absolute;
+      width: 110%; height: 110%;
+      object-fit: cover;
+      opacity: 0.7;
+      transition: transform 0.1s ease-out;
+    }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.8));
+    }
+    .hero-text {
+      position: relative; z-index: 10;
+      text-align: center; color: white;
+      padding: 20px;
+    }
+    .hero-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 8vw, 4rem);
+      margin-bottom: 10px;
+      text-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    /* ── CONTENT ──────────────────────────────── */
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      position: relative; z-index: 5;
+    }
+    .section-header {
+      background: var(--ynet-red);
+      color: white;
+      padding: 10px 20px;
+      font-weight: bold;
+      font-size: 20px;
+      margin-bottom: 30px;
+      display: inline-block;
+      border-radius: 4px;
+    }
+
+    /* ── GALLERY MASONRY ─────────────────────── */
+    .gallery-grid {
+      column-count: 3;
+      column-gap: 15px;
+    }
+    @media (max-width: 900px) { .gallery-grid { column-count: 2; } }
+    @media (max-width: 600px) { .gallery-grid { column-count: 1; } }
+
+    .gallery-item, .quote-item {
+      break-inside: avoid;
+      margin-bottom: 15px;
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      cursor: pointer;
+      transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), filter 1.0s ease-out;
+    }
+    .gallery-item img, .gallery-item video {
+      width: 100%; display: block;
+    }
+    .ai-badge {
+      position: absolute; top: 8px; left: 8px;
+      background: var(--ynet-red); color: white;
+      font-size: 10px; padding: 2px 6px; border-radius: 10px;
+      font-weight: bold;
+    }
+
+    /* ── QUOTE CARDS IN GALLERY ────────────────── */
+    .quote-item {
+      padding: 25px;
+      background: #fffbe6;
+      border-right: 5px solid var(--ynet-red);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .quote-item strong { display: block; color: var(--ynet-red); margin-bottom: 8px; }
+
+    /* ── FLOATING GREETINGS ────────────────────── */
+    .floating-greeting {
+      position: fixed;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px 15px;
+      border-radius: 20px;
+      font-size: 13px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      z-index: 1;
+      pointer-events: none;
+      animation: driftFade 15s linear forwards;
+      white-space: nowrap;
+      color: #555;
+      border: 1px solid rgba(204,0,0,0.1);
+    }
+    @keyframes driftFade {
+      0% { transform: translate(0, 100vh) scale(0.8); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translate(20px, -20vh) scale(1.1); opacity: 0; }
+    }
+
+    /* ── MUSIC PLAYER ─────────────────────────── */
+    .music-bar {
+      position: fixed;
+      bottom: 20px; right: 20px;
+      background: white;
+      padding: 15px 25px;
+      border-radius: 50px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      z-index: 2000;
+      border: 2px solid var(--ynet-red);
+    }
+    .music-btn {
+      background: var(--ynet-red);
+      color: white; border: none;
+      width: 40px; height: 40px;
+      border-radius: 50%; cursor: pointer;
+      font-size: 18px; display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── EMOJI REACTIONS ──────────────────────── */
+    .emoji-bar {
+      position: fixed;
+      bottom: 20px; left: 20px;
+      background: rgba(255,255,255,0.9);
+      padding: 10px;
+      border-radius: 30px;
+      display: flex; gap: 10px;
+      box-shadow: var(--card-shadow);
+      z-index: 2000;
+    }
+    .emoji-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 24px; padding: 5px; transition: transform 0.2s;
+    }
+    .emoji-btn:active { transform: scale(1.4); }
+
+    /* ── PARTICIPANTS ─────────────────────────── */
+    .per-section { margin-bottom: 60px; }
+    .participants-grid {
+      display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;
+    }
+    .participant-card {
+      text-align: center; width: 80px;
+    }
+    .selfie-circle {
+      width: 70px; height: 70px; border-radius: 50%;
+      object-fit: cover; border: 3px solid white;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-bottom: 5px; background: #eee;
+    }
+    .host-photos { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; }
+    .host-photo { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid gold; }
+
+    /* ── LIGHTBOX ─────────────────────────────── */
+    .lightbox {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+      display: none; align-items: center; justify-content: center; z-index: 3000;
+      padding: 20px;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox-content { max-width: 90%; max-height: 90vh; }
+    
+    #particles-canvas {
+      position: fixed; inset: 0; pointer-events: none; z-index: -1;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="enter-overlay">
+    <div style="font-family:'Playfair Display', serif; font-size:48px; color:var(--ynet-red); margin-bottom:10px;">ברוכים הבאים</div>
+    <div style="font-size:22px; margin-bottom:30px;">כנסו לגלריית הזכרונות של ליל הסדר</div>
+    <button class="enter-btn" onclick="enterExperience()">🎶 כנסו לחוויה</button>
+    <div style="margin-top:20px; font-size:14px; color:#888;">(הלחיצה תפעיל את המוזיקה והאנימציות)</div>
+  </div>
+
+  <canvas id="particles-canvas"></canvas>
+
+  <nav class="top-bar">
+    <span class="ynet-logo">ynet</span>
+    <span class="ynet-live-dot"></span>
+    ישראלים שאנחנו אוהבים | פסח תשפ"ה
+    <div id="clock" style="margin-right: auto;"></div>
+  </nav>
+
+  <header class="hero" id="hero">
+    <img src="https://pesach-yachad.onrender.com/images/seder-photos/PXL_20260401_075349501.MP.jpg" class="hero-img" id="hero-img">
+    <div class="hero-overlay"></div>
+    <div class="hero-text">
+      <h1>"כשיש מקום בלב, יש מקום בבית"</h1>
+      <p>סיכום ליל הסדר אצל משפחת קריו – 2026</p>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="per-section" style="text-align:center;">
+      <div class="section-header">🏆 המארחים המופלאים</div>
+      <div class="host-photos" id="hosts-photos"></div>
+      <h3>יעל ודני קריו</h3>
+    </div>
+    <div class="per-section">
+      <div class="section-header">👤 הגיבורים שלנו</div>
+      <div class="participants-grid" id="participants-grid"></div>
+    </div>
+    <div class="per-section">
+      <div class="section-header">📸 הגלריה המרקדת</div>
+      <div class="gallery-grid" id="gallery-grid"></div>
+    </div>
+  </div>
+
+  <footer style="text-align:center; padding:60px 20px; background:#eee; color:#666;">
+    <h2 id="countdown"></h2>
+    <p>תודה לכל מי שלקח חלק בערב הבלתי נשכח הזה.</p>
+  </footer>
+
+  <div class="music-bar">
+    <div style="font-size:12px; color:var(--ynet-red); font-weight:bold;" id="music-status">לחצו לניגון 🎶</div>
+    <button class="music-btn" id="music-toggle" onclick="toggleMusic()">▶️</button>
+  </div>
+
+  <div class="emoji-bar">
+    <button class="emoji-btn" onclick="sendEmoji('❤️')">❤️</button>
+    <button class="emoji-btn" onclick="sendEmoji('🍷')">🍷</button>
+    <button class="emoji-btn" onclick="sendEmoji('🎸')">🎸</button>
+    <div id="emoji-counts" style="font-size:12px; align-self:center; color:#999;"></div>
+  </div>
+
+  <audio id="seder-music" src="/music/kafotz_ata.mp3" loop></audio>
+
+  <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+    <div class="lightbox-content" id="lightbox-content"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const guestQuotes = [
+      { author: 'מילה מהלב', text: 'עדיין לא לגמרי ערה… אבל עם חיוך ענק והתרגשות בלב ❤️' },
+      { author: 'יעלי קריו', text: 'אני כל הזמן חושבת על זה שיש את הלוליין — ויש את הרשת שמחזיקה אותו. ואתם הייתם הרשת שלי.' },
+      { author: 'דני ❤️', text: 'הכי לא האזור הטבעי שלו… ועדיין זרם איתי לגמרי (ואפילו שרד כדי לספר 😜)' },
+      { author: 'אוהד', text: 'נעים וטעים וכיף לחגוג ככה. סחתיין עליכם! אגב, שכחתי את הכיסאות... 🤦🏼' },
+      { author: 'ערן הורוביץ', text: 'אחד מערבי הסדר המהנים והמוצלחים שיצא לי לחוות.' },
+      { author: 'אפרת וולפסון', text: 'היה ממש מהמם!! תודה יעל ודני על ההפקה המטורפת אתם אלופים ❤️❤️' },
+      { author: 'אייל', text: 'וואו היה ערב ממש מלבב! תודה לכולם היה טעים וכייף 😘' },
+      { author: 'נטע', text: 'תודה על האפליקציה של ההגדה זה היה להיט ומיוחד ביותר! ♥️' },
+      { author: 'מורן', text: 'מאחלת לנו שנוכל להפסיק לשיר "אלא שבכל דור ודור"... אמן!' },
+      { author: 'תודה רבה', text: 'תודה רבה על ההזמנה והלב הרחב והטוב ❤️' }
+    ];
+
+    socket.on('memories-emoji-update', ({ emoji, counts }) => {
+      spawnFloatingEmoji(emoji);
+      updateEmojiCounts(counts);
+    });
+
+    function sendEmoji(emoji) {
+      socket.emit('memories-emoji', { emoji });
+    }
+
+    function updateEmojiCounts(counts) {
+      const el = document.getElementById('emoji-counts');
+      el.innerHTML = Object.entries(counts).map(([txt, num]) => `${txt} ${num}`).join(' | ');
+    }
+
+    function spawnFloatingEmoji(emoji) {
+      const el = document.createElement('div');
+      el.textContent = emoji;
+      el.style.position = 'fixed';
+      el.style.bottom = '40px';
+      el.style.left = (Math.random() * 40 + 20) + 'vw';
+      el.style.fontSize = '30px';
+      el.style.zIndex = '3000';
+      el.style.transition = 'all 2s ease-out';
+      document.body.appendChild(el);
+      setTimeout(() => {
+        el.style.transform = `translateY(-300px) scale(2)`;
+        el.style.opacity = '0';
+      }, 50);
+      setTimeout(() => el.remove(), 2000);
+    }
+
+    function spawnGreetingBubble() {
+      const q = guestQuotes[Math.floor(Math.random() * guestQuotes.length)];
+      const el = document.createElement('div');
+      el.className = 'floating-greeting';
+      el.innerHTML = `<strong>${q.author}:</strong> ${q.text}`;
+      el.style.left = (Math.random() * 80 + 10) + 'vw';
+      document.body.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    }
+    setInterval(spawnGreetingBubble, 12000);
+    setTimeout(spawnGreetingBubble, 2000);
+
+    fetch('/api/memories-data')
+      .then(r => r.json())
+      .then(data => {
+        renderParticipants(data.participants);
+        renderHosts(data.participants);
+        renderGallery(data.photos, data.videos, data.aiImages);
+        updateEmojiCounts(data.emojiCounts || {});
+      });
+
+    function renderParticipants(list) {
+      const grid = document.getElementById('participants-grid');
+      grid.innerHTML = list.map(p => {
+        const img = (p.photo && p.photo.length > 50) ? p.photo : (p.exodusCard || '');
+        return `<div class="participant-card">
+          <img src="${img}" class="selfie-circle">
+          <div style="font-size:12px;">${p.name}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderHosts(list) {
+      const hostNames = ['יעל-ק', 'דני קריו'];
+      const hosts = list.filter(p => hostNames.includes(p.name));
+      document.getElementById('hosts-photos').innerHTML = hosts.map(h => 
+        `<img src="${h.photo}" class="host-photo">`
+      ).join('');
+    }
+
+    function renderGallery(photos, videos, aiImages) {
+      const grid = document.getElementById('gallery-grid');
+      const items = [];
+      const allReal = [...photos, ...videos.map(v => ({ src: v, isVideo: true }))];
+      const ai = [...aiImages];
+      const quotes = [...guestQuotes];
+
+      allReal.forEach((item, i) => {
+        items.push(typeof item === 'string' ? { src: item } : item);
+        if ((i + 1) % 5 === 0 && ai.length) items.push({ src: ai.pop(), isAI: true });
+        if ((i + 1) % 4 === 0 && quotes.length) items.push({ isQuote: true, ...quotes.pop() });
+      });
+      while(ai.length) items.push({ src: ai.pop(), isAI: true });
+      while(quotes.length) items.push({ isQuote: true, ...quotes.pop() });
+
+      grid.innerHTML = items.map((item, i) => {
+        if (item.isQuote) return `<div class="quote-item"><strong>${item.author}</strong><blockquote>"${item.text}"</blockquote></div>`;
+        const path = item.isVideo ? item.src : item.src;
+        return `<div class="gallery-item" onclick="openLightbox(${i})">
+          ${item.isVideo ? `<video src="${path}" autoplay muted loop playsinline></video>` : `<img src="${path}">`}
+          ${item.isAI ? '<span class="ai-badge">AI</span>' : ''}
+        </div>`;
+      }).join('');
+      window._gallery = items;
+    }
+
+    function openLightbox(i) {
+      const item = window._gallery[i];
+      const content = document.getElementById('lightbox-content');
+      content.innerHTML = item.isVideo 
+        ? `<video src="${item.src}" controls autoplay style="max-width:100%;"></video>`
+        : `<img src="${item.src}" style="max-width:100%; border-radius:10px;">`;
+      document.getElementById('lightbox').classList.add('open');
+    }
+    function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+
+    let audioCtx, analyser, dataArray, isPlaying = false;
+    function enterExperience() {
+      const overlay = document.getElementById('enter-overlay');
+      overlay.classList.add('hidden');
+      setTimeout(() => overlay.remove(), 1500);
+      toggleMusic();
+    }
+    function toggleMusic() {
+      const audio = document.getElementById('seder-music');
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 128;
+        const source = audioCtx.createMediaElementSource(audio);
+        source.connect(analyser); analyser.connect(audioCtx.destination);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        updateBeat();
+      }
+      if (isPlaying) { audio.pause(); document.getElementById('music-toggle').textContent = '▶️'; }
+      else { audioCtx.resume(); audio.play(); document.getElementById('music-toggle').textContent = '⏸️'; }
+      isPlaying = !isPlaying;
+    }
+    let lastAvg = 0;
+    function updateBeat() {
+      if (isPlaying && analyser) {
+        analyser.getByteFrequencyData(dataArray);
+        const rawAvg = (dataArray[0] + dataArray[1] + dataArray[2] + dataArray[4]) / 4;
+        const avg = lastAvg * 0.9 + rawAvg * 0.1; lastAvg = avg;
+        const factor = Math.max(0, (avg - 70) / 180);
+        const swing = Math.sin(Date.now() / 1500) * (2 + factor * 6);
+        document.querySelectorAll('.gallery-item, .quote-item').forEach((it, i) => {
+          const s = 1 + factor * 0.05, r = (i % 2 ? 1 : -1) * swing;
+          it.style.transform = `scale(${s}) rotate(${r}deg)`;
+          it.style.filter = `brightness(${1 + factor * 0.15})`;
+        });
+        const logo = document.querySelector('.ynet-logo');
+        if (logo) logo.style.transform = `scale(${1 + factor * 0.15})`;
+      }
+      requestAnimationFrame(updateBeat);
+    }
+    (function(){
+      const canvas = document.getElementById('particles-canvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+      window.addEventListener('resize', resize); resize();
+      for(let i=0; i<12; i++) particles.push({ x:Math.random()*canvas.width, y:Math.random()*canvas.height, sym:'✨', s:10+Math.random()*15, v:0.2+Math.random()*0.5 });
+      function draw() {
+        ctx.clearRect(0,0,canvas.width,canvas.height); ctx.globalAlpha = 0.2;
+        particles.forEach(p => {
+          ctx.font = p.s+'px serif'; ctx.fillText(p.sym, p.x, p.y);
+          p.y -= p.v; if (p.y < -30) p.y = canvas.height+30;
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+    document.addEventListener('mousemove', (e) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 20, y = (e.clientY / window.innerHeight - 0.5) * 10;
+      const hero = document.getElementById('hero-img'); if(hero) hero.style.transform = `scale(1.1) translate(${x}px, ${y}px)`;
+    });
+    function updateInfo() {
+      const now = new Date(), next = new Date('2027-04-21T18:30:00');
+      const days = Math.floor((next - now) / 86400000);
+      const clock = document.getElementById('clock'), countdown = document.getElementById('countdown');
+      if(clock) clock.textContent = now.toLocaleTimeString('he-IL', { hour:'2-digit', minute:'2-digit' });
+      if(countdown) countdown.textContent = `ספירה לאחור לפסח תשפ"ז: עוד ${days} ימים להיפגש שוב ✨`;
+    }
+    updateInfo(); setInterval(updateInfo, 1000);
+  </script>
+</body>
+</html>
