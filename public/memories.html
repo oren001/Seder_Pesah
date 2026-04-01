@@ -442,14 +442,42 @@
     <div style="padding:20px;color:#888;font-size:13px;">טוען...</div>
   </div>
 
+  <!-- WORDS FROM THE HEART SECTION -->
+  <div class="section-header" style="background:#cc0000; color:white; padding:12px; margin-top:30px;">❤️ מילים מהלב</div>
+  <div class="heart-words-container" style="padding:20px; background:#fffcf5; border-radius:15px; margin:20px; box-shadow:inset 0 0 100px rgba(0,0,0,0.03); direction:rtl; text-align:right;">
+    
+    <h1 style="text-align:center; font-family:serif; color:#cc0000; font-size:28px; margin-bottom:30px; letter-spacing:-1px;">"כשיש מקום בלב, יש מקום בבית"</h1>
+
+    <!-- YAELI'S LETTER -->
+    <div class="yaeli-letter" style="background:#fff; padding:30px; border-radius:5px; box-shadow:5px 5px 15px rgba(0,0,0,0.1); transform:rotate(-1.2deg); position:relative; margin-bottom:50px;">
+      <div style="font-size:24px; color:#cc0000; margin-bottom:15px; font-weight:bold;">חברים יקרים... ❤️</div>
+      <div style="font-size:16px; line-height:1.8; color:#333;">
+        יעלי קריו כותבת: "עדיין לא לגמרי ערה… אבל עם חיוך ענק והתרגשות בלב. ליל הסדר אצל הקריו – מי היה מאמין? 😅 עם לב שמלא עד הסוף. היה רגע שבאמת לא האמנו שייכנסו כל כך הרבה אנשים — ובסוף לא רק שנכנסו, גם הביאו איתם ים של לב, נתינה ואווירה שאין לתאר...<br><br>
+        <strong>אורן</strong> שאמר 'יאללה' בלי לחשוב פעמיים, <strong>איתי</strong> שהפתיע בהפקת על, <strong>מורני</strong> שלקחה פיקוד על האוכל, וכל צוות ההובלות והמטבח המטורף שלנו...<br><br>
+        אני כל הזמן חושבת על זה שיש את הלוליין — ויש את הרשת שמחזיקה אותו. ואתם הייתם הרשת שלי, שאפשרה לי בכלל להעיז. והכי – <strong>דני ❤️</strong>. אז תודה עליכם, באמת."
+      </div>
+    </div>
+
+    <!-- STICKY NOTES GRID -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:20px;">
+      <div style="background:#fff9c4; padding:15px; transform:rotate(2deg); box-shadow:3px 3px 6px rgba(0,0,0,0.1); font-size:14px; border-left:4px solid #fbc02d;"><strong>אוהד:</strong> "נעים וטעים וכיף לחגוג ככה. סחתיין עליכם! אגב, שכחתי את הכיסאות... 🤦🏼"</div>
+      <div style="background:#e1f5fe; padding:15px; transform:rotate(-2deg); box-shadow:3px 3px 6px rgba(0,0,0,0.1); font-size:14px; border-left:4px solid #0288d1;"><strong>ערן הורוביץ:</strong> "תודה רבה שאירחתם אותנו בבית המקסים שלכם. אחד מערבי הסדר הנהנים שיצא לי לחוות."</div>
+      <div style="background:#fce4ec; padding:15px; transform:rotate(1deg); box-shadow:3px 3px 6px rgba(0,0,0,0.1); font-size:14px; border-left:4px solid #c2185b;"><strong>אפרת :</strong> "הפקה מטורפת! אתם אלופים ❤️❤️ תענוג לבלות את החג אתכם."</div>
+      <div style="background:#f1f8e9; padding:15px; transform:rotate(-1deg); box-shadow:3px 3px 6px rgba(0,0,0,0.1); font-size:14px; border-left:4px solid #689f38;"><strong>אייל:</strong> "וואו היה ערב ממש מלבב! תודה לכולם היה טעים ומעניין וכייף לחגוג 😘"</div>
+    </div>
+
+    <!-- CLOSING AMEN -->
+    <div style="text-align:center; margin-top:40px; padding:20px; border-top:1px solid #ddd;">
+      <p style="font-style:italic; color:#666; font-size:15px;">"מאחלת לנו שנוכל להפסיק לשיר 'אלא שבכל דור ודור עומדים עלינו לכלותינו'... <strong>אמן!</strong>" (מורן)</p>
+    </div>
   </div>
 
   <!-- MUSIC PLAYER -->
-  <div class="hosts-section" style="margin-top:0; border-color:#cc0000; background:#fff0f0;">
+  <div class="hosts-section" style="margin-top:0; border-color:#cc0000; background:#fff0f0; text-align:center; padding:25px;">
     <div style="font-size:32px; margin-bottom:8px;">🎸</div>
     <h3>נגן ה-AI של הסדר</h3>
-    <p>לחצו כאן כדי להפעיל את המוזיקה ("קפוץ אתה" - מאיר אריאל) ולראות את הגלריה רוקדת לקצב!</p>
-    <button id="music-toggle" onclick="toggleMusic()" style="margin-top:12px; padding:12px 24px; background:#cc0000; color:white; border:none; border-radius:30px; font-weight:bold; font-size:16px; cursor:pointer; box-shadow:0 4px 12px rgba(204,0,0,0.3);">▶️ הפעל מוזיקה</button>
+    <p id="music-status" style="font-weight:bold; color:#cc0000;">המוזיקה תתחיל אוטומטית ברגע שתגלו את הדף! ✨</p>
+    <button id="music-toggle" onclick="toggleMusic()" style="margin-top:15px; padding:12px 25px; background:#cc0000; color:white; border:none; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow:0 4px 10px rgba(204,0,0,0.3);">▶️ הפעל ידנית</button>
     <audio id="seder-music" src="/music/kafotz_ata.mp3" loop></audio>
   </div>
 
@@ -737,10 +765,27 @@ document.getElementById('lightbox').addEventListener('click', (e) => {
 // ── Music & Beat Visualizer ──────────────────────────────
 let audioCtx, analyser, dataArray;
 let isPlaying = false;
+let userInteracted = false;
 
-function toggleMusic() {
+// Trigger music on FIRST interaction anywhere on the document
+document.addEventListener('click', () => {
+  if (!userInteracted) {
+    userInteracted = true;
+    if (!isPlaying) startMusicPlayback();
+  }
+}, { once: true });
+
+document.addEventListener('touchstart', () => {
+  if (!userInteracted) {
+    userInteracted = true;
+    if (!isPlaying) startMusicPlayback();
+  }
+}, { once: true });
+
+function startMusicPlayback() {
   const audio = document.getElementById('seder-music');
   const btn = document.getElementById('music-toggle');
+  const status = document.getElementById('music-status');
   
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -751,6 +796,25 @@ function toggleMusic() {
     analyser.fftSize = 64;
     dataArray = new Uint8Array(analyser.frequencyBinCount);
     updateBeat();
+  }
+
+  audioCtx.resume();
+  audio.play().then(() => {
+    isPlaying = true;
+    btn.textContent = '⏸️ השהה מוזיקה';
+    status.textContent = '🎶 מאיר אריאל - קפוץ אתה מנגן עכשיו...';
+  }).catch(e => {
+    console.log("Auto-play blocked:", e);
+  });
+}
+
+function toggleMusic() {
+  const audio = document.getElementById('seder-music');
+  const btn = document.getElementById('music-toggle');
+  
+  if (!audioCtx) {
+    startMusicPlayback();
+    return;
   }
 
   if (isPlaying) {
@@ -772,26 +836,23 @@ function updateBeat() {
     const mid = dataArray[4] + dataArray[5];
     const avg = (bass + mid) / 5;
     
-    // Convert to normalized beat factor (0 to 1)
+    // Normalized beat factor
     const factor = Math.max(0, (avg - 80) / 150);
     
-    // Apply to CSS variables
+    // Apply to CSS
     const scale = 1 + factor * 0.15;
     const rotate = factor * 5;
     const brightness = 1 + factor * 0.4;
     
     document.querySelectorAll('.gallery-item').forEach((item, i) => {
-      const stagger = (i % 3) * 0.2;
-      const finalScale = scale + stagger * factor;
+      const finalScale = scale + (i % 3) * 0.2 * factor;
       item.style.transform = `scale(${finalScale}) rotate(${rotate * (i%2 ? 1 : -1)}deg)`;
       item.style.filter = `brightness(${brightness})`;
     });
 
-    // Also pulse the header logo
     const logo = document.querySelector('.ynet-logo');
     if (logo) logo.style.transform = `scale(${1 + factor * 0.2})`;
   } else {
-    // Reset transforms when not playing
     document.querySelectorAll('.gallery-item').forEach(item => {
       item.style.transform = '';
       item.style.filter = '';
