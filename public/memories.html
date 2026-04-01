@@ -19,6 +19,27 @@
       overflow-x: hidden;
     }
 
+    /* ── ENTER OVERLAY ────────────────────────── */
+    #enter-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg-cream);
+      z-index: 5000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 20px;
+      transition: opacity 1.5s ease, visibility 1.5s;
+    }
+    #enter-overlay.hidden { opacity: 0; visibility: hidden; }
+    .enter-btn {
+      background: var(--ynet-red); color: white;
+      padding: 18px 40px; border-radius: 50px;
+      font-size: 20px; font-weight: bold; border: none;
+      cursor: pointer; box-shadow: 0 10px 40px rgba(204,0,0,0.3);
+      transition: transform 0.3s;
+      margin-top: 20px;
+    }
+    .enter-btn:hover { transform: scale(1.05); }
+
     /* ── HEADER ───────────────────────────────── */
     .top-bar {
       background: #000;
@@ -37,7 +58,7 @@
       font-size: 24px;
       margin-left: 15px;
       letter-spacing: -1px;
-      transition: transform 0.2s;
+      transition: transform 0.8s ease-out; /* Smooth logo pulse */
     }
     .ynet-live-dot {
       width: 8px; height: 8px; background: var(--ynet-red);
@@ -106,7 +127,7 @@
     @media (max-width: 900px) { .gallery-grid { column-count: 2; } }
     @media (max-width: 600px) { .gallery-grid { column-count: 1; } }
 
-    .gallery-item {
+    .gallery-item, .quote-item {
       break-inside: avoid;
       margin-bottom: 15px;
       position: relative;
@@ -115,7 +136,8 @@
       background: #fff;
       box-shadow: 0 4px 15px rgba(0,0,0,0.05);
       cursor: pointer;
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      /* Smoother 'gliding' movement (נדנדה) */
+      transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), filter 1.0s ease-out;
     }
     .gallery-item img, .gallery-item video {
       width: 100%; display: block;
@@ -129,16 +151,11 @@
 
     /* ── QUOTE CARDS IN GALLERY ────────────────── */
     .quote-item {
-      break-inside: avoid;
-      margin-bottom: 15px;
       padding: 25px;
       background: #fffbe6;
-      border-radius: 8px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
       border-right: 5px solid var(--ynet-red);
       font-size: 16px;
       line-height: 1.6;
-      position: relative;
     }
     .quote-item strong { display: block; color: var(--ynet-red); margin-bottom: 8px; }
 
@@ -235,6 +252,13 @@
   </style>
 </head>
 <body>
+
+  <div id="enter-overlay">
+    <div style="font-family:'Playfair Display', serif; font-size:48px; color:var(--ynet-red); margin-bottom:10px;">ברוכים הבאים</div>
+    <div style="font-size:22px; margin-bottom:30px;">כנסו לגלריית הזכרונות של ליל הסדר</div>
+    <button class="enter-btn" onclick="enterExperience()">🎶 כנסו לחוויה</button>
+    <div style="margin-top:20px; font-size:14px; color:#888;">(הלחיצה תפעיל את המוזיקה והאנימציות)</div>
+  </div>
 
   <canvas id="particles-canvas"></canvas>
 
@@ -429,34 +453,75 @@
 
     // MUSIC & BEAT SYNC
     let audioCtx, analyser, dataArray, isPlaying = false;
+
+    function enterExperience() {
+      const overlay = document.getElementById('enter-overlay');
+      overlay.classList.add('hidden');
+      setTimeout(() => overlay.remove(), 1500);
+      toggleMusic(); // Starts audio context and plays
+    }
+
     function toggleMusic() {
       const audio = document.getElementById('seder-music');
       const btn = document.getElementById('music-toggle');
+      const status = document.getElementById('music-status');
+      
       if (!audioCtx) {
-        audioCtx = new AudioContext();
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 64;
+        analyser.fftSize = 128; // Higher resolution for smoother data
         const source = audioCtx.createMediaElementSource(audio);
         source.connect(analyser); analyser.connect(audioCtx.destination);
         dataArray = new Uint8Array(analyser.frequencyBinCount);
         updateBeat();
       }
-      if (isPlaying) { audio.pause(); btn.textContent = '▶️'; }
-      else { audioCtx.resume(); audio.play(); btn.textContent = '⏸️'; }
+      
+      if (isPlaying) { 
+        audio.pause(); 
+        btn.textContent = '▶️'; 
+        status.textContent = 'המוזיקה הושהתה';
+      } else { 
+        audioCtx.resume(); 
+        audio.play(); 
+        btn.textContent = '⏸️'; 
+        status.textContent = '🎶 קפוץ אתה מנגן עכשיו...';
+      }
       isPlaying = !isPlaying;
     }
 
+    let lastAvg = 0;
     function updateBeat() {
-      if (isPlaying) {
+      if (isPlaying && analyser) {
         analyser.getByteFrequencyData(dataArray);
-        const avg = dataArray.reduce((p, c) => p + c, 0) / dataArray.length;
-        const factor = Math.max(0, (avg - 60) / 100);
+        const bass = (dataArray[0] + dataArray[1] + dataArray[2]) / 3;
+        const mid = (dataArray[4] + dataArray[5] + dataArray[6]) / 3;
+        const rawAvg = (bass * 0.7 + mid * 0.3);
+        
+        // Very heavy smoothing for 'flowing' feel
+        const avg = lastAvg * 0.92 + rawAvg * 0.08;
+        lastAvg = avg;
+
+        const factor = Math.max(0, (avg - 70) / 180);
+        
+        // The 'Swing' (נדנדה) logic:
+        // Use a slow sine wave based on time, amplitude controlled by music.
+        const time = Date.now() / 1500; // Slow cycle (1.5s)
+        const swing = Math.sin(time) * (2 + factor * 6); // Max 8 degree tilt
+        const slowPulse = 1 + factor * 0.05; // Very subtle scale pulse
+
         document.querySelectorAll('.gallery-item, .quote-item').forEach((it, i) => {
-          const s = 1 + factor * 0.1, r = (i % 2 ? 1 : -1) * factor * 5;
-          it.style.transform = `scale(${s}) rotate(${r}deg)`;
-          it.style.filter = `brightness(${1 + factor * 0.4})`;
+          // Alternative directions for different items
+          const itemSwing = (i % 2 === 0) ? swing : -swing;
+          it.style.transform = `scale(${slowPulse}) rotate(${itemSwing}deg)`;
+          it.style.filter = `brightness(${1 + factor * 0.15})`;
         });
-        document.querySelector('.ynet-logo').style.transform = `scale(${1 + factor * 0.3})`;
+        
+        const logo = document.querySelector('.ynet-logo');
+        if (logo) logo.style.transform = `scale(${1 + factor * 0.15})`;
+      } else {
+        document.querySelectorAll('.gallery-item, .quote-item').forEach(it => {
+          it.style.transform = ''; it.style.filter = '';
+        });
       }
       requestAnimationFrame(updateBeat);
     }
