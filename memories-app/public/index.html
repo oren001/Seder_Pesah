@@ -384,9 +384,14 @@
         updateEmojiCounts(data.emojiCounts || {});
       });
 
+    const hostNames = ['יעל-ק', 'דני'];
+
     function renderParticipants(list) {
       const grid = document.getElementById('participants-grid');
-      grid.innerHTML = list.map(p => {
+      // Filter out hosts from the 'Heroes' section
+      const heroes = list.filter(p => !hostNames.includes(p.name));
+      
+      grid.innerHTML = heroes.map(p => {
         const img = (p.photo && p.photo.length > 50) ? p.photo : (p.exodusCard || '');
         return `<div class="participant-card">
           <img src="${img}" class="selfie-circle">
@@ -396,8 +401,10 @@
     }
 
     function renderHosts(list) {
-      const hostNames = ['יעל-ק', 'דני קריו'];
       const hosts = list.filter(p => hostNames.includes(p.name));
+      // Sort to ensure Yael is first if preferred, or just render both
+      hosts.sort((a,b) => b.name.includes('יעל') ? 1 : -1); 
+      
       document.getElementById('hosts-photos').innerHTML = hosts.map(h => 
         `<img src="${h.photo}" class="host-photo">`
       ).join('');
