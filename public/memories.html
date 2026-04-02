@@ -504,10 +504,10 @@
         const factor = Math.max(0, (avg - 70) / 180);
         
         // The 'Swing' (נדנדה) logic:
-        // Use a slow sine wave based on time, amplitude controlled by music.
-        const time = Date.now() / 1500; // Slow cycle (1.5s)
-        const swing = Math.sin(time) * (2 + factor * 6); // Max 8 degree tilt
-        const slowPulse = 1 + factor * 0.05; // Very subtle scale pulse
+        // Use a much slower sine wave (3 seconds) and a larger swing range.
+        const time = Date.now() / 3000; // Even slower (3s)
+        const swing = Math.sin(time) * (5 + factor * 10); // Max 15 degree dramatic tilt
+        const slowPulse = 1 + factor * 0.04; // Very subtle scale pulse
 
         document.querySelectorAll('.gallery-item, .quote-item').forEach((it, i) => {
           // Alternative directions for different items

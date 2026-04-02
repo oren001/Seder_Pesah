@@ -475,7 +475,8 @@
         const rawAvg = (dataArray[0] + dataArray[1] + dataArray[2] + dataArray[4]) / 4;
         const avg = lastAvg * 0.9 + rawAvg * 0.1; lastAvg = avg;
         const factor = Math.max(0, (avg - 70) / 180);
-        const swing = Math.sin(Date.now() / 1500) * (2 + factor * 6);
+        // Slower (3s) and larger (14deg) swing
+        const swing = Math.sin(Date.now() / 3000) * (4 + factor * 10);
         document.querySelectorAll('.gallery-item, .quote-item').forEach((it, i) => {
           const s = 1 + factor * 0.05, r = (i % 2 ? 1 : -1) * swing;
           it.style.transform = `scale(${s}) rotate(${r}deg)`;
